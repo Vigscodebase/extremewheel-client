@@ -5,8 +5,8 @@ import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
 import { useAuth } from "../context/authcontext";
 import { usePermissions } from "../context/permissioncontext";
+import { useCreateUser, useDeleteUser, useUpdateUser, useUsersQuery } from "../hooks/queries/useUsers";
 import { PAGES, ROLES } from "../utils/constants";
-import axios from "../utils/axiosInstance";
 
 const MOCK_USERS = [
   { _id: "u1", name: "Alicia Roy", email: "alicia@fleet.io", role: "admin", createdAt: "2025-11-02" },
@@ -21,36 +21,26 @@ export default function UserManagement() {
   const { permissions, savePermissions } = usePermissions();
 
   const [tab, setTab] = useState("users");
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+
+  const { data: fetchedUsers, isLoading: loading, isError: usersError } = useUsersQuery();
+  const users = usersError ? MOCK_USERS : fetchedUsers || [];
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
+  const deleteUserMutation = useDeleteUser();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deleting, setDeleting] = useState(false);
 
   const [matrix, setMatrix] = useState(permissions);
   const [matrixDirty, setMatrixDirty] = useState(false);
   const [savingMatrix, setSavingMatrix] = useState(false);
 
   useEffect(() => setMatrix(permissions), [permissions]);
-
-  useEffect(() => {
-    let ignore = false;
-    axios
-      .get("api/users")
-      .then(({ data }) => !ignore && setUsers(data.users || data || []))
-      .catch(() => !ignore && setUsers(MOCK_USERS))
-      .finally(() => !ignore && setLoading(false));
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -83,49 +73,32 @@ export default function UserManagement() {
       setFormError("Name, email and password are required.");
       return;
     }
-    setSaving(true);
     try {
       if (editing) {
-        const payload = { name: form.name, email: form.email, role: form.role };
+        const payload = { id: editing._id, name: form.name, email: form.email, role: form.role };
         if (form.password) payload.password = form.password;
-        const { data } = await axios.put(`api/users/${editing._id}`, payload);
-        const updated = data.user || { ...editing, ...payload };
-        setUsers((list) => list.map((u) => (u._id === editing._id ? updated : u)));
+        await updateUserMutation.mutateAsync(payload);
       } else {
-        const { data } = await axios.post("api/users", form);
-        const created = data.user || { ...form, _id: `local-${Date.now()}`, createdAt: new Date().toISOString() };
-        setUsers((list) => [created, ...list]);
+        await createUserMutation.mutateAsync(form);
       }
       setFormOpen(false);
     } catch (err) {
-      if (err?.response) {
-        setFormError(err.response.data?.message || "Something went wrong. Please try again.");
-      } else {
-        if (editing) {
-          setUsers((list) => list.map((u) => (u._id === editing._id ? { ...u, ...form } : u)));
-        } else {
-          setUsers((list) => [{ ...form, _id: `local-${Date.now()}`, createdAt: new Date().toISOString() }, ...list]);
-        }
-        setFormOpen(false);
-      }
-    } finally {
-      setSaving(false);
+      setFormError(err?.response?.data?.message || "Something went wrong. Please try again.");
     }
   };
 
+  const saving = createUserMutation.isPending || updateUserMutation.isPending;
+
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    setDeleting(true);
     try {
-      await axios.delete(`api/users/${deleteTarget._id}`);
-    } catch {
-      // fall through to local removal regardless
+      await deleteUserMutation.mutateAsync(deleteTarget._id);
     } finally {
-      setUsers((list) => list.filter((u) => u._id !== deleteTarget._id));
-      setDeleting(false);
       setDeleteTarget(null);
     }
   };
+
+  const deleting = deleteUserMutation.isPending;
 
   const toggleMatrix = (role, pageKey) => {
     if (role === "admin") return;

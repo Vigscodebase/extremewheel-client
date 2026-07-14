@@ -10,12 +10,12 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import AreaLineChart from "../components/charts/areaLinechart";
 import DonutChart from "../components/charts/donutchart";
 import PageHeader from "../components/pageheader";
 import { useAuth } from "../context/authcontext";
-import axios from "../utils/axiosInstance";
+import { useDashboardSummary } from "../hooks/queries/useDashboard";
 
 const RANGES = ["W", "M", "Y"];
 
@@ -180,24 +180,13 @@ function ContactRow({ name, role, online }) {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [stats, setStats] = useState(FALLBACK);
+  const { data } = useDashboardSummary();
   const [range, setRange] = useState("W");
   const [selectedDay, setSelectedDay] = useState(FALLBACK.scheduleDays[2]?.day);
 
-  useEffect(() => {
-    let ignore = false;
-    axios
-      .get("api/dashboard/summary")
-      .then(({ data }) => {
-        if (!ignore && data) setStats((prev) => ({ ...prev, ...data }));
-      })
-      .catch(() => {
-        // No backend endpoint yet — the fallback demo numbers above stay in place.
-      });
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  // Merge live data over the demo fallback so the layout never looks empty
+  // while the first request is in flight or if the endpoint errors out.
+  const stats = useMemo(() => ({ ...FALLBACK, ...(data || {}) }), [data]);
 
   const donutData = [
     { label: "Admin", value: stats.usersByRole.admin, color: "#8B7CF6" },

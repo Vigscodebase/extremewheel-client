@@ -1,4 +1,5 @@
 import Axios from "axios";
+import useAuthStore from "../store/authStore";
 
 // Base URL comes from env in production; falls back to the LAN address used
 // during development. Set VITE_API_BASE_URL in a .env file for deployment.
@@ -27,7 +28,7 @@ export const setupAxiosInterceptors = (onTokenRenewed, onSessionExpired) => {
 
   axios.interceptors.request.use(
     (config) => {
-      const token = localStorage.getItem("token");
+      const token = useAuthStore.getState().token;
       if (token) {
         config.headers["Authorization"] = `Bearer ${token}`;
       }

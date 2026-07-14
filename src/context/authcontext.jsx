@@ -1,5 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import axios, { setupAxiosInterceptors } from "../utils/axiosInstance";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
+import { fetchMe, loginRequest, registerRequest } from "../api/authApi";
+import useAuthStore from "../store/authStore";
+import { setupAxiosInterceptors } from "../utils/axiosInstance";
 
 const AuthContext = createContext(null);
 
@@ -10,35 +13,22 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  // token/user live in the Zustand store (persisted + shared across tabs);
+  // initializing/sessionExpired are transient UI-only flags for this mount.
+  const { token, user } = useAuthStore(useShallow((s) => ({ token: s.token, user: s.user })));
+  const setSession = useAuthStore((s) => s.setSession);
+  const clearSession = useAuthStore((s) => s.clearSession);
+  const setToken = useAuthStore((s) => s.setToken);
+  const updateUser = useAuthStore((s) => s.updateUser);
+
   const [initializing, setInitializing] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
-  const logoutBroadcastRef = useRef(false);
 
-  const persistSession = useCallback((token, userData) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(userData));
-    setUser(userData);
-  }, []);
-
-  const clearSession = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
-  }, []);
-
-  // Logs the user out locally. `broadcast` false is used when we are already
-  // reacting to another tab's logout, to avoid an infinite storage-event loop.
-  const logout = useCallback(
-    (broadcast = true) => {
-      clearSession();
-      if (broadcast) {
-        // Bumping this key fires the `storage` event in every other open tab.
-        localStorage.setItem("logout-broadcast", String(Date.now()));
-      }
-    },
-    [clearSession]
-  );
+  const logout = useCallback(() => {
+    // Clearing the persisted store fires a native `storage` event in every
+    // other open tab, so they log out too without any extra plumbing.
+    clearSession();
+  }, [clearSession]);
 
   const handleSessionExpired = useCallback(() => {
     setSessionExpired(true);
@@ -51,28 +41,24 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     setupAxiosInterceptors(
-      (renewedToken) => localStorage.setItem("token", renewedToken),
+      (renewedToken) => setToken(renewedToken),
       () => handleSessionExpired()
     );
-  }, [handleSessionExpired]);
+  }, [handleSessionExpired, setToken]);
 
-  // Verify the stored token against the backend on first load, and sync
-  // logout across tabs of the same browser instantly via the storage event.
+  // Verify the stored token against the backend on first load. Cross-tab
+  // sync (logout in another tab, etc.) is handled natively by zustand's
+  // persist middleware re-hydrating this store on the `storage` event.
   useEffect(() => {
     const bootstrap = async () => {
-      const token = localStorage.getItem("token");
-      const cachedUser = localStorage.getItem("user");
-      if (!token || !cachedUser) {
+      const currentToken = useAuthStore.getState().token;
+      if (!currentToken) {
         setInitializing(false);
         return;
       }
       try {
-        setUser(JSON.parse(cachedUser));
-        const { data } = await axios.get("api/auth/me");
-        if (data?.user) {
-          setUser(data.user);
-          localStorage.setItem("user", JSON.stringify(data.user));
-        }
+        const freshUser = await fetchMe();
+        updateUser(freshUser);
       } catch {
         clearSession();
       } finally {
@@ -80,49 +66,32 @@ export const AuthProvider = ({ children }) => {
       }
     };
     bootstrap();
-
-    const onStorage = (e) => {
-      if (e.key === "logout-broadcast") {
-        logoutBroadcastRef.current = true;
-        clearSession();
-      }
-      if (e.key === "user" && e.newValue) {
-        setUser(JSON.parse(e.newValue));
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, [clearSession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const login = useCallback(
     async (email, password) => {
-      const { data } = await axios.post("api/auth/login", { email, password });
-      persistSession(data.token, data.user);
+      const data = await loginRequest(email, password);
+      setSession(data.token, data.user);
       return data.user;
     },
-    [persistSession]
+    [setSession]
   );
 
   const register = useCallback(
     async (payload) => {
-      const { data } = await axios.post("api/auth/register", payload);
-      if (data.token) persistSession(data.token, data.user);
+      const data = await registerRequest(payload);
+      if (data.token) setSession(data.token, data.user);
       return data.user;
     },
-    [persistSession]
+    [setSession]
   );
 
-  const updateCurrentUser = useCallback((partial) => {
-    setUser((prev) => {
-      const next = { ...prev, ...partial };
-      localStorage.setItem("user", JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  const updateCurrentUser = useCallback((partial) => updateUser(partial), [updateUser]);
 
   const value = {
     user,
-    isAuthenticated: !!user,
+    isAuthenticated: !!token && !!user,
     initializing,
     login,
     register,

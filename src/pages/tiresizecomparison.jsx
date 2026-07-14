@@ -1,7 +1,7 @@
 import { ArrowRightLeft } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import PageHeader from "../components/pageheader";
-import axios from "../utils/axiosInstance";
+import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import { speedoDifferencePct, tireCircumferenceMm, tireDiameterInches } from "../utils/tireMath";
 
 const MOCK_PRESETS = [
@@ -53,16 +53,10 @@ function TireForm({ title, value, onChange, presets }) {
 }
 
 export default function TireSizeComparison() {
-  const [presets, setPresets] = useState(MOCK_PRESETS);
+  const { data: fetchedPresets, isError: presetsError } = useTireOptionsQuery();
+  const presets = presetsError || !fetchedPresets?.length ? MOCK_PRESETS : fetchedPresets;
   const [tireA, setTireA] = useState({ width: 225, aspect: 65, rim: 17 });
   const [tireB, setTireB] = useState({ width: 265, aspect: 70, rim: 17 });
-
-  useEffect(() => {
-    axios
-      .get("api/tire-options")
-      .then(({ data }) => (data.options || data) && setPresets(data.options || data))
-      .catch(() => { });
-  }, []);
 
   const update = (setter) => (patch) => setter((prev) => ({ ...prev, ...patch }));
 

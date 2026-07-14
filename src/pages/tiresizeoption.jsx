@@ -1,9 +1,14 @@
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ConfirmDialog from "../components/confirmdialog";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
-import axios from "../utils/axiosInstance";
+import {
+  useCreateTireOption,
+  useDeleteTireOption,
+  useTireOptionsQuery,
+  useUpdateTireOption,
+} from "../hooks/queries/useTireOptions";
 import { tireDiameterInches } from "../utils/tireMath";
 
 const MOCK_PRESETS = [
@@ -15,26 +20,19 @@ const MOCK_PRESETS = [
 const emptyForm = { label: "", width: 205, aspect: 55, rim: 16 };
 
 export default function TireSizeOption() {
-  const [presets, setPresets] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: fetchedPresets, isLoading: loading, isError: presetsError } = useTireOptionsQuery();
+  const presets = presetsError ? MOCK_PRESETS : fetchedPresets || [];
+  const createMutation = useCreateTireOption();
+  const updateMutation = useUpdateTireOption();
+  const deleteMutation = useDeleteTireOption();
+
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  useEffect(() => {
-    let ignore = false;
-    axios
-      .get("api/tire-options")
-      .then(({ data }) => !ignore && setPresets(data.options || data || []))
-      .catch(() => !ignore && setPresets(MOCK_PRESETS))
-      .finally(() => !ignore && setLoading(false));
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const saving = createMutation.isPending || updateMutation.isPending;
 
   const openAdd = () => {
     setEditing(null);
@@ -56,36 +54,23 @@ export default function TireSizeOption() {
       setFormError("Fill in every field.");
       return;
     }
-    setSaving(true);
     const payload = { ...form, width: Number(form.width), aspect: Number(form.aspect), rim: Number(form.rim) };
     try {
       if (editing) {
-        await axios.put(`api/tire-options/${editing._id}`, payload);
-        setPresets((list) => list.map((p) => (p._id === editing._id ? { ...p, ...payload } : p)));
+        await updateMutation.mutateAsync({ id: editing._id, ...payload });
       } else {
-        const { data } = await axios.post("api/tire-options", payload);
-        setPresets((list) => [data.option || { ...payload, _id: `local-${Date.now()}` }, ...list]);
+        await createMutation.mutateAsync(payload);
       }
       setFormOpen(false);
-    } catch {
-      if (editing) {
-        setPresets((list) => list.map((p) => (p._id === editing._id ? { ...p, ...payload } : p)));
-      } else {
-        setPresets((list) => [{ ...payload, _id: `local-${Date.now()}` }, ...list]);
-      }
-      setFormOpen(false);
-    } finally {
-      setSaving(false);
+    } catch (err) {
+      setFormError(err?.response?.data?.message || "Something went wrong. Please try again.");
     }
   };
 
   const confirmDelete = async () => {
     try {
-      await axios.delete(`api/tire-options/${deleteTarget._id}`);
-    } catch {
-      /* remove locally regardless */
+      await deleteMutation.mutateAsync(deleteTarget._id);
     } finally {
-      setPresets((list) => list.filter((p) => p._id !== deleteTarget._id));
       setDeleteTarget(null);
     }
   };

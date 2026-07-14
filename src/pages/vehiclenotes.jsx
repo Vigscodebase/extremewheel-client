@@ -1,9 +1,14 @@
 import { Car, ImagePlus, Pencil, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ConfirmDialog from "../components/confirmdialog";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
-import axios from "../utils/axiosInstance";
+import {
+  useCreateVehicleNote,
+  useDeleteVehicleNote,
+  useUpdateVehicleNote,
+  useVehicleNotesQuery,
+} from "../hooks/queries/useVehicleNotes";
 
 const MOCK_VEHICLES = [
   { _id: "v1", name: "Ford Transit 350", type: "Cargo Van", model: "2023", image: "" },
@@ -14,28 +19,20 @@ const MOCK_VEHICLES = [
 const emptyForm = { name: "", type: "", model: "", image: "" };
 
 export default function VehicleNotes() {
-  const [vehicles, setVehicles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: fetchedVehicles, isLoading: loading, isError: vehiclesError } = useVehicleNotesQuery();
+  const vehicles = vehiclesError ? MOCK_VEHICLES : fetchedVehicles || [];
+  const createMutation = useCreateVehicleNote();
+  const updateMutation = useUpdateVehicleNote();
+  const deleteMutation = useDeleteVehicleNote();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    let ignore = false;
-    axios
-      .get("api/vehicle-notes")
-      .then(({ data }) => !ignore && setVehicles(data.vehicles || data || []))
-      .catch(() => !ignore && setVehicles(MOCK_VEHICLES))
-      .finally(() => !ignore && setLoading(false));
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const saving = createMutation.isPending || updateMutation.isPending;
+  const deleting = deleteMutation.isPending;
 
   const openAdd = () => {
     setEditing(null);
@@ -66,40 +63,23 @@ export default function VehicleNotes() {
       setFormError("Vehicle name, type and model are required.");
       return;
     }
-    setSaving(true);
     try {
       if (editing) {
-        const { data } = await axios.put(`api/vehicle-notes/${editing._id}`, form);
-        const updated = data.vehicle || { ...editing, ...form };
-        setVehicles((list) => list.map((v) => (v._id === editing._id ? updated : v)));
+        await updateMutation.mutateAsync({ id: editing._id, ...form });
       } else {
-        const { data } = await axios.post("api/vehicle-notes", form);
-        const created = data.vehicle || { ...form, _id: `local-${Date.now()}` };
-        setVehicles((list) => [created, ...list]);
+        await createMutation.mutateAsync(form);
       }
       setFormOpen(false);
-    } catch {
-      if (editing) {
-        setVehicles((list) => list.map((v) => (v._id === editing._id ? { ...v, ...form } : v)));
-      } else {
-        setVehicles((list) => [{ ...form, _id: `local-${Date.now()}` }, ...list]);
-      }
-      setFormOpen(false);
-    } finally {
-      setSaving(false);
+    } catch (err) {
+      setFormError(err?.response?.data?.message || "Something went wrong. Please try again.");
     }
   };
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    setDeleting(true);
     try {
-      await axios.delete(`api/vehicle-notes/${deleteTarget._id}`);
-    } catch {
-      // remove locally regardless so the UI stays responsive offline
+      await deleteMutation.mutateAsync(deleteTarget._id);
     } finally {
-      setVehicles((list) => list.filter((v) => v._id !== deleteTarget._id));
-      setDeleting(false);
       setDeleteTarget(null);
     }
   };
