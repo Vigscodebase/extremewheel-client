@@ -34,7 +34,7 @@ export const PermissionProvider = ({ children }) => {
 
   const fetchPermissions = useCallback(async () => {
     try {
-      const { data } = await axios.get("api/permissions");
+      const { data } = await axios.get("/permissions");
       if (data?.permissions) applyAndCache(data.permissions);
     } catch {
       // Backend not reachable yet / endpoint not implemented -> keep using
@@ -74,7 +74,7 @@ export const PermissionProvider = ({ children }) => {
 
       applyAndCache(safeNext);
       try {
-        await axios.put("api/permissions", { permissions: safeNext });
+        await axios.put("/permissions", { permissions: safeNext });
       } catch {
         // Persisted locally + will retry to reach backend on next poll;
         // still reflects instantly across this browser's tabs.

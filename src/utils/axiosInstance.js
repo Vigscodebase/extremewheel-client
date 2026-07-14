@@ -2,7 +2,7 @@ import Axios from "axios";
 
 // Base URL comes from env in production; falls back to the LAN address used
 // during development. Set VITE_API_BASE_URL in a .env file for deployment.
-const baseURL = import.meta.env.VITE_API_BASE_URL || "http://192.168.2.63:5000/";
+const baseURL = import.meta.env.VITE_API_BASE_URL;
 
 export const axios = Axios.create({
   baseURL,

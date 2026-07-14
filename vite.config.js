@@ -6,11 +6,12 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Any request to /api in React is silently forwarded to Express
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
+        // ADD THIS: Strips '/api' before sending to Express
+        rewrite: (path) => path.replace(/^\/api/, '')
       },
     },
   },
