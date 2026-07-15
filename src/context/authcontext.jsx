@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { jwtDecode } from "jwt-decode";
 import { fetchMe, loginRequest, registerRequest } from "../api/authApi";
 import useAuthStore from "../store/authStore";
 import { setupAxiosInterceptors } from "../utils/axiosInstance";
@@ -41,10 +42,17 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     setupAxiosInterceptors(
-      (renewedToken) => setToken(renewedToken),
+      (renewedToken) => {
+        setToken(renewedToken);
+        if (renewedToken) {
+          // Destructure token to update user data seamlessly on token refresh
+          const { name, email, role } = jwtDecode(renewedToken);
+          updateUser({ name, email, role });
+        }
+      },
       () => handleSessionExpired()
     );
-  }, [handleSessionExpired, setToken]);
+  }, [handleSessionExpired, setToken, updateUser]);
 
   // Verify the stored token against the backend on first load. Cross-tab
   // sync (logout in another tab, etc.) is handled natively by zustand's
@@ -57,8 +65,12 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       try {
-        const freshUser = await fetchMe();
-        updateUser(freshUser);
+        // Decode token directly to hydrate state immediately
+        const { name, email, role } = jwtDecode(currentToken);
+        updateUser({ name, email, role });
+
+        // Still call fetchMe to verify token validity with backend
+        await fetchMe();
       } catch {
         clearSession();
       } finally {
@@ -72,8 +84,12 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(
     async (email, password) => {
       const data = await loginRequest(email, password);
-      setSession(data.token, data.user);
-      return data.user;
+      // Destructure user details directly from the returned token
+      const { name, email: userEmail, role } = jwtDecode(data.token);
+      const userData = { name, email: userEmail, role };
+
+      setSession(data.token, userData);
+      return userData;
     },
     [setSession]
   );
@@ -81,8 +97,15 @@ export const AuthProvider = ({ children }) => {
   const register = useCallback(
     async (payload) => {
       const data = await registerRequest(payload);
-      if (data.token) setSession(data.token, data.user);
-      return data.user;
+      if (data.token) {
+        // Destructure user details directly from the returned token
+        const { name, email, role } = jwtDecode(data.token);
+        const userData = { name, email, role };
+
+        setSession(data.token, userData);
+        return userData;
+      }
+      return null;
     },
     [setSession]
   );

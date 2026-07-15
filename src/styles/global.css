@@ -1,36 +1,35 @@
 /* =====================================================================
-   FleetPulse — Global Stylesheet
-   Palette, type and component language adapted from the Health‑app
-   reference screens (dark icon rail, pastel accent cards, rounded
-   panels). Foundation variables + reset first, components below,
-   responsive overrides live in the six approved breakpoints at the
-   very end of this file only.
+   FleetPulse & SmartSave — Global Stylesheet
+   Palette adapted from the warm marketing reference image (Burgundy, 
+   Ochre, Cream). Foundation variables + reset first, components below.
    ===================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-/* --- Design Tokens --- */
+/* --- Design Tokens (Updated to Warm Marketing Palette) --- */
 
 :root {
-    /* Brand accents (from reference screens) */
-    --color-pink: #FF6F91;
-    --color-pink-soft: #FCE4EA;
-    --color-violet: #8B7CF6;
-    --color-violet-soft: #EDE9FE;
-    --color-mint: #4FCFB6;
-    --color-mint-soft: #DDF6EF;
-    --color-amber: #FFB258;
-    --color-amber-soft: #FFF1DF;
-    --color-danger: #F0475A;
-    --color-danger-soft: #FDE6E8;
+    /* Brand accents (Burgundy & Ochre) */
+    --color-pink: #A31621;
+    --color-pink-soft: #F7E6E7;
+    --color-violet: #E0A96D;
+    --color-violet-soft: #F9EFE3;
 
-    /* Neutrals */
-    --color-bg: #F6F6FB;
-    --color-ink: #1B1D2B;
-    --color-muted: #8B8FA3;
-    --color-border: #ECEDF3;
-    --color-sidebar: #14152A;
-    --color-sidebar-hover: #24263F;
+    /* Status colors (Warmed up to fit palette) */
+    --color-mint: #4A8B58;
+    --color-mint-soft: #E5F0E8;
+    --color-amber: #E0A96D;
+    --color-amber-soft: #F9EFE3;
+    --color-danger: #D93838;
+    --color-danger-soft: #FCE8E8;
+
+    /* Neutrals (Cream & Warm Browns) */
+    --color-bg: #FDF8F2;
+    --color-ink: #2A2118;
+    --color-muted: #8C7E73;
+    --color-border: #E6DCD2;
+    --color-sidebar: #1F1815;
+    --color-sidebar-hover: #332722;
 
     /* Type */
     --font-display: 'Plus Jakarta Sans', 'Inter', sans-serif;
@@ -40,9 +39,12 @@
     --radius-lg: 22px;
     --radius-md: 16px;
     --radius-sm: 11px;
-    --shadow-card: 0 10px 30px -14px rgba(20, 21, 42, 0.14);
-    --shadow-pop: 0 24px 50px -16px rgba(20, 21, 42, 0.28);
+    --shadow-card: 0 10px 30px -14px rgba(42, 33, 24, 0.1);
+    --shadow-pop: 0 24px 50px -16px rgba(42, 33, 24, 0.18);
+
+    /* Sidebar specific constants */
     --sidebar-w: 88px;
+    --sidebar-expanded-w: 260px;
 }
 
 /* --- Reset & Base --- */
@@ -149,22 +151,22 @@ ul {
 }
 
 .btn-accent {
-    background: linear-gradient(135deg, var(--color-pink), var(--color-violet));
+    background: linear-gradient(135deg, #C21A27, var(--color-pink));
     color: #fff;
-    box-shadow: 0 10px 22px -10px rgba(139, 124, 246, 0.55);
+    box-shadow: 0 10px 22px -10px rgba(163, 22, 33, 0.45);
 }
 
 .btn-accent:hover:not(:disabled) {
-    filter: brightness(1.06);
+    filter: brightness(1.1);
 }
 
 .btn-ghost {
-    background: #F4F4F8;
+    background: var(--color-border);
     color: var(--color-ink);
 }
 
 .btn-ghost:hover:not(:disabled) {
-    background: #ECEDF3;
+    background: #D9CFC4;
 }
 
 .btn-danger {
@@ -209,20 +211,20 @@ ul {
 .field textarea,
 .search-box input {
     border: 1.5px solid var(--color-border);
-    background: #FBFBFD;
+    background: #FFFFFF;
     border-radius: var(--radius-sm);
     padding: 11px 13px;
     font-size: 13.5px;
     outline: none;
     width: 100%;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
-    border-color: var(--color-violet);
-    background: #fff;
+    border-color: var(--color-pink);
+    box-shadow: 0 0 0 3px var(--color-pink-soft);
 }
 
 /* --- App Shell / Layout --- */
@@ -234,7 +236,8 @@ ul {
 
 .page-main {
     flex: 1;
-    padding: 30px 36px 40px;
+    /* Account for fixed floating sidebar: 24px left + 88px width + 36px padding = 148px total */
+    padding: 30px 36px 40px calc(var(--sidebar-w) + 60px);
     max-width: 100%;
     overflow-x: hidden;
 }
@@ -317,7 +320,7 @@ ul {
     margin-top: 2px;
 }
 
-/* --- Dashboard: section header row (used above alerts, panels) --- */
+/* --- Dashboard: section header row --- */
 
 .section-title-row {
     display: flex;
@@ -371,6 +374,7 @@ ul {
 
 .alert-pill-pink {
     background: var(--color-pink-soft);
+    color: var(--color-ink);
 }
 
 .alert-pill-amber {
@@ -390,14 +394,14 @@ ul {
 }
 
 .alert-pill-date {
-    color: rgba(27, 29, 43, 0.55);
+    color: rgba(42, 33, 24, 0.55);
 }
 
 .alert-pill-status {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.8);
     padding: 4px 10px;
     border-radius: 20px;
 }
@@ -411,7 +415,7 @@ ul {
 }
 
 .alert-pill-pink .alert-pill-status {
-    color: #C13F60;
+    color: var(--color-pink);
 }
 
 .alert-pill-amber .alert-pill-status {
@@ -419,7 +423,7 @@ ul {
 }
 
 .alert-pill-mint .alert-pill-status {
-    color: #1B7A66;
+    color: var(--color-mint);
 }
 
 .alert-pill-title {
@@ -430,10 +434,10 @@ ul {
 
 .alert-pill-subtitle {
     font-size: 12.5px;
-    color: rgba(27, 29, 43, 0.6);
+    color: rgba(42, 33, 24, 0.7);
 }
 
-/* --- Dashboard: two column grid (chart/donut, services/goal) --- */
+/* --- Dashboard: two column grid --- */
 
 .dash-grid {
     display: grid;
@@ -466,7 +470,7 @@ ul {
 
 .badge-live {
     background: var(--color-mint-soft);
-    color: #22997F;
+    color: var(--color-mint);
 }
 
 .badge-live::before {
@@ -478,16 +482,16 @@ ul {
 }
 
 .badge-model {
-    background: #F4F4F8;
+    background: var(--color-border);
     color: var(--color-muted);
 }
 
-/* --- Dashboard: range toggle (W / M / Y pills) --- */
+/* --- Dashboard: range toggle --- */
 
 .range-toggle {
     display: flex;
     gap: 4px;
-    background: #F4F4F8;
+    background: var(--color-border);
     padding: 4px;
     border-radius: 10px;
     flex-shrink: 0;
@@ -511,7 +515,7 @@ ul {
     box-shadow: var(--shadow-card);
 }
 
-/* --- Dashboard: date strip (appointment calendar pills) --- */
+/* --- Dashboard: date strip --- */
 
 .date-strip {
     display: flex;
@@ -532,7 +536,7 @@ ul {
     height: 60px;
     border-radius: 14px;
     border: 1.5px solid var(--color-border);
-    background: #FBFBFD;
+    background: #FFFFFF;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -546,7 +550,7 @@ ul {
 }
 
 .date-pill.active {
-    background: linear-gradient(160deg, var(--color-pink), var(--color-violet));
+    background: var(--color-pink);
     border-color: transparent;
     color: #fff;
 }
@@ -561,10 +565,10 @@ ul {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    opacity: 0.75;
+    opacity: 0.85;
 }
 
-/* --- Dashboard: services list (appointment rows) --- */
+/* --- Dashboard: services list --- */
 
 .service-list {
     display: flex;
@@ -582,7 +586,7 @@ ul {
 }
 
 .service-row:hover {
-    background: #FAFAFC;
+    background: var(--color-pink-soft);
 }
 
 .service-time {
@@ -616,7 +620,7 @@ ul {
     text-align: center;
 }
 
-/* --- Dashboard: goal ring card (steps-style progress) --- */
+/* --- Dashboard: goal ring card --- */
 
 .goal-card {
     display: flex;
@@ -654,7 +658,7 @@ ul {
     margin-top: 3px;
 }
 
-/* --- Dashboard: recently added / recent list --- */
+/* --- Dashboard: recently added --- */
 
 .recent-list {
     display: flex;
@@ -672,7 +676,7 @@ ul {
 }
 
 .recent-row:hover {
-    background: #FAFAFC;
+    background: var(--color-pink-soft);
 }
 
 .recent-avatar {
@@ -697,6 +701,7 @@ ul {
 .recent-name {
     font-weight: 600;
     font-size: 14px;
+    color: inherit;
 }
 
 .recent-type {
@@ -704,7 +709,7 @@ ul {
     color: var(--color-muted);
 }
 
-/* --- Dashboard: team / contacts mini list --- */
+/* --- Dashboard: team contacts --- */
 
 .contact-row {
     display: flex;
@@ -716,7 +721,7 @@ ul {
 }
 
 .contact-row:hover {
-    background: #FAFAFC;
+    background: var(--color-violet-soft);
 }
 
 .contact-avatar {
@@ -725,7 +730,7 @@ ul {
     height: 36px;
     border-radius: 50%;
     background: var(--color-violet-soft);
-    color: #6656D6;
+    color: #B07839;
     display: grid;
     place-items: center;
     font-weight: 700;
@@ -749,7 +754,7 @@ ul {
 }
 
 .status-dot.offline {
-    background: #D3D5E0;
+    background: var(--color-border);
 }
 
 .contact-info {
@@ -771,98 +776,296 @@ ul {
     margin-top: 20px;
 }
 
-/* --- Auth Components CSS --- */
+/* --- Auth Components CSS (Warm Marketing Palette) --- */
 
-.auth-screen {
+.split-auth-container {
+    display: flex;
     min-height: 100vh;
-    display: grid;
-    place-items: center;
-    background: radial-gradient(circle at 20% 20%, #FCE1E8 0%, transparent 45%),
-        radial-gradient(circle at 85% 80%, #DDF6EF 0%, transparent 45%),
-        var(--color-bg);
-    padding: 24px;
+    background: #F3E7CE;
+    font-family: var(--font-display);
 }
 
-.auth-card {
+.auth-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+}
+
+.auth-content {
     width: 100%;
     max-width: 380px;
-    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.auth-card.auth-card-wide {
-    max-width: 400px;
+.brand-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 50px;
 }
 
-.auth-logo {
+.brand-name {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--color-ink);
+    letter-spacing: -0.5px;
+}
+
+.auth-heading {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.auth-heading h1 {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--color-ink);
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+}
+
+.auth-heading p {
+    font-size: 12.5px;
+    color: var(--color-muted);
+    font-weight: 500;
+}
+
+.auth-toggle {
+    display: flex;
+    background: var(--color-border);
+    border-radius: 12px;
+    padding: 5px;
+    margin-bottom: 24px;
+    width: 100%;
+}
+
+.auth-toggle button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px 0;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.auth-toggle button.active {
+    background: #ffffff;
+    color: var(--color-ink);
+    box-shadow: 0 1px 3px rgba(42, 33, 24, 0.08);
+}
+
+.auth-error-banner {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    width: 100%;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.auth-form {
+    width: 100%;
+}
+
+.smart-input-group {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 8px 16px;
+    margin-bottom: 16px;
+    background: #ffffff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.smart-input-group:focus-within {
+    border-color: var(--color-pink);
+    box-shadow: 0 0 0 3px rgba(163, 22, 33, 0.15);
+}
+
+.smart-input-icon {
+    color: var(--color-ink);
+    margin-right: 14px;
+    display: flex;
+}
+
+.smart-input-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.smart-input-field label {
+    font-size: 9px;
+    color: var(--color-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    letter-spacing: 0.5px;
+}
+
+.smart-input-field input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-ink);
+    width: 100%;
+    padding: 0;
+}
+
+.smart-input-field input::placeholder {
+    color: #D1C7BD;
+    font-weight: 600;
+}
+
+.smart-input-action {
+    background: none;
+    border: none;
+    display: flex;
+    color: var(--color-muted);
+    margin-left: 12px;
+    padding: 0;
+}
+
+.toggle-btn {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.toggle-btn:hover {
+    color: var(--color-ink);
+}
+
+.text-green {
+    color: var(--color-mint);
+}
+
+.smart-btn-primary {
+    width: 100%;
+    background: var(--color-pink);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: transform 0.15s, background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 14px rgba(163, 22, 33, 0.25);
+}
+
+.smart-btn-primary:hover:not(:disabled) {
+    background: #85101A;
+    transform: translateY(-1px);
+}
+
+.smart-btn-primary:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(163, 22, 33, 0.25);
+}
+
+.smart-btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 28px 0;
+    width: 100%;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.auth-divider span {
+    font-size: 12px;
+    color: var(--color-muted);
+    font-weight: 600;
+    padding: 0 16px;
+}
+
+.social-logins {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 40px;
+    width: 100%;
+}
+
+.social-btn {
     width: 44px;
     height: 44px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, var(--color-pink), var(--color-violet));
-    color: #fff;
-    font-family: var(--font-display);
-    font-weight: 800;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 18px;
-}
-
-.auth-card h1 {
-    font-size: 24px;
-    margin-bottom: 6px;
-}
-
-.auth-sub {
-    color: var(--color-muted);
-    font-size: 14px;
-    margin-bottom: 24px;
-    line-height: 1.5;
-}
-
-.auth-error {
-    background: var(--color-danger-soft);
-    color: var(--color-danger);
-    padding: 10px 14px;
-    border-radius: 10px;
-    font-size: 13px;
-    margin-bottom: 18px;
-}
-
-.pw-toggle {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
     border: none;
-    background: none;
-    color: var(--color-muted);
-    display: flex;
     cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.field-mb {
-    margin-bottom: 14px;
+.social-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(42, 33, 24, 0.08);
 }
 
-.field-mb-lg {
-    margin-bottom: 22px;
+.social-google {
+    background: #ffffff;
+    border: 1px solid var(--color-border);
 }
 
-.btn-full {
-    width: 100%;
-    justify-content: center;
+.social-apple {
+    background: var(--color-ink);
 }
 
-.auth-footer {
-    text-align: center;
-    font-size: 13px;
+.social-facebook {
+    background: #1877F2;
+}
+
+.auth-footer-text {
+    font-size: 11px;
     color: var(--color-muted);
-    margin-top: 22px;
+    text-align: center;
+    line-height: 1.6;
+    max-width: 95%;
+    font-weight: 500;
 }
 
-.auth-footer a {
-    color: var(--color-pink);
-    font-weight: 600;
+.auth-right {
+    flex: 1;
+    background-color: var(--color-bg);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-image: url(/login-bg.webp);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 /* --- Not Authorized Component CSS --- */
@@ -966,7 +1169,7 @@ ul {
     border-radius: 50%;
     border-width: 10px;
     border-style: solid;
-    background: #FAFAFC;
+    background: #FFFFFF;
     margin: 0 auto;
 }
 
@@ -980,7 +1183,7 @@ ul {
 
 .speedo-banner.ok {
     background: var(--color-mint-soft);
-    color: #1B7A66;
+    color: var(--color-mint);
 }
 
 .speedo-banner.warn {
@@ -1072,6 +1275,7 @@ ul {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    width: 100%;
 }
 
 .alert-error {
@@ -1093,7 +1297,7 @@ ul {
     display: flex;
     gap: 6px;
     margin-bottom: 18px;
-    background: #ECEDF3;
+    background: var(--color-border);
     padding: 4px;
     border-radius: 12px;
     width: fit-content;
@@ -1122,10 +1326,11 @@ ul {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #F7F7FA;
+    background: #FFFFFF;
     border-radius: 10px;
     padding: 9px 14px;
     max-width: 320px;
+    border: 1px solid var(--color-border);
 }
 
 .search-box input {
@@ -1191,7 +1396,7 @@ ul {
 }
 
 .icon-btn:hover {
-    background: #F4F4F8;
+    background: var(--color-border);
     color: var(--color-ink);
 }
 
@@ -1226,7 +1431,7 @@ ul {
 
 .vehicle-image {
     height: 130px;
-    background: #F6F6FA;
+    background: var(--color-border);
     display: grid;
     place-items: center;
 }
@@ -1269,8 +1474,8 @@ ul {
 .image-upload {
     height: 100px;
     border-radius: 12px;
-    border: 1.5px dashed var(--color-border);
-    background: #FBFBFD;
+    border: 1.5px dashed var(--color-muted);
+    background: #FFFFFF;
     display: grid;
     place-items: center;
     cursor: pointer;
@@ -1305,13 +1510,13 @@ ul {
     font-size: 20px;
     font-weight: 800;
     font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
-    fill: #1B1D2B;
+    fill: var(--color-ink);
 }
 
 .donut-chart-total-label {
     font-size: 10.5px;
     font-family: 'Inter', sans-serif;
-    fill: #8B8FA3;
+    fill: var(--color-muted);
 }
 
 .donut-legend {
@@ -1373,7 +1578,7 @@ ul {
 .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(20, 21, 32, 0.55);
+    background: rgba(42, 33, 24, 0.65);
     backdrop-filter: blur(2px);
     display: flex;
     align-items: center;
@@ -1408,7 +1613,7 @@ ul {
 
 .modal-close {
     border: none;
-    background: #F4F4F8;
+    background: var(--color-border);
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -1456,7 +1661,7 @@ ul {
 .session-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(20, 21, 32, 0.65);
+    background: rgba(42, 33, 24, 0.75);
     backdrop-filter: blur(3px);
     display: flex;
     align-items: center;
@@ -1500,124 +1705,219 @@ ul {
     margin-bottom: 22px;
 }
 
-/* --- Sidebar Component CSS --- */
+/* =====================================================================
+   SIDEBAR (Floating Pill + Pop-Out Icons)
+   ===================================================================== */
 
+/* Floating pill core styles */
 .sidebar {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    height: calc(100vh - 48px);
     width: var(--sidebar-w);
-    flex-shrink: 0;
-    background: var(--color-sidebar);
+    border-radius: 44px;
+    background-color: var(--color-sidebar);
     display: flex;
     flex-direction: column;
+    padding: 30px 0;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(31, 24, 21, 0.4);
+    transition: width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    /* CRITICAL for pop-out icons to burst outside the pill boundary */
+    overflow: visible;
+}
+
+.sidebar.expanded {
+    width: var(--sidebar-expanded-w);
+}
+
+.sidebar-header {
+    display: flex;
     align-items: center;
-    padding: 22px 0;
-    height: 100vh;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    justify-content: space-between;
+    padding: 0 24px;
+    margin-bottom: 40px;
+    height: 32px;
 }
 
 .sidebar-logo {
-    width: 40px;
-    height: 40px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, var(--color-pink), var(--color-violet));
-    color: #fff;
+    color: var(--color-bg);
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: 14px;
+    font-size: 22px;
+    letter-spacing: 1px;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-bg);
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 34px;
-    flex-shrink: 0;
+    opacity: 0;
+    transform: rotate(-90deg);
+    transition: all 0.3s ease;
+}
+
+.sidebar.expanded .close-btn {
+    opacity: 1;
+    transform: rotate(0);
 }
 
 .sidebar-nav {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    flex: 1;
+    gap: 16px;
+    width: 100%;
+    position: relative;
 }
 
 .sidebar-item {
-    position: relative;
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
-    border: none;
     background: transparent;
-    color: #767A93;
+    border: none;
+    display: flex;
+    align-items: center;
+    color: var(--color-bg);
+    cursor: pointer;
+    position: relative;
+    width: 100%;
+    height: 48px;
+    padding: 0;
+    text-align: left;
+}
+
+/* The circular pop-out element */
+.icon-wrapper {
+    position: absolute;
+    left: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: transparent;
+    color: var(--color-muted);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.15s ease, color 0.15s ease;
-    flex-shrink: 0;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 2;
 }
 
-.sidebar-item:hover {
-    background: var(--color-sidebar-hover);
-    color: #fff;
-}
-
-.sidebar-item.active {
-    background: var(--color-pink-soft);
-    color: var(--color-pink);
-}
-
-.sidebar-tooltip {
-    position: absolute;
-    left: 58px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: #fff;
-    color: var(--color-ink);
-    padding: 7px 12px;
-    border-radius: 8px;
-    font-size: 12.5px;
+.sidebar-label {
+    margin-left: 84px;
+    /* Push label past the icon */
+    font-size: 14px;
     font-weight: 600;
     white-space: nowrap;
-    box-shadow: var(--shadow-card);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.15s ease;
-    z-index: 50;
+    transition: opacity 0.2s ease;
 }
 
-.sidebar-item:hover .sidebar-tooltip {
+.sidebar.expanded .sidebar-label {
     opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0.1s;
+}
+
+/* --- The Pop-Out Hover Logic --- */
+
+.sidebar-item:hover .icon-wrapper,
+.sidebar-item.active .icon-wrapper {
+    background-color: var(--color-pink-soft);
+    color: var(--color-pink);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* When Collapsed: Icon visually pops OUTSIDE the pill to the right */
+.sidebar:not(.expanded) .sidebar-item:hover .icon-wrapper,
+.sidebar:not(.expanded) .sidebar-item.active .icon-wrapper {
+    transform: translateX(45px) scale(1.1);
+    background-color: var(--color-bg);
+    /* Use full cream background so it stands out strongly */
+}
+
+/* When Expanded: Icon stays perfectly inside, just highlighted */
+.sidebar.expanded .sidebar-item:hover .icon-wrapper,
+.sidebar.expanded .sidebar-item.active .icon-wrapper {
+    transform: translateX(0) scale(1);
+    background-color: var(--color-pink-soft);
+}
+
+/* Specialized state for the hamburger menu top-button */
+.hamburger-item .icon-wrapper {
+    color: var(--color-bg);
 }
 
 .sidebar-footer {
+    margin-top: auto;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 14px;
+    padding: 0 20px;
+    width: 100%;
+    position: relative;
 }
 
 .sidebar-avatar {
-    width: 40px;
-    height: 40px;
+    background-color: var(--color-violet-soft);
+    color: #B07839;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    background: var(--color-mint-soft);
-    color: #1B7A66;
-    font-weight: 700;
-    font-family: var(--font-display);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
     flex-shrink: 0;
+    position: absolute;
+    left: 20px;
+    transition: all 0.3s ease;
+}
+
+.logout-btn {
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    color: var(--color-danger);
+    cursor: pointer;
+    padding: 0;
+    width: 100%;
+    height: 48px;
+    text-align: left;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+.logout-btn .sidebar-label {
+    margin-left: 84px;
+    color: var(--color-danger);
+}
+
+/* Cross-fade Footer: Avatar -> Logout button */
+.sidebar.expanded .sidebar-avatar {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.sidebar.expanded .logout-btn {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 /* =====================================================================
-   RESPONSIVE — only the six approved breakpoints below are used
-   anywhere in this file. Rules cascade from the largest screens down;
-   each block only overrides what needs to change at that width.
+   RESPONSIVE LAYOUT adjustments
    ===================================================================== */
 
 @media only screen and (min-width:1366px) and (max-width:1420px) {
     .page-main {
-        padding: 28px 34px 40px;
+        padding: 28px 34px 40px calc(var(--sidebar-w) + 54px);
     }
 
     .kpi-grid {
@@ -1627,7 +1927,7 @@ ul {
 
 @media only screen and (min-width:1280px) and (max-width:1365px) {
     .page-main {
-        padding: 26px 30px 38px;
+        padding: 26px 30px 38px calc(var(--sidebar-w) + 50px);
     }
 
     .kpi-grid {
@@ -1650,7 +1950,7 @@ ul {
     }
 
     .page-main {
-        padding: 24px 26px 36px;
+        padding: 24px 26px 36px calc(var(--sidebar-w) + 46px);
     }
 
     .kpi-grid {
@@ -1678,7 +1978,7 @@ ul {
     }
 
     .page-main {
-        padding: 22px 22px 34px;
+        padding: 22px 22px 34px calc(var(--sidebar-w) + 42px);
     }
 
     .page-title {
@@ -1711,7 +2011,7 @@ ul {
     }
 
     .page-main {
-        padding: 20px 20px 32px;
+        padding: 20px 20px 32px calc(var(--sidebar-w) + 40px);
     }
 
     .page-title {
@@ -1755,53 +2055,106 @@ ul {
         transform: rotate(90deg);
     }
 
-    .sidebar-tooltip {
-        display: none;
+    .sidebar:not(.expanded) .sidebar-item:hover .icon-wrapper,
+    .sidebar:not(.expanded) .sidebar-item.active .icon-wrapper {
+        transform: translateX(25px) scale(1.1);
+        /* Reduced pop-out on tablets */
     }
 }
 
+/* --- MOBILE SPECIFIC: Fallback to Bottom Bar layout --- */
 @media only screen and (min-width:320px) and (max-width:767px) {
     .dashboard-layout {
         flex-direction: column;
     }
 
-    .sidebar {
+    /* Force Mobile Bottom Navigation Bar instead of Pill */
+    .sidebar,
+    .sidebar.expanded {
         width: 100%;
-        height: auto;
+        height: 70px;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
-        padding: 10px 14px;
+        padding: 0 14px;
         position: fixed;
         bottom: 0;
         left: 0;
         top: auto;
-        box-shadow: 0 -8px 24px -12px rgba(20, 21, 42, 0.35);
+        transform: none;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -8px 24px -12px rgba(42, 33, 24, 0.15);
         z-index: 100;
+        overflow: hidden;
+        /* Stops pop-outs */
     }
 
-    .sidebar-logo {
-        display: none;
+    .sidebar-header,
+    .hamburger-item {
+        display: none !important;
     }
 
     .sidebar-nav {
         flex-direction: row;
         flex: 1;
         justify-content: space-around;
-        gap: 4px;
+        gap: 0;
+        margin: 0;
     }
 
+    .sidebar-item {
+        width: auto;
+        justify-content: center;
+    }
+
+    /* Kill Desktop Pop-out effects natively on mobile */
+    .icon-wrapper,
+    .sidebar-item:hover .icon-wrapper,
+    .sidebar-item.active .icon-wrapper {
+        position: static;
+        transform: none !important;
+        box-shadow: none !important;
+        background-color: transparent !important;
+        width: 44px;
+        height: 44px;
+    }
+
+    .sidebar-item.active .icon-wrapper {
+        color: var(--color-pink) !important;
+        background-color: var(--color-pink-soft) !important;
+    }
+
+    .sidebar-label {
+        display: none !important;
+    }
+
+    /* Fix Logout Button location on mobile */
     .sidebar-footer {
-        flex-direction: row;
-        gap: 10px;
+        display: flex !important;
+        width: auto;
+        position: static;
+        padding: 0;
+        margin: 0;
     }
 
-    .sidebar-tooltip {
+    .sidebar-avatar {
+        display: none;
+    }
+
+    .logout-btn {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        position: static;
+        width: auto;
+        height: auto;
+    }
+
+    .logout-btn .sidebar-label {
         display: none;
     }
 
     .page-main {
-        padding: 18px 14px 90px;
+        padding: 18px 14px 90px 14px;
     }
 
     .page-header {
@@ -1880,8 +2233,12 @@ ul {
         gap: 24px;
     }
 
-    .auth-card {
-        padding: 28px 22px;
+    .split-auth-container {
+        flex-direction: column;
+    }
+
+    .auth-right {
+        display: none;
     }
 
     .user-table th,

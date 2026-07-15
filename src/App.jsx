@@ -6,7 +6,6 @@ import DashboardLayout from "./layouts/dashboardlayout";
 import Dashboard from "./pages/dashboard";
 import Login from "./pages/login";
 import NotAuthorized from "./pages/notauthorized";
-import Register from "./pages/register";
 import TireSizeComparison from "./pages/tiresizecomparison";
 import TireSizeOption from "./pages/tiresizeoption";
 import UserManagement from "./pages/usermanagement";
@@ -33,7 +32,6 @@ export default function App() {
               PermissionProvider is completely bypassed here 
               ========================================= */}
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
 
           {/* =========================================
               PRIVATE ROUTES 
