@@ -4,11 +4,12 @@ import useAuthStore from "../store/authStore";
 // Base URL comes from env in production; falls back to the LAN address used
 // during development. Set VITE_API_BASE_URL in a .env file for deployment.
 const baseURL = import.meta.env.VITE_API_BASE_URL;
+const timeout = Number(import.meta.env.VITE_AXIOS_TIMEOUT_MS) || 15000;
 
 export const axios = Axios.create({
   baseURL,
   headers: { "Content-Type": "application/json" },
-  timeout: 15000,
+  timeout,
 });
 
 let interceptorsBound = false;
