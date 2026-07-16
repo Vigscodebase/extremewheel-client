@@ -1,33 +1,36 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-// Single source of truth for the current session. Anything outside React
-// (like the axios interceptor) can read/write this via `useAuthStore.getState()`
-// without needing Context, and every component that calls the hook re-renders
-// automatically when the token or user changes.
 const useAuthStore = create(
   persist(
     (set) => ({
       token: null,
       user: null,
+      sessionExpired: false, // <-- 1. Add this property
 
-      // Called after a successful login/register.
-      setSession: (token, user) => set({ token, user }),
+      // Reset sessionExpired on a new login
+      setSession: (token, user) => set({ token, user, sessionExpired: false }),
 
-      // Applies a partial user patch (e.g. after editing your own profile).
       updateUser: (partial) =>
         set((state) => ({ user: state.user ? { ...state.user, ...partial } : state.user })),
 
-      // Swaps in a rolling-renewed token without touching the user object.
       setToken: (token) => set({ token }),
 
-      // Wipes the session locally (does not call the server).
-      clearSession: () => set({ token: null, user: null }),
+      // Wipes the session and clears the expired flag
+      clearSession: () => set({ token: null, user: null, sessionExpired: false }),
+
+      // <-- 2. Add an action to trigger the expiration flag
+      setSessionExpired: (status) => set({ sessionExpired: status }),
     }),
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ token: state.token, user: state.user }),
+      // <-- 3. Add sessionExpired to partialize so it persists across refreshes
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        sessionExpired: state.sessionExpired
+      }),
     }
   )
 );

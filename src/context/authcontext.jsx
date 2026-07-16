@@ -14,38 +14,41 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  // token/user live in the Zustand store (persisted + shared across tabs);
-  // initializing/sessionExpired are transient UI-only flags for this mount.
-  const { token, user } = useAuthStore(useShallow((s) => ({ token: s.token, user: s.user })));
+  // 1. Pull the persisted sessionExpired flag directly from Zustand
+  const { token, user, sessionExpired } = useAuthStore(useShallow((s) => ({
+    token: s.token,
+    user: s.user,
+    sessionExpired: s.sessionExpired
+  })));
+
   const setSession = useAuthStore((s) => s.setSession);
   const clearSession = useAuthStore((s) => s.clearSession);
   const setToken = useAuthStore((s) => s.setToken);
   const updateUser = useAuthStore((s) => s.updateUser);
+  const setSessionExpiredState = useAuthStore((s) => s.setSessionExpired); // 2. Pull the setter
 
   const [initializing, setInitializing] = useState(true);
-  const [sessionExpired, setSessionExpired] = useState(false);
+  // REMOVED: const [sessionExpired, setSessionExpired] = useState(false);
 
   const logout = useCallback(() => {
-    // Clearing the persisted store fires a native `storage` event in every
-    // other open tab, so they log out too without any extra plumbing.
     clearSession();
   }, [clearSession]);
 
   const handleSessionExpired = useCallback(() => {
-    setSessionExpired(true);
-  }, []);
+    // 3. Update the global Zustand store instead of local state
+    setSessionExpiredState(true);
+  }, [setSessionExpiredState]);
 
   const acknowledgeSessionExpired = useCallback(() => {
-    setSessionExpired(false);
+    setSessionExpiredState(false);
     logout();
-  }, [logout]);
+  }, [logout, setSessionExpiredState]);
 
   useEffect(() => {
     setupAxiosInterceptors(
       (renewedToken) => {
         setToken(renewedToken);
         if (renewedToken) {
-          // Destructure token to update user data seamlessly on token refresh
           const { name, email, role } = jwtDecode(renewedToken);
           updateUser({ name, email, role });
         }
@@ -54,9 +57,6 @@ export const AuthProvider = ({ children }) => {
     );
   }, [handleSessionExpired, setToken, updateUser]);
 
-  // Verify the stored token against the backend on first load. Cross-tab
-  // sync (logout in another tab, etc.) is handled natively by zustand's
-  // persist middleware re-hydrating this store on the `storage` event.
   useEffect(() => {
     const bootstrap = async () => {
       const currentToken = useAuthStore.getState().token;
@@ -65,11 +65,8 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       try {
-        // Decode token directly to hydrate state immediately
         const { name, email, role } = jwtDecode(currentToken);
         updateUser({ name, email, role });
-
-        // Still call fetchMe to verify token validity with backend
         await fetchMe();
       } catch {
         clearSession();
@@ -84,7 +81,6 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(
     async (email, password) => {
       const data = await loginRequest(email, password);
-      // Destructure user details directly from the returned token
       const { name, email: userEmail, role } = jwtDecode(data.token);
       const userData = { name, email: userEmail, role };
 
@@ -98,7 +94,6 @@ export const AuthProvider = ({ children }) => {
     async (payload) => {
       const data = await registerRequest(payload);
       if (data.token) {
-        // Destructure user details directly from the returned token
         const { name, email, role } = jwtDecode(data.token);
         const userData = { name, email, role };
 
@@ -119,7 +114,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    sessionExpired,
+    sessionExpired, // Now safely referencing Zustand's persistent state
     acknowledgeSessionExpired,
     triggerSessionExpired: handleSessionExpired,
     updateCurrentUser,

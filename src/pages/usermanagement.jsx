@@ -142,69 +142,75 @@ export default function UserManagement() {
       </div>
 
       {tab === "users" ? (
-        <div className="card" style={{ padding: 0 }}>
-          <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-border)" }}>
-            <div className="search-box">
-              <Search size={16} color="var(--color-muted)" />
-              <input placeholder="Search by name or email…" value={query} onChange={(e) => setQuery(e.target.value)} />
-            </div>
+        !loading && users.length === 0 ? (
+          <div className="card" style={{ padding: "60px 20px", textAlign: "center", color: "var(--color-muted)" }}>
+            No users yet — add your first one.
           </div>
+        ) : (
+          <div className="card" style={{ padding: 0 }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-border)" }}>
+              <div className="search-box">
+                <Search size={16} color="var(--color-muted)" />
+                <input placeholder="Search by name or email…" value={query} onChange={(e) => setQuery(e.target.value)} />
+              </div>
+            </div>
 
-          <table className="user-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Joined</th>
-                <th style={{ textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && (
+            <table className="user-table">
+              <thead>
                 <tr>
-                  <td colSpan={5} style={{ textAlign: "center", padding: 30, color: "var(--color-muted)" }}>
-                    Loading users…
-                  </td>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                  <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
-              )}
-              {!loading && filtered.length === 0 && (
-                <tr>
-                  <td colSpan={5} style={{ textAlign: "center", padding: 30, color: "var(--color-muted)" }}>
-                    No users match your search.
-                  </td>
-                </tr>
-              )}
-              {!loading &&
-                filtered.map((u) => (
-                  <tr key={u._id}>
-                    <td style={{ fontWeight: 600 }}>{u.name}</td>
-                    <td style={{ color: "var(--color-muted)" }}>{u.email}</td>
-                    <td>
-                      <span className={`badge badge-${u.role}`}>{u.role}</span>
-                    </td>
-                    <td style={{ color: "var(--color-muted)" }}>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</td>
-                    <td>
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6 }}>
-                        <button type="button" className="icon-btn" onClick={() => openEdit(u)} title="Edit">
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          type="button"
-                          className="icon-btn danger"
-                          onClick={() => setDeleteTarget(u)}
-                          title="Delete"
-                          disabled={u._id === currentUser?._id}
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {loading && (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", padding: 30, color: "var(--color-muted)" }}>
+                      Loading users…
                     </td>
                   </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
+                )}
+                {!loading && filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", padding: 30, color: "var(--color-muted)" }}>
+                      No users match your search.
+                    </td>
+                  </tr>
+                )}
+                {!loading &&
+                  filtered.map((u) => (
+                    <tr key={u._id}>
+                      <td style={{ fontWeight: 600 }}>{u.name}</td>
+                      <td style={{ color: "var(--color-muted)" }}>{u.email}</td>
+                      <td>
+                        <span className={`badge badge-${u.role}`}>{u.role}</span>
+                      </td>
+                      <td style={{ color: "var(--color-muted)" }}>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</td>
+                      <td>
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 6 }}>
+                          <button type="button" className="icon-btn" onClick={() => openEdit(u)} title="Edit">
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            className="icon-btn danger"
+                            onClick={() => setDeleteTarget(u)}
+                            title="Delete"
+                            disabled={u._id === currentUser?._id}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )
       ) : (
         <div className="card" style={{ padding: 22 }}>
           <p style={{ color: "var(--color-muted)", fontSize: 13.5, marginBottom: 18 }}>

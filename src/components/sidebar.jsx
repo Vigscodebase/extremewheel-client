@@ -115,7 +115,9 @@ export default function Sidebar() {
       aria-expanded={isSidebarExpanded}
     >
       <div className="sidebar-header">
-        <div className="sidebar-logo">FM</div>
+        <div className="sidebar-logo">
+          <img src="/sidebar-logo.png" alt="sidebar-logo" />
+        </div>
         {isSidebarExpanded && (
           <button className="close-btn" onClick={handleClose} aria-label="Close menu">
             <X size={20} />
@@ -125,7 +127,7 @@ export default function Sidebar() {
 
       <nav className="sidebar-nav">
         {/* Hamburger sits at the top of the nav list when collapsed */}
-        {!isSidebarExpanded && (
+        {/* {!isSidebarExpanded && (
           <button
             type="button"
             className="sidebar-item hamburger-item"
@@ -136,7 +138,7 @@ export default function Sidebar() {
               <Menu size={22} />
             </div>
           </button>
-        )}
+        )} */}
 
         {visibleItems.map((item) => {
           const Icon = ICONS_MAP[item.icon] || Circle; // fallback if backend sends an unmapped icon key

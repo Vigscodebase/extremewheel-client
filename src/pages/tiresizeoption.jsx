@@ -90,6 +90,10 @@ export default function TireSizeOption() {
 
       {loading ? (
         <p className="text-muted">Loading presets…</p>
+      ) : presets.length === 0 ? (
+        <div className="card" style={{ padding: "60px 20px", textAlign: "center", color: "var(--color-muted)" }}>
+          No tire presets yet — add your first one.
+        </div>
       ) : (
         <div className="preset-grid">
           {presets.map((p) => (
