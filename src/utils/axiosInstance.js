@@ -4,12 +4,11 @@ import useAuthStore from "../store/authStore";
 // Base URL comes from env in production; falls back to the LAN address used
 // during development. Set VITE_API_BASE_URL in a .env file for deployment.
 const baseURL = import.meta.env.VITE_API_BASE_URL;
-const timeout = Number(import.meta.env.VITE_AXIOS_TIMEOUT_MS) || 15000;
 
 export const axios = Axios.create({
   baseURL,
   headers: { "Content-Type": "application/json" },
-  timeout,
+  timeout: 15000,
 });
 
 let interceptorsBound = false;
@@ -49,6 +48,12 @@ export const setupAxiosInterceptors = (onTokenRenewed, onSessionExpired) => {
     (error) => {
       if (error.response && error.response.status === 401) {
         onSessionExpired();
+      } else {
+        // --- NEW ADDITION START ---
+        // For any error that ISN'T a 401, extract the Express message and trigger the global modal
+        const errorMessage = error.response?.data?.message || "An unexpected error occurred. Please try again.";
+        window.dispatchEvent(new CustomEvent("api-error", { detail: errorMessage }));
+        // --- NEW ADDITION END ---
       }
       return Promise.reject(error);
     }

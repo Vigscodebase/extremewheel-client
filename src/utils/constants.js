@@ -23,6 +23,8 @@ export const PAGES = [
   { key: 'user-management', label: 'User Management', path: '/user-management' },
   { key: 'tire-comparison', label: 'Tire Size Comparison', path: '/tire-comparison' },
   { key: 'tire-options', label: 'Tire Size Option', path: '/tire-options' },
+  { key: 'plus-size', label: 'Plus Size Options', path: '/plus-size' },
+  { key: 'application-guide', label: 'Application Guide', path: '/application-guide' },
   { key: 'vehicle-notes', label: 'Vehicle Notes', path: '/vehicle-notes' },
 ];
 
@@ -32,7 +34,7 @@ export const PAGES = [
 // one role that can reach User Management to fix mistakes.
 export const DEFAULT_PERMISSIONS = {
   admin: PAGES.map((p) => p.key),
-  staff: ['dashboard', 'tire-comparison', 'tire-options', 'vehicle-notes'],
+  staff: ['dashboard', 'tire-comparison', 'tire-options', 'plus-size', 'application-guide', 'vehicle-notes'],
   guest: ['dashboard', 'tire-comparison'],
 };
 

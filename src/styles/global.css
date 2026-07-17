@@ -2413,3 +2413,32 @@ ul {
         padding-right: 18px;
     }
 }
+
+/* ==========================================
+   Global Error Modal Styles
+========================================== */
+.error-modal-icon {
+    background-color: var(--color-danger-soft, #fee2e2);
+    color: var(--color-danger, #dc2626);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px auto;
+}
+
+.error-modal-text {
+    margin-top: 16px;
+    text-align: center;
+    color: var(--color-text-main, #333);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.error-modal-actions {
+    margin-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+}

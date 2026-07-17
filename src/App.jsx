@@ -3,14 +3,17 @@ import { AuthProvider } from "./context/authcontext";
 import { PermissionProvider } from "./context/permissioncontext";
 
 import DashboardLayout from "./layouts/dashboardlayout";
+import ApplicationGuide from "./pages/applicationguide";
 import Dashboard from "./pages/dashboard";
 import Login from "./pages/login";
 import NotAuthorized from "./pages/notauthorized";
+import PlusSizeOptions from "./pages/plussizeoptions";
 import TireSizeComparison from "./pages/tiresizecomparison";
 import TireSizeOption from "./pages/tiresizeoption";
 import UserManagement from "./pages/usermanagement";
 import VehicleNotes from "./pages/vehiclenotes";
 import ProtectedRoute from "./routes/protectedroute";
+import GlobalErrorListener from "./components/GlobalErrorListener"; // <-- 1. Import added here
 
 // 1. Create a Layout Route specifically for Permissions
 // This ensures PermissionProvider only mounts for the nested routes below it.
@@ -26,6 +29,13 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+
+        {/* =========================================
+            GLOBAL COMPONENTS
+            These stay mounted regardless of the current route
+            ========================================= */}
+        <GlobalErrorListener /> {/* <-- 2. Component inserted here */}
+
         <Routes>
           {/* =========================================
               PUBLIC ROUTES 
@@ -59,6 +69,14 @@ export default function App() {
 
                 <Route element={<ProtectedRoute pageKey="tire-options" />}>
                   <Route path="/tire-options" element={<TireSizeOption />} />
+                </Route>
+
+                <Route element={<ProtectedRoute pageKey="plus-size" />}>
+                  <Route path="/plus-size" element={<PlusSizeOptions />} />
+                </Route>
+
+                <Route element={<ProtectedRoute pageKey="application-guide" />}>
+                  <Route path="/application-guide" element={<ApplicationGuide />} />
                 </Route>
 
                 <Route element={<ProtectedRoute pageKey="vehicle-notes" />}>

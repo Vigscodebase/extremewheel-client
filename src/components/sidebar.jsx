@@ -8,7 +8,9 @@ import {
   Users,
   Menu,
   X,
-  Circle
+  Circle,
+  TrendingUp,
+  Search
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authcontext";
@@ -20,6 +22,8 @@ const ICONS_MAP = {
   Scale,
   SlidersHorizontal,
   Car,
+  TrendingUp,
+  Search,
 };
 
 const FALLBACK_NAV = [
@@ -27,6 +31,8 @@ const FALLBACK_NAV = [
   { key: "user-management", label: "User Management", path: "/user-management", icon: "Users" },
   { key: "tire-comparison", label: "Tire Size Comparison", path: "/tire-comparison", icon: "Scale" },
   { key: "tire-options", label: "Tire Size Option", path: "/tire-options", icon: "SlidersHorizontal" },
+  { key: "plus-size", label: "Plus Size Options", path: "/plus-size", icon: "TrendingUp" },
+  { key: "application-guide", label: "Application Guide", path: "/application-guide", icon: "Search" },
   { key: "vehicle-notes", label: "Vehicle Notes", path: "/vehicle-notes", icon: "Car" },
 ];
 
