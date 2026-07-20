@@ -10,7 +10,10 @@ import {
   X,
   Circle,
   TrendingUp,
-  Search
+  Search,
+  Calculator,
+  Wrench,
+  FileBarChart
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authcontext";
@@ -24,16 +27,22 @@ const ICONS_MAP = {
   Car,
   TrendingUp,
   Search,
+  Calculator,
+  Wrench,
+  FileBarChart,
 };
 
 const FALLBACK_NAV = [
   { key: "dashboard", label: "Dashboard", path: "/dashboard", icon: "LayoutDashboard" },
   { key: "user-management", label: "User Management", path: "/user-management", icon: "Users" },
+  { key: "tire-calculator", label: "Tire Size Calculator", path: "/tire-calculator", icon: "Calculator" },
   { key: "tire-comparison", label: "Tire Size Comparison", path: "/tire-comparison", icon: "Scale" },
   { key: "tire-options", label: "Tire Size Option", path: "/tire-options", icon: "SlidersHorizontal" },
   { key: "plus-size", label: "Plus Size Options", path: "/plus-size", icon: "TrendingUp" },
-  { key: "application-guide", label: "Application Guide", path: "/application-guide", icon: "Search" },
+  // { key: "application-guide", label: "Application Guide", path: "/application-guide", icon: "Search" },
+  { key: "tech-data", label: "Tech Data", path: "/tech-data", icon: "Wrench" },
   { key: "vehicle-notes", label: "Vehicle Notes", path: "/vehicle-notes", icon: "Car" },
+  { key: "reports", label: "Reporting & Data Export", path: "/reports", icon: "FileBarChart" },
 ];
 
 export default function Sidebar() {

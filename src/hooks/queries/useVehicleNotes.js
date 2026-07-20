@@ -33,3 +33,19 @@ export function useDeleteVehicleNote() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: vehicleNotesKey }),
   });
 }
+
+export function useAddVehicleGalleryPhoto() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: vehicleNotesApi.addVehicleGalleryPhoto,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: vehicleNotesKey }),
+  });
+}
+
+export function useRemoveVehicleGalleryPhoto() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: vehicleNotesApi.removeVehicleGalleryPhoto,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: vehicleNotesKey }),
+  });
+}

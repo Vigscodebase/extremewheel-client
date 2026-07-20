@@ -11,3 +11,9 @@ export const updateVehicleNote = ({ id, ...payload }) =>
 
 export const deleteVehicleNote = (id) =>
   axios.delete(`/vehicle-notes/${id}`).then((r) => r.data);
+
+export const addVehicleGalleryPhoto = ({ id, image }) =>
+  axios.post(`/vehicle-notes/${id}/gallery`, { image }).then((r) => r.data.vehicle);
+
+export const removeVehicleGalleryPhoto = ({ id, image }) =>
+  axios.delete(`/vehicle-notes/${id}/gallery`, { data: { image } }).then((r) => r.data.vehicle);

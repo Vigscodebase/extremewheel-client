@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchPermissions, updatePermissions } from "../api/permissionsApi";
 import { DEFAULT_PERMISSIONS, PAGES, PERMISSIONS_POLL_MS, ROLES } from "../utils/constants";
@@ -18,10 +18,7 @@ export const PermissionProvider = ({ children }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // React Query owns fetching, caching, and cross-device polling. Backend
-  // not reachable yet / endpoint not implemented -> keep serving the
-  // default matrix (via placeholderData) so the UI stays usable.
-  const { data: permissions = DEFAULT_PERMISSIONS, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: permissionsQueryKey,
     queryFn: fetchPermissions,
     placeholderData: DEFAULT_PERMISSIONS,
@@ -29,9 +26,18 @@ export const PermissionProvider = ({ children }) => {
     staleTime: 10_000,
   });
 
+  // Explicitly fallback to DEFAULT_PERMISSIONS if the backend 
+  // returns an empty object, array, or null on a fresh/uninitialized database.
+  const permissions = useMemo(() => {
+    if (!data || Object.keys(data).length === 0) {
+      return DEFAULT_PERMISSIONS;
+    }
+    return data;
+  }, [data]);
+
   const mutation = useMutation({
     mutationFn: updatePermissions,
-    onSuccess: (data) => queryClient.setQueryData(permissionsQueryKey, data),
+    onSuccess: (newData) => queryClient.setQueryData(permissionsQueryKey, newData),
   });
 
   // Instant cross-tab sync (same browser): any tab that saves permissions
@@ -62,7 +68,14 @@ export const PermissionProvider = ({ children }) => {
   const canAccess = useCallback(
     (role, pageKey) => {
       if (!role) return false;
-      return (permissions[role] || []).includes(pageKey);
+
+      // Sanitize the role to lowercase to prevent JWT casing mismatches
+      const normalizedRole = role.toLowerCase();
+
+      // Guarantee the admin always evaluates to true, preventing local lockouts
+      if (normalizedRole === 'admin') return true;
+
+      return (permissions[normalizedRole] || []).includes(pageKey);
     },
     [permissions]
   );

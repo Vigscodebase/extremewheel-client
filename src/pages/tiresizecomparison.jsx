@@ -1,6 +1,7 @@
-import { ArrowRightLeft } from "lucide-react";
+import { ArrowRightLeft, Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import PageHeader from "../components/pageheader";
+import { useLogTireComparison } from "../hooks/queries/useActivity";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import { speedoDifferencePct, tireCircumferenceMm, tireDiameterInches } from "../utils/tireMath";
 
@@ -60,6 +61,19 @@ export default function TireSizeComparison() {
 
   const update = (setter) => (patch) => setter((prev) => ({ ...prev, ...patch }));
 
+  const logComparison = useLogTireComparison();
+  const [saved, setSaved] = useState(false);
+  const saveComparison = async () => {
+    await logComparison.mutateAsync({
+      tireA,
+      tireB,
+      diffPct: Number(diffPct.toFixed(2)),
+      summary: `${tireA.width}/${tireA.aspect}R${tireA.rim} vs ${tireB.width}/${tireB.aspect}R${tireB.rim}`,
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
   const diameterA = tireDiameterInches(tireA);
   const diameterB = tireDiameterInches(tireB);
   const diffPct = speedoDifferencePct(tireA, tireB);
@@ -87,6 +101,12 @@ export default function TireSizeComparison() {
       </div>
 
       <div className="card compare-result-card">
+        <div className="section-title-row" style={{ marginBottom: 4 }}>
+          <div />
+          <button type="button" className="btn btn-ghost" onClick={saveComparison} disabled={logComparison.isPending}>
+            <Save size={14} /> {saved ? "Saved!" : logComparison.isPending ? "Saving…" : "Save comparison"}
+          </button>
+        </div>
         <div className="wheel-viz">
           <div className="wheel-col">
             {/* Dynamic style relying on state logic remains inline */}

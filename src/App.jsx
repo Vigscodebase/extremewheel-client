@@ -8,6 +8,9 @@ import Dashboard from "./pages/dashboard";
 import Login from "./pages/login";
 import NotAuthorized from "./pages/notauthorized";
 import PlusSizeOptions from "./pages/plussizeoptions";
+import Reports from "./pages/reports";
+import TechData from "./pages/techdata";
+import TireSizeCalculator from "./pages/tiresizecalculator";
 import TireSizeComparison from "./pages/tiresizecomparison";
 import TireSizeOption from "./pages/tiresizeoption";
 import UserManagement from "./pages/usermanagement";
@@ -63,6 +66,10 @@ export default function App() {
                   <Route path="/user-management" element={<UserManagement />} />
                 </Route>
 
+                <Route element={<ProtectedRoute pageKey="tire-calculator" />}>
+                  <Route path="/tire-calculator" element={<TireSizeCalculator />} />
+                </Route>
+
                 <Route element={<ProtectedRoute pageKey="tire-comparison" />}>
                   <Route path="/tire-comparison" element={<TireSizeComparison />} />
                 </Route>
@@ -79,8 +86,16 @@ export default function App() {
                   <Route path="/application-guide" element={<ApplicationGuide />} />
                 </Route>
 
+                <Route element={<ProtectedRoute pageKey="tech-data" />}>
+                  <Route path="/tech-data" element={<TechData />} />
+                </Route>
+
                 <Route element={<ProtectedRoute pageKey="vehicle-notes" />}>
                   <Route path="/vehicle-notes" element={<VehicleNotes />} />
+                </Route>
+
+                <Route element={<ProtectedRoute pageKey="reports" />}>
+                  <Route path="/reports" element={<Reports />} />
                 </Route>
 
               </Route>

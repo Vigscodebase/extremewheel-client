@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as appGuideApi from "../../api/appGuideApi";
 
 // Each level only fetches once its parent selection is made — keeps the
@@ -41,5 +41,19 @@ export function useAppGuideFitment(year, make, model, type, option) {
     queryKey: ["app-guide", "fitment", year, make, model, type, option],
     queryFn: () => appGuideApi.fetchAppGuideFitment(year, make, model, type, option),
     enabled: Boolean(year && make && model && type),
+  });
+}
+
+export function useDownloadTechDataCsv() {
+  return useMutation({
+    mutationFn: appGuideApi.downloadTechDataCsv,
+  });
+}
+
+export function useImportTechDataCsv() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: appGuideApi.importTechDataCsv,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["app-guide"] }),
   });
 }

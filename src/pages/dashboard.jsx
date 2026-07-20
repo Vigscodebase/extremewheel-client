@@ -4,13 +4,17 @@ import {
   Car,
   CheckCircle2,
   ChevronRight,
+  FileBarChart,
   Gauge,
   MessageCircle,
+  Scale,
+  Search,
   ShieldCheck,
   Users,
   Wrench,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import AreaLineChart from "../components/charts/areaLinechart";
 import DonutChart from "../components/charts/donutchart";
 import PageHeader from "../components/pageheader";
@@ -88,6 +92,15 @@ const FALLBACK = {
     { name: "Jhony Grille", role: "Lead Mechanic", online: true },
     { name: "Benjamin Fedral", role: "Inspector", online: false },
   ],
+  recentTireComparisons: [
+    { _id: "c1", summary: "225/65R17 vs 265/70R17", data: { diffPct: 3.4 }, createdAt: new Date().toISOString() },
+    { _id: "c2", summary: "215/60R16 vs 225/60R17", data: { diffPct: 1.1 }, createdAt: new Date().toISOString() },
+  ],
+  recentVehicleSearches: [
+    { _id: "s1", summary: "2023 Ford Transit 350 — Cargo Van", createdAt: new Date().toISOString() },
+    { _id: "s2", summary: "2022 Toyota Hilux — Pickup Truck", createdAt: new Date().toISOString() },
+  ],
+  reportsSummary: { totalActivity: 42, last7Days: 9 },
 };
 
 function KpiCard({ icon: Icon, label, value, tint }) {
@@ -355,6 +368,90 @@ export default function Dashboard() {
               <ContactRow key={c.name} {...c} />
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="dash-grid">
+        <div className="card dash-panel">
+          <div className="panel-head">
+            <div>
+              <h3>Recent tire comparisons</h3>
+              <p>Last few sizes run through the calculator</p>
+            </div>
+            <Link to="/tire-calculator" className="see-all-link">
+              Open calculator <ChevronRight size={14} />
+            </Link>
+          </div>
+          <div className="recent-list">
+            {(stats.recentTireComparisons || []).length === 0 ? (
+              <p className="service-empty">No comparisons logged yet.</p>
+            ) : (
+              stats.recentTireComparisons.map((c) => (
+                <div key={c._id} className="recent-row">
+                  <div className="recent-avatar"><Scale size={15} /></div>
+                  <div className="recent-info">
+                    <p className="recent-name">{c.summary}</p>
+                    <p className="recent-type">{new Date(c.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  {typeof c.data?.diffPct === "number" && (
+                    <span className="badge badge-model">{c.data.diffPct >= 0 ? "+" : ""}{c.data.diffPct.toFixed(1)}%</span>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="card dash-panel">
+          <div className="panel-head">
+            <div>
+              <h3>Recently searched vehicles</h3>
+              <p>Latest Application Guide / Tech Data lookups</p>
+            </div>
+            <Link to="/tech-data" className="see-all-link">
+              Open Tech Data <ChevronRight size={14} />
+            </Link>
+          </div>
+          <div className="recent-list">
+            {(stats.recentVehicleSearches || []).length === 0 ? (
+              <p className="service-empty">No vehicle searches logged yet.</p>
+            ) : (
+              stats.recentVehicleSearches.map((s) => (
+                <div key={s._id} className="recent-row">
+                  <div className="recent-avatar"><Search size={15} /></div>
+                  <div className="recent-info">
+                    <p className="recent-name">{s.summary}</p>
+                    <p className="recent-type">{new Date(s.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="dash-grid">
+        <div className="card dash-panel goal-card">
+          <div className="panel-head" style={{ width: "100%" }}>
+            <div>
+              <h3>Reports</h3>
+              <p>Activity captured for date-range exports</p>
+            </div>
+          </div>
+          <div className="goal-ring-wrap">
+            <GoalRing
+              value={stats.reportsSummary?.last7Days ?? 0}
+              goal={Math.max(stats.reportsSummary?.totalActivity ?? 1, 1)}
+              color="#4FCFB6"
+            />
+          </div>
+          <p className="goal-caption">Last 7 days vs. all-time activity</p>
+          <p className="goal-subcaption">
+            {stats.reportsSummary?.totalActivity ?? 0} events logged in total
+          </p>
+          <Link to="/reports" className="btn btn-accent" style={{ marginTop: 14 }}>
+            <FileBarChart size={15} /> Open Reporting & Data Export
+          </Link>
         </div>
       </div>
     </div>
