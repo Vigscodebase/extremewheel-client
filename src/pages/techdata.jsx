@@ -1,6 +1,7 @@
 import { Download, FileSpreadsheet, Info, Ruler, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import PageHeader from "../components/pageheader";
+import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import {
   useAppGuideFitment,
   useAppGuideMakes,
@@ -33,22 +34,36 @@ function OffsetRow({ label, value }) {
   );
 }
 
-function WheelOffsetChart({ record }) {
+// Parses common tire size strings like "265/70R17" or "225/65 R17" into
+// {width, aspect, rim}; returns null when the source string doesn't match
+// (some fitment rows only carry an "optional" size, free text, etc).
+function parseTireSizeString(str) {
+  if (!str) return null;
+  const match = String(str).match(/(\d{3})\s*\/\s*(\d{2,3})\s*R?\s*(\d{2})/i);
+  if (!match) return null;
+  return { width: Number(match[1]), aspect: Number(match[2]), rim: Number(match[3]) };
+}
+
+function WheelOffsetChart({ record, show3D = true }) {
+  const tire = show3D ? parseTireSizeString(record.txtTireSize) : null;
   return (
-    <table className="compare-table">
-      <tbody>
-        <OffsetRow label="Tire size" value={record.txtTireSize} />
-        <OffsetRow label="Optional tire size" value={record.txtOptTireSize} />
-        <OffsetRow label="Bolt pattern" value={record.txtBolt} />
-        <OffsetRow label="Lug" value={record.txtLug} />
-        <OffsetRow label="Hub bore" value={record.txtHub} />
-        <OffsetRow label="Offset" value={record.txtOffset} />
-        <OffsetRow label="Offset range (front)" value={record.minOffset && record.maxOffset ? `${record.minOffset} – ${record.maxOffset}` : null} />
-        <OffsetRow label="Offset range (rear)" value={record.minOffsetRear && record.maxOffsetRear ? `${record.minOffsetRear} – ${record.maxOffsetRear}` : null} />
-        <OffsetRow label="Wheel code" value={record.wheelCode} />
-        <OffsetRow label="Big brake clearance" value={record.bigBrake} />
-      </tbody>
-    </table>
+    <div className="tire3d-grid">
+      <table className="compare-table">
+        <tbody>
+          <OffsetRow label="Tire size" value={record.txtTireSize} />
+          <OffsetRow label="Optional tire size" value={record.txtOptTireSize} />
+          <OffsetRow label="Bolt pattern" value={record.txtBolt} />
+          <OffsetRow label="Lug" value={record.txtLug} />
+          <OffsetRow label="Hub bore" value={record.txtHub} />
+          <OffsetRow label="Offset" value={record.txtOffset} />
+          <OffsetRow label="Offset range (front)" value={record.minOffset && record.maxOffset ? `${record.minOffset} – ${record.maxOffset}` : null} />
+          <OffsetRow label="Offset range (rear)" value={record.minOffsetRear && record.maxOffsetRear ? `${record.minOffsetRear} – ${record.maxOffsetRear}` : null} />
+          <OffsetRow label="Wheel code" value={record.wheelCode} />
+          <OffsetRow label="Big brake clearance" value={record.bigBrake} />
+        </tbody>
+      </table>
+      {tire && <Tire3DVisualizer tire={tire} label={`${tire.width}/${tire.aspect}R${tire.rim}`} height={220} />}
+    </div>
   );
 }
 
@@ -192,9 +207,9 @@ function VehicleLookupTab() {
           <h3 style={{ marginBottom: 12 }}>
             {year} {make} {model} — {selType}{selOption ? ` (${selOption})` : ""}
           </h3>
-          {fitment.map((record) => (
+          {fitment.map((record, i) => (
             <div key={record._id} style={{ marginBottom: fitment.length > 1 ? 24 : 0 }}>
-              <WheelOffsetChart record={record} />
+              <WheelOffsetChart record={record} show3D={i === 0} />
             </div>
           ))}
         </div>

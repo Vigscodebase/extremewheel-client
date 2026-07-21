@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 import AreaLineChart from "../components/charts/areaLinechart";
 import DonutChart from "../components/charts/donutchart";
 import PageHeader from "../components/pageheader";
+import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import { useAuth } from "../context/authcontext";
 import { useDashboardSummary } from "../hooks/queries/useDashboard";
 
@@ -201,6 +202,11 @@ export default function Dashboard() {
   // while the first request is in flight or if the endpoint errors out.
   const stats = useMemo(() => ({ ...FALLBACK, ...(data || {}) }), [data]);
 
+  const showroomTire = useMemo(() => {
+    const latest = stats.recentTireComparisons?.[0]?.data?.tireB || stats.recentTireComparisons?.[0]?.data?.tireA;
+    return latest?.width && latest?.rim ? latest : { width: 265, aspect: 70, rim: 17 };
+  }, [stats.recentTireComparisons]);
+
   const donutData = [
     { label: "Admin", value: stats.usersByRole.admin, color: "#8B7CF6" },
     { label: "Staff", value: stats.usersByRole.staff, color: "#4FCFB6" },
@@ -227,6 +233,24 @@ export default function Dashboard() {
         <KpiCard icon={Car} label="Vehicles tracked" value={stats.totalVehicles} tint={{ soft: "var(--color-mint-soft)", solid: "#22997F" }} />
         <KpiCard icon={Gauge} label="Tire presets" value={stats.tirePresets} tint={{ soft: "var(--color-amber-soft)", solid: "#C97A22" }} />
         <KpiCard icon={ShieldCheck} label="Active sessions" value={stats.activeSessions} tint={{ soft: "var(--color-pink-soft)", solid: "var(--color-pink)" }} />
+      </div>
+
+      <div className="card dash-panel" style={{ marginBottom: 20 }}>
+        <div className="panel-head">
+          <div>
+            <h3>Tire showroom</h3>
+            <p>Live 3D preview of your most recently compared size</p>
+          </div>
+          <Link to="/tire-calculator" className="see-all-link">
+            Open calculator <ChevronRight size={14} />
+          </Link>
+        </div>
+        <Tire3DVisualizer
+          tire={showroomTire}
+          label={`${showroomTire.width}/${showroomTire.aspect}R${showroomTire.rim}`}
+          accent="#FF6F91"
+          height={260}
+        />
       </div>
 
       <div className="section-title-row">

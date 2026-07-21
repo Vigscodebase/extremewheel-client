@@ -1,8 +1,9 @@
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Box, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import ConfirmDialog from "../components/confirmdialog";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
+import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import {
   useCreateTireOption,
   useDeleteTireOption,
@@ -31,6 +32,7 @@ export default function TireSizeOption() {
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [previewPreset, setPreviewPreset] = useState(null);
 
   const saving = createMutation.isPending || updateMutation.isPending;
 
@@ -104,6 +106,9 @@ export default function TireSizeOption() {
                   {p.width}/{p.aspect} R{p.rim}
                 </p>
                 <p className="preset-diameter">≈ {tireDiameterInches(p).toFixed(1)}" diameter</p>
+                <button type="button" className="tire3d-modal-trigger" onClick={() => setPreviewPreset(p)}>
+                  <Box size={13} /> Preview in 3D
+                </button>
               </div>
               <div className="preset-actions">
                 <button type="button" className="icon-btn" onClick={() => openEdit(p)} title="Edit">
@@ -117,6 +122,18 @@ export default function TireSizeOption() {
           ))}
         </div>
       )}
+
+      <Modal open={!!previewPreset} onClose={() => setPreviewPreset(null)} title={previewPreset?.label || "3D preview"} width={420}>
+        {previewPreset && (
+          <Tire3DVisualizer
+            tire={previewPreset}
+            label={`${previewPreset.width}/${previewPreset.aspect}R${previewPreset.rim} · ≈ ${tireDiameterInches(previewPreset).toFixed(1)}" diameter`}
+            accent="#FF6F91"
+            height={280}
+            zoomable
+          />
+        )}
+      </Modal>
 
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Edit preset" : "Add preset"} width={400}>
         <form onSubmit={submitForm}>

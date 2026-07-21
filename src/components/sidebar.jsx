@@ -6,7 +6,6 @@ import {
   Scale,
   SlidersHorizontal,
   Users,
-  Menu,
   X,
   Circle,
   TrendingUp,
@@ -67,7 +66,7 @@ export default function Sidebar() {
           const data = await response.json();
           if (Array.isArray(data.nav) && data.nav.length > 0) setNavItems(data.nav);
         }
-      } catch (error) {
+      } catch {
         console.warn("Using fallback navigation.");
       }
     };
@@ -98,12 +97,6 @@ export default function Sidebar() {
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-  };
-
-  const handleOpen = (e) => {
-    if (e) e.stopPropagation();
-    setIsPinned(true);
-    setForceClose(false);
   };
 
   const handleClose = (e) => {

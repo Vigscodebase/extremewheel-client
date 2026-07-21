@@ -1,6 +1,7 @@
 import { Calculator, Gauge, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 import PageHeader from "../components/pageheader";
+import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import { useLogTireComparison } from "../hooks/queries/useActivity";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import {
@@ -21,25 +22,6 @@ const MOCK_PRESETS = [
 ];
 
 const SPEED_READINGS = [20, 30, 40, 50, 60, 70, 80, 90];
-
-function TireVisualizer({ tire, label, color = "#FF6F91" }) {
-  const diameter = tireDiameterInches(tire);
-  const size = 140;
-  const rimRatio = tire.rim / diameter;
-  const outerR = size / 2 - 4;
-  const innerR = outerR * rimRatio;
-
-  return (
-    <div className="tire-viz">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${label} visual`}>
-        <circle cx={size / 2} cy={size / 2} r={outerR} fill="none" stroke={color} strokeWidth={10} />
-        <circle cx={size / 2} cy={size / 2} r={innerR} fill="none" stroke="#C6C9D6" strokeWidth={2} strokeDasharray="3 3" />
-        <circle cx={size / 2} cy={size / 2} r={innerR * 0.35} fill="#EDEEF3" stroke="#C6C9D6" strokeWidth={1.5} />
-      </svg>
-      <p className="tire-viz-label">{label}</p>
-    </div>
-  );
-}
 
 function specRows(tire) {
   return {
@@ -158,7 +140,7 @@ export default function TireSizeCalculator() {
 
       <div className="card compare-result-card">
         <div className="wheel-viz">
-          <TireVisualizer tire={tire} label={`${tire.width}/${tire.aspect}R${tire.rim}`} color="#FF6F91" />
+          <Tire3DVisualizer tire={tire} label={`${tire.width}/${tire.aspect}R${tire.rim}`} accent="#FF6F91" height={240} />
         </div>
 
         <table className="compare-table">
@@ -200,10 +182,10 @@ export default function TireSizeCalculator() {
 
             <div className="wheel-viz">
               <div className="wheel-col">
-                <TireVisualizer tire={tire} label={`Current · ${tire.width}/${tire.aspect}R${tire.rim}`} color="#FF6F91" />
+                <Tire3DVisualizer tire={tire} label={`Current · ${tire.width}/${tire.aspect}R${tire.rim}`} accent="#FF6F91" height={220} />
               </div>
               <div className="wheel-col">
-                <TireVisualizer tire={convertedTire} label={`New · ${convertedTire.width}/${convertedTire.aspect}R${convertedTire.rim}`} color="#8B7CF6" />
+                <Tire3DVisualizer tire={convertedTire} label={`New · ${convertedTire.width}/${convertedTire.aspect}R${convertedTire.rim}`} accent="#8B7CF6" height={220} />
               </div>
             </div>
 

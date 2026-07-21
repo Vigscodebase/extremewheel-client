@@ -1,6 +1,7 @@
-import { Search, TrendingUp } from "lucide-react";
+import { Eye, Search, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import PageHeader from "../components/pageheader";
+import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import { usePlusSizeSearch } from "../hooks/queries/usePlusSize";
 
@@ -12,6 +13,7 @@ export default function PlusSizeOptions() {
 
   const [oe, setOe] = useState(emptyOe);
   const [searched, setSearched] = useState(false);
+  const [previewResult, setPreviewResult] = useState(null);
 
   const applyPreset = (id) => {
     const preset = (presets || []).find((p) => p._id === id);
@@ -21,6 +23,7 @@ export default function PlusSizeOptions() {
   const runSearch = async (e) => {
     e.preventDefault();
     setSearched(true);
+    setPreviewResult(null);
     await searchMutation.mutateAsync({
       width: Number(oe.width),
       aspect: Number(oe.aspect),
@@ -113,6 +116,7 @@ export default function PlusSizeOptions() {
                   <th>Tread width</th>
                   <th>Height diff</th>
                   <th>Tread diff</th>
+                  <th>3D</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,10 +131,41 @@ export default function PlusSizeOptions() {
                       {r.heightDiffPct >= 0 ? "+" : ""}{r.heightDiffPct}%
                     </td>
                     <td>{r.treadDiffPct >= 0 ? "+" : ""}{r.treadDiffPct}%</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        title="Preview in 3D"
+                        onClick={() => setPreviewResult(previewResult?._id === r._id ? null : r)}
+                      >
+                        <Eye size={14} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          )}
+
+          {previewResult && (
+            <div className="wheel-viz" style={{ marginTop: 20 }}>
+              <div className="wheel-col">
+                <Tire3DVisualizer
+                  tire={{ width: oe.width, aspect: oe.aspect, rim: oe.rim }}
+                  label={`OE · ${oe.width}/${oe.aspect}R${oe.rim}`}
+                  accent="#FF6F91"
+                  height={230}
+                />
+              </div>
+              <div className="wheel-col">
+                <Tire3DVisualizer
+                  tire={{ width: previewResult.width, aspect: previewResult.aspect, rim: previewResult.rim }}
+                  label={`${previewResult.label} · ${previewResult.width}/${previewResult.aspect}R${previewResult.rim}`}
+                  accent="#8B7CF6"
+                  height={230}
+                />
+              </div>
+            </div>
           )}
         </div>
       )}

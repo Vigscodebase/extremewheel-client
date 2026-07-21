@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import PageHeader from "../components/pageheader";
 import {
   useAppGuideFitment,
@@ -61,9 +61,21 @@ export default function ApplicationGuide() {
   const { data: fitment, isLoading: loadingFitment } = useAppGuideFitment(year, make, model, selType, selOption);
 
   // Cascading resets: changing an upstream dropdown clears everything below it.
-  useEffect(() => { setMake(""); }, [year]);
-  useEffect(() => { setModel(""); }, [make]);
-  useEffect(() => { setTypeOption(""); }, [model]);
+  const onYearChange = (e) => {
+    setYear(e.target.value);
+    setMake("");
+    setModel("");
+    setTypeOption("");
+  };
+  const onMakeChange = (e) => {
+    setMake(e.target.value);
+    setModel("");
+    setTypeOption("");
+  };
+  const onModelChange = (e) => {
+    setModel(e.target.value);
+    setTypeOption("");
+  };
 
   const step = !year ? 1 : !make ? 2 : !model ? 3 : !typeOption ? 4 : 5;
 
@@ -83,7 +95,7 @@ export default function ApplicationGuide() {
         <div className="tire-input-grid">
           <div className="field">
             <label>Year</label>
-            <select value={year} onChange={(e) => setYear(e.target.value)} disabled={loadingYears}>
+            <select value={year} onChange={onYearChange} disabled={loadingYears}>
               <option value="">{loadingYears ? "Loading…" : "Select year"}</option>
               {(years || []).map((y) => (
                 <option key={y} value={y}>{y}</option>
@@ -92,7 +104,7 @@ export default function ApplicationGuide() {
           </div>
           <div className="field">
             <label>Make</label>
-            <select value={make} onChange={(e) => setMake(e.target.value)} disabled={!year || loadingMakes}>
+            <select value={make} onChange={onMakeChange} disabled={!year || loadingMakes}>
               <option value="">{!year ? "Select year first" : loadingMakes ? "Loading…" : "Select make"}</option>
               {(makes || []).map((m) => (
                 <option key={m} value={m}>{m}</option>
@@ -101,7 +113,7 @@ export default function ApplicationGuide() {
           </div>
           <div className="field">
             <label>Model</label>
-            <select value={model} onChange={(e) => setModel(e.target.value)} disabled={!make || loadingModels}>
+            <select value={model} onChange={onModelChange} disabled={!make || loadingModels}>
               <option value="">{!make ? "Select make first" : loadingModels ? "Loading…" : "Select model"}</option>
               {(models || []).map((m) => (
                 <option key={m} value={m}>{m}</option>

@@ -1,5 +1,5 @@
 import { Pencil, Plus, Save, Search, ShieldCheck, Trash2, Users as UsersIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import ConfirmDialog from "../components/confirmdialog";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
@@ -15,6 +15,7 @@ const MOCK_USERS = [
 ];
 
 const emptyForm = { name: "", email: "", password: "", role: "guest" };
+const EMPTY_USERS = [];
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
@@ -24,7 +25,7 @@ export default function UserManagement() {
   const [query, setQuery] = useState("");
 
   const { data: fetchedUsers, isLoading: loading, isError: usersError } = useUsersQuery();
-  const users = usersError ? MOCK_USERS : fetchedUsers || [];
+  const users = usersError ? MOCK_USERS : fetchedUsers || EMPTY_USERS;
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
   const deleteUserMutation = useDeleteUser();
@@ -37,10 +38,19 @@ export default function UserManagement() {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const [matrix, setMatrix] = useState(permissions);
+  const [prevPermissions, setPrevPermissions] = useState(permissions);
   const [matrixDirty, setMatrixDirty] = useState(false);
   const [savingMatrix, setSavingMatrix] = useState(false);
 
-  useEffect(() => setMatrix(permissions), [permissions]);
+  // Sync the locally-editable matrix whenever a fresh `permissions` object
+  // arrives from context (e.g. after the initial fetch resolves). Done
+  // during render — per React's "adjusting state" guidance — rather than
+  // in an effect, so it doesn't cost an extra commit/render pass.
+  if (permissions !== prevPermissions) {
+    setPrevPermissions(permissions);
+    setMatrix(permissions);
+    setMatrixDirty(false);
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

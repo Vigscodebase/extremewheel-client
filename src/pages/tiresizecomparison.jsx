@@ -1,6 +1,7 @@
 import { ArrowRightLeft, Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import PageHeader from "../components/pageheader";
+import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import { useLogTireComparison } from "../hooks/queries/useActivity";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import { speedoDifferencePct, tireCircumferenceMm, tireDiameterInches } from "../utils/tireMath";
@@ -77,7 +78,6 @@ export default function TireSizeComparison() {
   const diameterA = tireDiameterInches(tireA);
   const diameterB = tireDiameterInches(tireB);
   const diffPct = speedoDifferencePct(tireA, tireB);
-  const maxDiameter = Math.max(diameterA, diameterB);
 
   const rows = useMemo(
     () => [
@@ -109,14 +109,10 @@ export default function TireSizeComparison() {
         </div>
         <div className="wheel-viz">
           <div className="wheel-col">
-            {/* Dynamic style relying on state logic remains inline */}
-            <div className="wheel-circle" style={{ width: `${(diameterA / maxDiameter) * 150}px`, height: `${(diameterA / maxDiameter) * 150}px`, borderColor: "#FF6F91" }} />
-            <p>Tire A · {diameterA.toFixed(1)}"</p>
+            <Tire3DVisualizer tire={tireA} label={`Tire A · ${diameterA.toFixed(1)}"`} accent="#FF6F91" height={230} />
           </div>
           <div className="wheel-col">
-            {/* Dynamic style relying on state logic remains inline */}
-            <div className="wheel-circle" style={{ width: `${(diameterB / maxDiameter) * 150}px`, height: `${(diameterB / maxDiameter) * 150}px`, borderColor: "#8B7CF6" }} />
-            <p>Tire B · {diameterB.toFixed(1)}"</p>
+            <Tire3DVisualizer tire={tireB} label={`Tire B · ${diameterB.toFixed(1)}"`} accent="#8B7CF6" height={230} />
           </div>
         </div>
 
