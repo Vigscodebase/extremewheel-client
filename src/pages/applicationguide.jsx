@@ -89,7 +89,7 @@ export default function ApplicationGuide() {
 
       <div className="card tire-form">
         <h3>
-          <Search size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />
+          <Search size={16} className="icon-inline" />
           Find a vehicle
         </h3>
         <div className="tire-input-grid">
@@ -135,25 +135,25 @@ export default function ApplicationGuide() {
       </div>
 
       {step < 5 ? (
-        <div className="card empty-state-card" style={{ marginTop: 20 }}>
+        <div className="card empty-state-card mt-20">
           {step === 1 && "Start by selecting a year."}
           {step === 2 && "Now select a make."}
           {step === 3 && "Now select a model."}
           {step === 4 && "Now select a type to see fitment data."}
         </div>
       ) : loadingFitment ? (
-        <p className="text-muted" style={{ marginTop: 20 }}>Loading fitment data…</p>
+        <p className="text-muted mt-20">Loading fitment data…</p>
       ) : !fitment || fitment.length === 0 ? (
-        <div className="card empty-state-card" style={{ marginTop: 20 }}>
+        <div className="card empty-state-card mt-20">
           No fitment records found for this selection.
         </div>
       ) : (
-        <div className="card" style={{ marginTop: 20 }}>
-          <h3 style={{ marginBottom: 12 }}>
+        <div className="card mt-20">
+          <h3 className="mb-12">
             {year} {make} {model} — {selType}{selOption ? ` (${selOption})` : ""}
           </h3>
           {fitment.map((record) => (
-            <div key={record._id} style={{ marginBottom: fitment.length > 1 ? 24 : 0 }}>
+            <div key={record._id} className={fitment.length > 1 ? "mb-24" : "mb-0"}>
               <FitmentSpecs record={record} />
             </div>
           ))}

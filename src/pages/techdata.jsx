@@ -17,11 +17,11 @@ import { useUpdateVehicleNote, useVehicleNotesQuery } from "../hooks/queries/use
 
 const GLOSSARY = [
   { term: "Wheel Offset", def: "The distance (in mm) from the wheel's centerline to its mounting hub surface. Positive offset pulls the wheel face inward; negative pushes it outward." },
-  { term: "Backspacing", def: "The distance from the mounting surface to the back edge of the rim — a quick way to estimate fender/suspension clearance." },
+  { term: "Backspacing", def: "The distance from the mounting surface to the back edge of the rim - a quick way to estimate fender/suspension clearance." },
   { term: "Bolt Pattern", def: "Number of lugs and the diameter of the circle they sit on, e.g. 5x114.3 = 5 lugs on a 114.3mm circle." },
-  { term: "Hub Bore", def: "The center hole diameter of the wheel — must be equal to or larger than the vehicle hub, with hub-centric rings used to take up any slack." },
+  { term: "Hub Bore", def: "The center hole diameter of the wheel - must be equal to or larger than the vehicle hub, with hub-centric rings used to take up any slack." },
   { term: "Wheel Code", def: "Manufacturer shorthand describing width, offset and bolt pattern together, printed on the back of the spoke." },
-  { term: "Big Brake Clearance", def: "Whether the wheel/offset combination clears an upgraded (big) brake caliper — flagged per fitment where the source data has it." },
+  { term: "Big Brake Clearance", def: "Whether the wheel/offset combination clears an upgraded (big) brake caliper - flagged per fitment where the source data has it." },
 ];
 
 function OffsetRow({ label, value }) {
@@ -47,7 +47,7 @@ function parseTireSizeString(str) {
 function WheelOffsetChart({ record, show3D = true }) {
   const tire = show3D ? parseTireSizeString(record.txtTireSize) : null;
   return (
-    <div className={tire ? "tire3d-grid" : ""}>
+    <div className="tire3d-grid">
       <table className="compare-table">
         <tbody>
           <OffsetRow label="Tire size" value={record.txtTireSize} />
@@ -78,22 +78,22 @@ export default function TechData() {
         subtitle="Static fitment reference plus wheel offset lookups sourced from the Application Guide, Vehicle Notes and Tire Size Options."
       />
 
-      <div className="segmented-toggle" style={{ marginBottom: 20 }}>
+      <div className="range-toggle mb-20">
         <button type="button" className={tab === "lookup" ? "active" : ""} onClick={() => setTab("lookup")}>Vehicle lookup</button>
         <button type="button" className={tab === "manual" ? "active" : ""} onClick={() => setTab("manual")}>Manual reference</button>
         <button type="button" className={tab === "csv" ? "active" : ""} onClick={() => setTab("csv")}>CSV import / export</button>
       </div>
 
-      <div className="card" style={{ marginBottom: 20 }}>
-        <h3 style={{ marginBottom: 10 }}>
-          <Info size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />
+      <div className="card mb-20">
+        <h3 className="mb-10">
+          <Info size={16} className="icon-inline" />
           Wheel & offset glossary
         </h3>
         <div className="preset-grid">
           {GLOSSARY.map((g) => (
-            <div key={g.term} className="card" style={{ padding: 14 }}>
+            <div key={g.term} className="card p-14">
               <p className="preset-label">{g.term}</p>
-              <p className="text-muted" style={{ fontSize: 13, lineHeight: 1.5 }}>{g.def}</p>
+              <p className="text-muted fs-13 leading-relaxed">{g.def}</p>
             </div>
           ))}
         </div>
@@ -152,7 +152,7 @@ function VehicleLookupTab() {
     <div>
       <div className="card tire-form">
         <h3>
-          <Ruler size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />
+          <Ruler size={16} className="icon-inline" />
           Find a vehicle
         </h3>
         <div className="tire-input-grid">
@@ -192,23 +192,23 @@ function VehicleLookupTab() {
       </div>
 
       {step < 5 ? (
-        <div className="card empty-state-card" style={{ marginTop: 20 }}>
+        <div className="card empty-state-card mt-20">
           {step === 1 && "Start by selecting a year."}
           {step === 2 && "Now select a make."}
           {step === 3 && "Now select a model."}
           {step === 4 && "Now select a type to see the wheel offset chart."}
         </div>
       ) : loadingFitment ? (
-        <p className="text-muted" style={{ marginTop: 20 }}>Loading wheel offset data…</p>
+        <p className="text-muted mt-20">Loading wheel offset data…</p>
       ) : !fitment || fitment.length === 0 ? (
-        <div className="card empty-state-card" style={{ marginTop: 20 }}>No tech data on file for this fitment.</div>
+        <div className="card empty-state-card mt-20">No tech data on file for this fitment.</div>
       ) : (
-        <div className="card" style={{ marginTop: 20 }}>
-          <h3 style={{ marginBottom: 12 }}>
+        <div className="card mt-20">
+          <h3 className="mb-12">
             {year} {make} {model} — {selType}{selOption ? ` (${selOption})` : ""}
           </h3>
           {fitment.map((record, i) => (
-            <div key={record._id} style={{ marginBottom: fitment.length > 1 ? 24 : 0 }}>
+            <div key={record._id} className={fitment.length > 1 ? "mb-24" : "mb-0"}>
               <WheelOffsetChart record={record} show3D={i === 0} />
             </div>
           ))}
@@ -244,8 +244,8 @@ function ManualReferenceTab() {
 
   return (
     <div className="card">
-      <h3 style={{ marginBottom: 4 }}>Reference an existing vehicle note or tire preset</h3>
-      <p className="text-muted" style={{ marginBottom: 16 }}>
+      <h3 className="mb-4">Reference an existing vehicle note or tire preset</h3>
+      <p className="text-muted mb-16">
         For fitments not yet in the Application Guide dataset, record offset/backspacing reference notes directly against a Vehicle Note.
       </p>
 
@@ -261,7 +261,7 @@ function ManualReferenceTab() {
 
       {vehicle && (
         <>
-          <div className="vehicle-tags" style={{ marginBottom: 14 }}>
+          <div className="vehicle-tags mb-14">
             <span className="badge badge-live">{vehicle.type}</span>
             <span className="badge badge-model">{vehicle.model}</span>
           </div>
@@ -283,15 +283,15 @@ function ManualReferenceTab() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. Confirmed +38mm offset, 5x114.3, hub-centric rings fitted…"
-              style={{ width: "100%", resize: "vertical", fontFamily: "inherit" }}
+              className="textarea-resize-v"
             />
           </div>
 
-          <div className="modal-actions" style={{ justifyContent: "flex-start" }}>
+          <div className="modal-actions modal-actions-start">
             <button type="button" className="btn btn-accent" onClick={save} disabled={updateVehicle.isPending}>
               {updateVehicle.isPending ? "Saving…" : "Save reference notes"}
             </button>
-            {savedMsg && <span className="text-muted" style={{ alignSelf: "center" }}>{savedMsg}</span>}
+            {savedMsg && <span className="text-muted align-self-center">{savedMsg}</span>}
           </div>
         </>
       )}
@@ -324,15 +324,15 @@ function CsvImportExportTab() {
 
   return (
     <div className="card">
-      <h3 style={{ marginBottom: 4 }}>
-        <FileSpreadsheet size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />
+      <h3 className="mb-4">
+        <FileSpreadsheet size={16} className="icon-inline" />
         Tech Data CSV
       </h3>
-      <p className="text-muted" style={{ marginBottom: 16 }}>
+      <p className="text-muted mb-16">
         Download the current fitment / wheel-offset dataset as CSV, edit it, and re-upload — columns match exactly so a round trip is safe.
       </p>
 
-      <div className="modal-actions" style={{ justifyContent: "flex-start", gap: 12 }}>
+      <div className="modal-actions modal-actions-start gap-12">
         <button
           type="button"
           className="btn btn-accent"
@@ -348,10 +348,10 @@ function CsvImportExportTab() {
         <input ref={fileInputRef} type="file" accept=".csv,text/csv" hidden onChange={onFileChosen} />
       </div>
 
-      {importError && <div className="alert-error" style={{ marginTop: 16 }}>{importError}</div>}
+      {importError && <div className="alert-error mt-16">{importError}</div>}
 
       {importResult && (
-        <div className="card empty-state-card" style={{ marginTop: 16, textAlign: "left" }}>
+        <div className="card empty-state-card mt-16 text-left">
           Imported {importResult.processed} row(s), skipped {importResult.skipped} incomplete row(s), out of {importResult.total} total.
         </div>
       )}

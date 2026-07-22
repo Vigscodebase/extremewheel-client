@@ -159,13 +159,9 @@ export default function TireCanvas({
       shadows
       dpr={[1, 1.75]}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance", failIfMajorPerformanceCaveat: false }}
-      // Camera starts offset to the right + slightly elevated so the
-      // default frame reads as an obvious 3/4 "hero shot" — the tread,
-      // sidewall and spoke face are all visible at once, not a flat
-      // straight-on silhouette — making it immediately clear this is a
-      // real 3D object you can rotate, rather than a static icon.
-      camera={{ position: [1.75, 0.9, 3.05], fov: 30 }}
-      style={{ width: "100%", height: "100%", display: "block" }}
+      /* Pulled back further on X, Y, and Z, and widened FOV to completely clear the top/bottom cuts */
+      camera={{ position: [3.5, 1.5, 6.0], fov: 40 }}
+      className="tire3d-canvas-fill"
       onCreated={({ gl }) => { glRef.current = gl.domElement; }}
     >
       <StudioLighting />
@@ -179,13 +175,11 @@ export default function TireCanvas({
         enableZoom={zoomable}
         enablePan={false}
         enableRotate={interactive}
-        // Wide-open vertical range (short of the exact poles) so dragging
-        // really can bring the tire to any angle — front, side, top-down —
-        // proving it's a full 3D model rather than a flat cutout.
         minPolarAngle={Math.PI * 0.12}
         maxPolarAngle={Math.PI * 0.88}
-        minDistance={2.1}
-        maxDistance={5.5}
+        /* Adjusted zoom limits for the new camera distance */
+        minDistance={3.0}
+        maxDistance={10.0}
       />
     </Canvas>
   );

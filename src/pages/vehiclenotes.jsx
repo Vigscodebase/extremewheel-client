@@ -153,9 +153,9 @@ export default function VehicleNotes() {
   return (
     <div>
       <PageHeader
-        eyebrow="Fleet records"
+        eyebrow="Ectremewheel records"
         title="Vehicle Notes"
-        subtitle="Keep a visual reference of every vehicle in the fleet — including before/after photos and a full image gallery."
+        subtitle="Keep a visual reference of every vehicle in the extremewheel - including before/after photos and a full image gallery."
         action={
           <button type="button" className="btn btn-accent" onClick={openAdd}>
             <Plus size={16} /> Add vehicle
@@ -235,18 +235,18 @@ export default function VehicleNotes() {
             <div className="before-after-grid">
               <label className="image-upload">
                 {form.beforeImage ? <img src={form.beforeImage} alt="before preview" /> : (
-                  <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                  <span className="image-upload-placeholder">
                     <Camera size={18} color="var(--color-muted)" />
-                    <span style={{ fontSize: 11, color: "var(--color-muted)" }}>Before</span>
+                    <span className="text-muted fs-11">Before</span>
                   </span>
                 )}
                 <input type="file" accept="image/*" onChange={onSingleFileChange("beforeImage")} hidden />
               </label>
               <label className="image-upload">
                 {form.afterImage ? <img src={form.afterImage} alt="after preview" /> : (
-                  <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                  <span className="image-upload-placeholder">
                     <Camera size={18} color="var(--color-muted)" />
-                    <span style={{ fontSize: 11, color: "var(--color-muted)" }}>After</span>
+                    <span className="text-muted fs-11">After</span>
                   </span>
                 )}
                 <input type="file" accept="image/*" onChange={onSingleFileChange("afterImage")} hidden />
@@ -292,11 +292,11 @@ export default function VehicleNotes() {
               <div className="field field-mb-lg">
                 <label>Before / after</label>
                 <div className="before-after-grid">
-                  <div className="gallery-thumb" style={{ aspectRatio: "4/3" }}>
-                    {galleryVehicle.beforeImage ? <img src={galleryVehicle.beforeImage} alt="before" /> : <span className="text-muted" style={{ fontSize: 11 }}>No before photo</span>}
+                  <div className="gallery-thumb wide">
+                    {galleryVehicle.beforeImage ? <img src={galleryVehicle.beforeImage} alt="before" /> : <span className="text-muted fs-11">No before photo</span>}
                   </div>
-                  <div className="gallery-thumb" style={{ aspectRatio: "4/3" }}>
-                    {galleryVehicle.afterImage ? <img src={galleryVehicle.afterImage} alt="after" /> : <span className="text-muted" style={{ fontSize: 11 }}>No after photo</span>}
+                  <div className="gallery-thumb wide">
+                    {galleryVehicle.afterImage ? <img src={galleryVehicle.afterImage} alt="after" /> : <span className="text-muted fs-11">No after photo</span>}
                   </div>
                 </div>
               </div>
@@ -306,7 +306,7 @@ export default function VehicleNotes() {
               <label>Gallery ({galleryVehicle.gallery?.length || 0})</label>
               <div className="gallery-grid">
                 {(galleryVehicle.gallery || []).map((photo, i) => (
-                  <div key={photo} className="gallery-thumb gallery-thumb-clickable" onClick={() => setLightboxIndex(i)}>
+                  <div key={photo} className="gallery-thumb" onClick={() => setLightboxIndex(i)}>
                     <img src={photo} alt={`gallery ${i + 1}`} />
                     <button
                       type="button"

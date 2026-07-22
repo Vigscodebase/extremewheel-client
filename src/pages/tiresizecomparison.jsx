@@ -101,7 +101,7 @@ export default function TireSizeComparison() {
       </div>
 
       <div className="card compare-result-card">
-        <div className="section-title-row" style={{ marginBottom: 4 }}>
+        <div className="section-title-row mb-4">
           <div />
           <button type="button" className="btn btn-ghost" onClick={saveComparison} disabled={logComparison.isPending}>
             <Save size={14} /> {saved ? "Saved!" : logComparison.isPending ? "Saving…" : "Save comparison"}

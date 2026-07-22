@@ -4,10 +4,10 @@ import PageHeader from "../components/pageheader";
 import { useDownloadReportCsv, useReportsSummary } from "../hooks/queries/useReports";
 
 const REPORT_TYPES = [
-  { type: "vehicles", label: "Vehicles added", icon: Car, tint: { soft: "var(--color-mint-soft)", solid: "#22997F" } },
-  { type: "tire-comparisons", label: "Tire comparisons", icon: Scale, tint: { soft: "var(--color-violet-soft)", solid: "var(--color-violet)" } },
-  { type: "vehicle-searches", label: "Vehicle searches", icon: Search, tint: { soft: "var(--color-amber-soft)", solid: "#C97A22" } },
-  { type: "tire-options", label: "Tire presets added", icon: SlidersHorizontal, tint: { soft: "var(--color-pink-soft)", solid: "var(--color-pink)" } },
+  { type: "vehicles", label: "Vehicles added", icon: Car, tint: { soft: "var(--color-amber-dark)", solid: "var(--color-pink-soft)" } },
+  { type: "tire-comparisons", label: "Tire comparisons", icon: Scale, tint: { soft: "var(--color-sidebar)", solid: "var(--color-pink-soft)" } },
+  { type: "vehicle-searches", label: "Vehicle searches", icon: Search, tint: { soft: "var(--color-muted)", solid: "var(--color-pink-soft)" } },
+  { type: "tire-options", label: "Tire presets added", icon: SlidersHorizontal, tint: { soft: "var(--color-pink)", solid: "var(--color-pink-soft)" } },
 ];
 
 const SUMMARY_KEY = {
@@ -44,9 +44,9 @@ export default function Reports() {
         subtitle="Pick a date range, review activity, and export any category to CSV."
       />
 
-      <div className="card tire-form" style={{ marginBottom: 20 }}>
+      <div className="card tire-form mb-20">
         <h3>
-          <FileBarChart size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />
+          <FileBarChart size={16} className="icon-inline" />
           Date range
         </h3>
         <div className="tire-input-grid">
@@ -59,7 +59,7 @@ export default function Reports() {
             <input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
           </div>
         </div>
-        <div className="segmented-toggle" style={{ marginTop: 10 }}>
+        <div className="range-toggle mt-10">
           <button type="button" onClick={() => applyQuickRange(7)}>Last 7 days</button>
           <button type="button" onClick={() => applyQuickRange(30)}>Last 30 days</button>
           <button type="button" onClick={() => applyQuickRange(90)}>Last 90 days</button>
@@ -80,9 +80,9 @@ export default function Reports() {
         ))}
       </div>
 
-      <div className="card" style={{ marginTop: 20 }}>
-        <h3 style={{ marginBottom: 4 }}>Export to CSV</h3>
-        <p className="text-muted" style={{ marginBottom: 16 }}>
+      <div className="card mt-20">
+        <h3 className="mb-4">Export to CSV</h3>
+        <p className="text-muted mb-16">
           Downloads are scoped to the date range selected above.
         </p>
         <div className="preset-grid">

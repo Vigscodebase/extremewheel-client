@@ -95,12 +95,12 @@ export default function TireSizeCalculator() {
       <PageHeader
         eyebrow="Tire library"
         title="Tire Size Calculator"
-        subtitle="Calculate metric tire specs, convert to a different wheel size, and see alternate size suggestions — just like tiresize.com's calculator."
+        subtitle="Calculate metric tire specs, convert to a different wheel size, and see alternate size suggestions."
       />
 
-      <div className="card tire-form">
+      <div className="card tire-calculator-form">
         <h3>
-          <Calculator size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />
+          <Calculator size={16} className="icon-inline" />
           Tire Size
         </h3>
         <div className="field field-mb">
@@ -132,7 +132,7 @@ export default function TireSizeCalculator() {
           {tire.width}/{tire.aspect} R{tire.rim} · equivalent inch size ≈ {equivalentInchSize(tire)}
         </p>
 
-        <div className="segmented-toggle" style={{ marginTop: 10 }}>
+        <div className="range-toggle mt-10">
           <button type="button" className={unit === "in" ? "active" : ""} onClick={() => setUnit("in")}>inches</button>
           <button type="button" className={unit === "mm" ? "active" : ""} onClick={() => setUnit("mm")}>mm</button>
         </div>
@@ -161,7 +161,7 @@ export default function TireSizeCalculator() {
       </div>
 
       <div className="card">
-        <div className="section-title-row" style={{ marginBottom: convertOpen ? 16 : 0 }}>
+        <div className={`section-title-row${convertOpen ? "" : " tight"}`}>
           <div>
             <h3>Convert to a different wheel size?</h3>
             <p>Keeps the same aspect ratio and shows the speedometer effect of the swap.</p>
@@ -173,7 +173,7 @@ export default function TireSizeCalculator() {
 
         {convertOpen && (
           <>
-            <div className="tire-input-grid" style={{ maxWidth: 220, marginBottom: 16 }}>
+            <div className="tire-input-grid narrow">
               <div className="field">
                 <label>New rim (in)</label>
                 <input type="number" value={targetRim} onChange={(e) => setTargetRim(e.target.value)} />
@@ -210,8 +210,8 @@ export default function TireSizeCalculator() {
               </tbody>
             </table>
 
-            <h4 style={{ margin: "18px 0 8px" }}>
-              <Gauge size={14} style={{ verticalAlign: "-2px", marginRight: 6 }} />
+            <h4 className="subheading-spaced">
+              <Gauge size={14} className="icon-inline-sm" />
               Speedometer error
             </h4>
             <table className="compare-table">
@@ -229,14 +229,14 @@ export default function TireSizeCalculator() {
         )}
       </div>
 
-      <div className="card">
-        <h3 style={{ marginBottom: 10 }}>Alternate tire sizes (within 1" diameter)</h3>
+      <div className="card alternate-tire-size">
+        <h3 className="mb-10">Alternate tire sizes (within 1" diameter)</h3>
         {alternates.length === 0 ? (
           <p className="text-muted">No saved presets fall within 1" of this size yet — add more in Tire Size Option.</p>
         ) : (
           <div className="preset-grid">
             {alternates.map((a) => (
-              <div key={a._id} className="card preset-card" style={{ cursor: "pointer" }} onClick={() => setTire({ width: a.width, aspect: a.aspect, rim: a.rim })}>
+              <div key={a._id} className="card preset-card cursor-pointer" onClick={() => setTire({ width: a.width, aspect: a.aspect, rim: a.rim })}>
                 <div>
                   <p className="preset-label">{a.label}</p>
                   <p className="preset-size">{a.width}/{a.aspect} R{a.rim}</p>

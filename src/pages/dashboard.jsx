@@ -208,9 +208,9 @@ export default function Dashboard() {
   }, [stats.recentTireComparisons]);
 
   const donutData = [
-    { label: "Admin", value: stats.usersByRole.admin, color: "#8B7CF6" },
-    { label: "Staff", value: stats.usersByRole.staff, color: "#4FCFB6" },
-    { label: "Guest", value: stats.usersByRole.guest, color: "#FFB258" },
+    { label: "Admin", value: stats.usersByRole.admin, color: "#A31621" },
+    { label: "Staff", value: stats.usersByRole.staff, color: "#1F1815" },
+    { label: "Guest", value: stats.usersByRole.guest, color: "#e59033" },
   ];
 
   const rangeCopy = useMemo(
@@ -225,17 +225,17 @@ export default function Dashboard() {
       <PageHeader
         eyebrow="Overview"
         title={`Welcome back${user?.name ? `, ${user.name.split(" ")[0]}` : ""}`}
-        subtitle="Here's what's happening across your fleet today."
+        subtitle="Here's what's happening across your extremewheel."
       />
 
       <div className="kpi-grid">
-        <KpiCard icon={Users} label="Total users" value={stats.totalUsers} tint={{ soft: "var(--color-violet-soft)", solid: "var(--color-violet)" }} />
-        <KpiCard icon={Car} label="Vehicles tracked" value={stats.totalVehicles} tint={{ soft: "var(--color-mint-soft)", solid: "#22997F" }} />
-        <KpiCard icon={Gauge} label="Tire presets" value={stats.tirePresets} tint={{ soft: "var(--color-amber-soft)", solid: "#C97A22" }} />
-        <KpiCard icon={ShieldCheck} label="Active sessions" value={stats.activeSessions} tint={{ soft: "var(--color-pink-soft)", solid: "var(--color-pink)" }} />
+        <KpiCard icon={Users} label="Total users" value={stats.totalUsers} tint={{ soft: "var(--color-amber-dark)", solid: "var(--color-pink-soft)" }} />
+        <KpiCard icon={Car} label="Vehicles notes" value={stats.totalVehicles} tint={{ soft: "var(--color-pink)", solid: "var(--color-pink-soft)" }} />
+        <KpiCard icon={Gauge} label="Tire presets" value={stats.tirePresets} tint={{ soft: "var(--color-sidebar)", solid: "var(--color-pink-soft)" }} />
+        {/* <KpiCard icon={ShieldCheck} label="Active sessions" value={stats.activeSessions} tint={{ soft: "var(--color-pink-soft)", solid: "var(--color-pink)" }} /> */}
       </div>
 
-      <div className="card dash-panel" style={{ marginBottom: 20 }}>
+      <div className="card dash-panel threed-height mb-20">
         <div className="panel-head">
           <div>
             <h3>Tire showroom</h3>
@@ -245,15 +245,23 @@ export default function Dashboard() {
             Open calculator <ChevronRight size={14} />
           </Link>
         </div>
-        <Tire3DVisualizer
+        {/* <Tire3DVisualizer
           tire={showroomTire}
           label={`${showroomTire.width}/${showroomTire.aspect}R${showroomTire.rim}`}
           accent="#FF6F91"
           height={260}
+        /> */}
+
+        <Tire3DVisualizer
+          tire={showroomTire}
+          label={`${showroomTire.width}/${showroomTire.aspect}R${showroomTire.rim}`}
+          accent="#FF6F91"
+          height="100%"
         />
+
       </div>
 
-      <div className="section-title-row">
+      {/* <div className="section-title-row">
         <div>
           <h3>Fleet alerts</h3>
           <p>Items that need a look this week</p>
@@ -266,16 +274,16 @@ export default function Dashboard() {
         {stats.fleetAlerts.map((a) => (
           <AlertPill key={a.id} {...a} />
         ))}
-      </div>
+      </div> */}
 
-      <div className="dash-grid">
+      {/* <div className="dash-grid">
         <div className="card dash-panel">
           <div className="panel-head">
             <div>
               <h3>Weekly activity</h3>
               <p>{rangeCopy} · logins and page visits</p>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="flex-row gap-10">
               <span className="badge badge-live">Live</span>
               <div className="range-toggle">
                 {RANGES.map((r) => (
@@ -298,9 +306,9 @@ export default function Dashboard() {
           </div>
           <DonutChart data={donutData} />
         </div>
-      </div>
+      </div> */}
 
-      <div className="dash-grid">
+      {/* <div className="dash-grid">
         <div className="card dash-panel">
           <div className="panel-head">
             <div>
@@ -339,7 +347,7 @@ export default function Dashboard() {
         </div>
 
         <div className="card dash-panel goal-card">
-          <div className="panel-head" style={{ width: "100%" }}>
+          <div className="panel-head">
             <div>
               <h3>Fleet utilization</h3>
               <p>Vehicles active right now</p>
@@ -353,7 +361,7 @@ export default function Dashboard() {
             {stats.fleetUtilization.active} of {stats.totalVehicles} vehicles are on active routes
           </p>
         </div>
-      </div>
+      </div> */}
 
       <div className="dash-grid">
         <div className="card dash-panel">
@@ -380,6 +388,16 @@ export default function Dashboard() {
         <div className="card dash-panel">
           <div className="panel-head">
             <div>
+              <h3>Users by role</h3>
+              <p>Current access distribution</p>
+            </div>
+          </div>
+          <DonutChart data={donutData} />
+        </div>
+
+        {/* <div className="card dash-panel">
+          <div className="panel-head">
+            <div>
               <h3>Team on duty</h3>
               <p>Reach a teammate directly</p>
             </div>
@@ -392,7 +410,7 @@ export default function Dashboard() {
               <ContactRow key={c.name} {...c} />
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
 
       <div className="dash-grid">
@@ -400,10 +418,10 @@ export default function Dashboard() {
           <div className="panel-head">
             <div>
               <h3>Recent tire comparisons</h3>
-              <p>Last few sizes run through the calculator</p>
+              {/* <p>Last few tire sizes un through the calculator</p> */}
             </div>
-            <Link to="/tire-calculator" className="see-all-link">
-              Open calculator <ChevronRight size={14} />
+            <Link to="/tire-comparison" className="see-all-link">
+              Open comparison <ChevronRight size={14} />
             </Link>
           </div>
           <div className="recent-list">
@@ -452,30 +470,58 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
       </div>
 
-      <div className="card dash-panel goal-card" style={{ maxWidth: 360 }}>
-        <div className="panel-head" style={{ width: "100%" }}>
-          <div>
-            <h3>Reports</h3>
-            <p>Activity captured for date-range exports</p>
+      <div className="dash-grid">
+        <div className="card dash-panel goal-card">
+          <div className="panel-head">
+            <div>
+              <h3>Reports</h3>
+              <p>Activity captured for date-range exports</p>
+            </div>
           </div>
+          <div className="goal-ring-wrap">
+            <GoalRing
+              value={stats.reportsSummary?.last7Days ?? 0}
+              goal={Math.max(stats.reportsSummary?.totalActivity ?? 1, 1)}
+              color="#e59033"
+            />
+          </div>
+          <p className="goal-caption">Last 7 days vs. all-time activity</p>
+          <p className="goal-subcaption">
+            {stats.reportsSummary?.totalActivity ?? 0} events logged in total
+          </p>
+          <Link to="/reports" className="btn btn-accent mt-14">
+            <FileBarChart size={15} /> Open Reporting & Data Export
+          </Link>
         </div>
-        <div className="goal-ring-wrap">
-          <GoalRing
-            value={stats.reportsSummary?.last7Days ?? 0}
-            goal={Math.max(stats.reportsSummary?.totalActivity ?? 1, 1)}
-            color="#4FCFB6"
-          />
-        </div>
-        <p className="goal-caption">Last 7 days vs. all-time activity</p>
-        <p className="goal-subcaption">
-          {stats.reportsSummary?.totalActivity ?? 0} events logged in total
-        </p>
-        <Link to="/reports" className="btn btn-accent" style={{ marginTop: 14 }}>
-          <FileBarChart size={15} /> Open Reporting & Data Export
-        </Link>
       </div>
+
+      {/* <div className="dash-grid">
+        <div className="card dash-panel goal-card">
+          <div className="panel-head">
+            <div>
+              <h3>Reports</h3>
+              <p>Activity captured for date-range exports</p>
+            </div>
+          </div>
+          <div className="goal-ring-wrap">
+            <GoalRing
+              value={stats.reportsSummary?.last7Days ?? 0}
+              goal={Math.max(stats.reportsSummary?.totalActivity ?? 1, 1)}
+              color="#4FCFB6"
+            />
+          </div>
+          <p className="goal-caption">Last 7 days vs. all-time activity</p>
+          <p className="goal-subcaption">
+            {stats.reportsSummary?.totalActivity ?? 0} events logged in total
+          </p>
+          <Link to="/reports" className="btn btn-accent mt-14">
+            <FileBarChart size={15} /> Open Reporting & Data Export
+          </Link>
+        </div>
+      </div> */}
     </div>
   );
 }

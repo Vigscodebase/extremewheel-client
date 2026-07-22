@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchPermissions, updatePermissions } from "../api/permissionsApi";
-import { DEFAULT_PERMISSIONS, PAGES, PERMISSIONS_POLL_MS, ROLES } from "../utils/constants";
+import { DEFAULT_PERMISSIONS, PAGES, ROLES } from "../utils/constants";
 import { useAuth } from "./authcontext";
 
 const PermissionContext = createContext(null);
@@ -22,7 +22,7 @@ export const PermissionProvider = ({ children }) => {
     queryKey: permissionsQueryKey,
     queryFn: fetchPermissions,
     placeholderData: DEFAULT_PERMISSIONS,
-    refetchInterval: user ? PERMISSIONS_POLL_MS : false,
+    // Polling removed: the query will only refetch on mutations, window focus, or cross-tab sync
     staleTime: 10_000,
   });
 

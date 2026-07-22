@@ -116,7 +116,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`sidebar ${isSidebarExpanded ? "expanded" : ""}`}
+      className={`sidebar ${isSidebarExpanded ? "expanded" : ""}${isPinned ? " pinned" : ""}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onKeyDown={handleKeyDown}

@@ -19,6 +19,7 @@
     --color-mint: #4A8B58;
     --color-mint-soft: #E5F0E8;
     --color-amber: #E0A96D;
+    --color-amber-dark: #e59033;
     --color-amber-soft: #F9EFE3;
     --color-danger: #D93838;
     --color-danger-soft: #FCE8E8;
@@ -30,6 +31,7 @@
     --color-border: #E6DCD2;
     --color-sidebar: #1F1815;
     --color-sidebar-hover: #332722;
+    --color-white: #fff;
 
     /* Type */
     --font-display: 'Plus Jakarta Sans', 'Inter', sans-serif;
@@ -112,6 +114,8 @@ ul {
     border-radius: var(--radius-lg);
     border: 1px solid var(--color-border);
     box-shadow: var(--shadow-card);
+    margin-bottom: 24px;
+    padding: 24px;
 }
 
 /* --- Buttons --- */
@@ -192,6 +196,249 @@ ul {
     white-space: nowrap;
 }
 
+/* --- Utilities --- */
+
+.mt-0 {
+    margin-top: 0;
+}
+
+.mt-4 {
+    margin-top: 4px;
+}
+
+.mt-6 {
+    margin-top: 6px;
+}
+
+.mt-8 {
+    margin-top: 8px;
+}
+
+.mt-10 {
+    margin-top: 10px;
+}
+
+.mt-12 {
+    margin-top: 12px;
+}
+
+.mt-14 {
+    margin-top: 14px;
+}
+
+.mt-16 {
+    margin-top: 16px;
+}
+
+.mt-18 {
+    margin-top: 18px;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+.mt-24 {
+    margin-top: 24px;
+}
+
+.mb-0 {
+    margin-bottom: 0;
+}
+
+.mb-4 {
+    margin-bottom: 4px;
+}
+
+.mb-6 {
+    margin-bottom: 6px;
+}
+
+.mb-8 {
+    margin-bottom: 8px;
+}
+
+.mb-10 {
+    margin-bottom: 10px;
+}
+
+.mb-12 {
+    margin-bottom: 12px;
+}
+
+.mb-14 {
+    margin-bottom: 14px;
+}
+
+.mb-16 {
+    margin-bottom: 16px;
+}
+
+.mb-18 {
+    margin-bottom: 18px;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+.mb-22 {
+    margin-bottom: 22px;
+}
+
+.mb-24 {
+    margin-bottom: 24px;
+}
+
+.p-0 {
+    padding: 0;
+}
+
+.p-14 {
+    padding: 14px;
+}
+
+.p-22 {
+    padding: 22px;
+}
+
+.p-30 {
+    padding: 30px;
+}
+
+.capitalize {
+    text-transform: capitalize;
+}
+
+.fs-11 {
+    font-size: 11px;
+}
+
+.fs-13 {
+    font-size: 13px;
+}
+
+.fs-13-5 {
+    font-size: 13.5px;
+}
+
+.leading-relaxed {
+    line-height: 1.5;
+}
+
+.icon-inline {
+    vertical-align: -3px;
+    margin-right: 6px;
+}
+
+.icon-inline-sm {
+    vertical-align: -2px;
+    margin-right: 6px;
+}
+
+/* Flex helpers */
+.flex-row {
+    display: flex;
+    align-items: center;
+}
+
+.flex-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.flex-col-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.flex-end {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.gap-4 {
+    gap: 4px;
+}
+
+.gap-6 {
+    gap: 6px;
+}
+
+.gap-8 {
+    gap: 8px;
+}
+
+.gap-10 {
+    gap: 10px;
+}
+
+.gap-12 {
+    gap: 12px;
+}
+
+.w-full {
+    width: 100%;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.textarea-resize-v {
+    width: 100%;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.align-self-center {
+    align-self: center;
+}
+
+.fw-600 {
+    font-weight: 600;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.text-danger {
+    color: var(--color-danger);
+}
+
+.text-mint {
+    color: var(--color-mint);
+}
+
+.text-muted {
+    color: var(--color-muted);
+}
+
+.btn-full {
+    width: 100%;
+}
+
+.empty-state-block {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--color-muted);
+}
+
+.panel-head-strip {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+}
+
 /* --- Form fields --- */
 
 .field {
@@ -214,6 +461,55 @@ ul {
     margin-bottom: 22px;
 }
 
+.field input,
+.field select,
+.field textarea {
+    border: 1.5px solid var(--color-border);
+    background: #FFFFFF;
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Fix for Select overlap issue & unify styling globally */
+.field select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238C7E73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+    padding-right: 40px;
+    cursor: pointer;
+}
+
+.field select::-ms-expand {
+    display: none;
+}
+
+.search-box input {
+    border: none;
+    background: #FFFFFF;
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+    font-size: 13.5px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    border-color: var(--color-pink);
+    box-shadow: 0 0 0 3px var(--color-pink-soft);
+}
+
 .tire-viz {
     display: flex;
     flex-direction: column;
@@ -228,13 +524,13 @@ ul {
     text-align: center;
 }
 
-/* --- Lightbox (image gallery preview) --- */
+/* --- Lightbox --- */
 
 .lightbox-overlay {
     position: fixed;
     inset: 0;
     background: rgba(20, 20, 28, 0.86);
-    z-index: 1150;
+    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -269,42 +565,35 @@ ul {
     font-size: 12px;
 }
 
-.lightbox-close {
-    position: absolute;
-    top: 20px;
-    right: 24px;
+.lightbox-close,
+.lightbox-nav {
     background: rgba(255, 255, 255, 0.12);
     border: none;
     color: #fff;
     border-radius: 999px;
-    width: 38px;
-    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
 }
 
-.lightbox-close:hover {
-    background: rgba(255, 255, 255, 0.22);
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    width: 38px;
+    height: 38px;
 }
 
 .lightbox-nav {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.12);
-    border: none;
-    color: #fff;
-    border-radius: 999px;
     width: 42px;
     height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
 }
 
+.lightbox-close:hover,
 .lightbox-nav:hover {
     background: rgba(255, 255, 255, 0.22);
 }
@@ -317,7 +606,7 @@ ul {
     right: 20px;
 }
 
-/* --- Before/after photo pair + gallery grid (Vehicle Notes) --- */
+/* --- Photo Grids --- */
 
 .before-after-grid {
     display: grid;
@@ -339,16 +628,12 @@ ul {
     border-radius: var(--radius-sm, 8px);
     overflow: hidden;
     border: 1.5px solid var(--color-border);
+    cursor: pointer;
     background: #F5F5F8;
 }
 
-.gallery-thumb-clickable {
-    cursor: pointer;
-    transition: border-color 0.15s ease;
-}
-
-.gallery-thumb-clickable:hover {
-    border-color: var(--color-pink);
+.gallery-thumb.wide {
+    aspect-ratio: 4 / 3;
 }
 
 .gallery-thumb img {
@@ -410,7 +695,7 @@ ul {
     margin-top: 6px;
 }
 
-/* --- 3D tire visualizer --- */
+/* --- 3D Tire Visualizer --- */
 
 .tire3d-wrap {
     display: flex;
@@ -427,7 +712,7 @@ ul {
     position: relative;
     border-radius: var(--radius-sm, 10px);
     overflow: hidden;
-    touch-action: none; /* let three.js/OrbitControls own pointer gestures inside the canvas */
+    touch-action: none;
 }
 
 .tire3d-skeleton {
@@ -436,6 +721,12 @@ ul {
     background: linear-gradient(100deg, #F0F1F5 30%, #F7F8FA 50%, #F0F1F5 70%);
     background-size: 200% 100%;
     animation: tire3d-shimmer 1.4s ease-in-out infinite;
+}
+
+.tire3d-canvas-fill {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .tire3d-fallback {
@@ -467,8 +758,13 @@ ul {
 }
 
 @keyframes tire3d-shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 .tire3d-label {
@@ -480,12 +776,12 @@ ul {
 
 .tire3d-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    /* grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); */
     gap: 12px;
     align-items: start;
 }
 
-.tire3d-grid > * {
+.tire3d-grid>* {
     min-width: 0;
 }
 
@@ -509,38 +805,6 @@ ul {
     }
 }
 
-
-
-
-.field input,
-.field select,
-.field textarea {
-    border: 1.5px solid var(--color-border);
-    background: #FFFFFF;
-    border-radius: var(--radius-sm);
-    padding: 11px 13px;
-    font-size: 13.5px;
-    outline: none;
-    width: 100%;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.field input:focus,
-.field select:focus,
-.field textarea:focus {
-    border-color: var(--color-pink);
-    box-shadow: 0 0 0 3px var(--color-pink-soft);
-}
-
-.field input[type="date"],
-.field input[type="checkbox"] {
-    accent-color: var(--color-pink);
-}
-
-.field input[type="date"] {
-    cursor: pointer;
-}
-
 /* --- App Shell / Layout --- */
 
 .dashboard-layout {
@@ -550,10 +814,14 @@ ul {
 
 .page-main {
     flex: 1;
-    /* Account for fixed floating sidebar: 24px left + 88px width + 36px padding = 148px total */
     padding: 30px 36px 40px calc(var(--sidebar-w) + 60px);
     max-width: 100%;
     overflow-x: hidden;
+    transition: padding-left 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dashboard-layout:has(.sidebar.pinned) .page-main {
+    padding-left: calc(var(--sidebar-expanded-w) + 60px);
 }
 
 /* --- Page Header Component CSS --- */
@@ -654,6 +922,10 @@ ul {
     margin-top: 3px;
 }
 
+.section-title-row.tight {
+    margin-bottom: 0;
+}
+
 .see-all-link {
     display: inline-flex;
     align-items: center;
@@ -664,7 +936,7 @@ ul {
     flex-shrink: 0;
 }
 
-/* --- Dashboard: alert / examination style pill cards --- */
+/* --- Dashboard: alert pills --- */
 
 .alerts-row {
     display: grid;
@@ -760,6 +1032,10 @@ ul {
     margin-bottom: 20px;
 }
 
+.dash-grid>*:only-child {
+    grid-column: 1 / -1;
+}
+
 .dash-panel {
     padding: 22px;
 }
@@ -770,6 +1046,7 @@ ul {
     justify-content: space-between;
     margin-bottom: 18px;
     gap: 10px;
+    width: 100%;
 }
 
 .panel-head h3 {
@@ -800,8 +1077,6 @@ ul {
     color: var(--color-muted);
 }
 
-/* --- User Management: role badges --- */
-
 .badge-admin {
     background: var(--color-pink-soft);
     color: var(--color-pink);
@@ -809,35 +1084,38 @@ ul {
 
 .badge-staff {
     background: var(--color-violet-soft);
-    color: #A05D0F;
+    color: var(--color-amber-dark);
 }
 
 .badge-guest {
     background: var(--color-border);
-    color: var(--color-muted);
+    color: var(--color-ink);
 }
 
-/* --- Dashboard: range toggle --- */
+/* --- Dashboard Tools --- */
 
 .range-toggle {
-    display: flex;
-    gap: 4px;
+    display: inline-flex;
+    width: fit-content;
+    gap: 6px;
     background: var(--color-border);
-    padding: 4px;
-    border-radius: 10px;
+    padding: 6px;
+    border-radius: 12px;
     flex-shrink: 0;
+    margin-top: 14px;
 }
 
 .range-toggle button {
     border: none;
     background: transparent;
-    width: 28px;
-    height: 26px;
-    border-radius: 7px;
-    font-size: 11.5px;
+    width: auto;
+    height: auto;
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 13.5px;
     font-weight: 700;
     color: var(--color-muted);
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .range-toggle button.active {
@@ -845,39 +1123,6 @@ ul {
     color: var(--color-ink);
     box-shadow: var(--shadow-card);
 }
-
-/* --- Segmented toggle: text-label tabs (unlike .range-toggle, which is
-   sized for short numeric/day-count pills, buttons here size to their
-   label) --- */
-
-.segmented-toggle {
-    display: inline-flex;
-    gap: 4px;
-    background: var(--color-border);
-    padding: 4px;
-    border-radius: 10px;
-    flex-wrap: wrap;
-}
-
-.segmented-toggle button {
-    border: none;
-    background: transparent;
-    padding: 8px 16px;
-    border-radius: 7px;
-    font-size: 12.5px;
-    font-weight: 700;
-    color: var(--color-muted);
-    white-space: nowrap;
-    transition: background 0.15s ease, color 0.15s ease;
-}
-
-.segmented-toggle button.active {
-    background: #fff;
-    color: var(--color-ink);
-    box-shadow: var(--shadow-card);
-}
-
-/* --- Dashboard: date strip --- */
 
 .date-strip {
     display: flex;
@@ -930,25 +1175,46 @@ ul {
     opacity: 0.85;
 }
 
-/* --- Dashboard: services list --- */
+/* Lists & Goals */
 
-.service-list {
+.service-list,
+.recent-list {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-.service-row {
+.service-row,
+.recent-row,
+.contact-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 11px 8px;
     border-radius: 12px;
     transition: background 0.15s ease;
 }
 
-.service-row:hover {
+.service-row {
+    gap: 14px;
+    padding: 11px 8px;
+}
+
+.service-row:hover,
+.recent-row:hover {
     background: var(--color-pink-soft);
+}
+
+.contact-row {
+    gap: 12px;
+    padding: 9px 6px;
+}
+
+.contact-row:hover {
+    background: var(--color-violet-soft);
+}
+
+.recent-row {
+    gap: 12px;
+    padding: 10px 6px;
 }
 
 .service-time {
@@ -959,17 +1225,23 @@ ul {
     flex-shrink: 0;
 }
 
-.service-info {
+.service-info,
+.recent-info,
+.contact-info {
     flex: 1;
     min-width: 0;
 }
 
-.service-task {
+.service-task,
+.recent-name,
+.contact-name {
     font-size: 13.5px;
     font-weight: 600;
 }
 
-.service-meta {
+.service-meta,
+.recent-type,
+.contact-role {
     font-size: 12px;
     color: var(--color-muted);
     margin-top: 2px;
@@ -982,13 +1254,10 @@ ul {
     text-align: center;
 }
 
-/* --- Dashboard: goal ring card --- */
-
 .goal-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    text-align: center;
 }
 
 .goal-ring-wrap {
@@ -1020,27 +1289,6 @@ ul {
     margin-top: 3px;
 }
 
-/* --- Dashboard: recently added --- */
-
-.recent-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.recent-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 6px;
-    border-radius: 12px;
-    transition: background 0.15s ease;
-}
-
-.recent-row:hover {
-    background: var(--color-pink-soft);
-}
-
 .recent-avatar {
     width: 36px;
     height: 36px;
@@ -1053,37 +1301,6 @@ ul {
     font-family: var(--font-display);
     font-size: 14px;
     flex-shrink: 0;
-}
-
-.recent-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.recent-name {
-    font-weight: 600;
-    font-size: 14px;
-    color: inherit;
-}
-
-.recent-type {
-    font-size: 12.5px;
-    color: var(--color-muted);
-}
-
-/* --- Dashboard: team contacts --- */
-
-.contact-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 9px 6px;
-    border-radius: 12px;
-    transition: background 0.15s ease;
-}
-
-.contact-row:hover {
-    background: var(--color-violet-soft);
 }
 
 .contact-avatar {
@@ -1119,26 +1336,7 @@ ul {
     background: var(--color-border);
 }
 
-.contact-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.contact-name {
-    font-weight: 600;
-    font-size: 13.5px;
-}
-
-.contact-role {
-    font-size: 12px;
-    color: var(--color-muted);
-}
-
-.mt-20 {
-    margin-top: 20px;
-}
-
-/* --- Auth Components CSS (Warm Marketing Palette) --- */
+/* --- Auth Components CSS --- */
 
 .split-auth-container {
     display: flex;
@@ -1431,7 +1629,6 @@ ul {
 }
 
 /* --- Not Authorized Component CSS --- */
-
 .not-authorized-container {
     display: grid;
     place-items: center;
@@ -1461,7 +1658,9 @@ ul {
     margin-bottom: 20px;
 }
 
-/* --- Tire Comparison Component CSS --- */
+/* =====================================================================
+   Tire Comparison Component CSS (Fluid Desktop Widths)
+   ===================================================================== */
 
 .compare-grid {
     display: grid;
@@ -1470,28 +1669,69 @@ ul {
     align-items: center;
 }
 
-.compare-result-card {
-    padding: 24px;
-    margin-top: 20px;
-}
-
+/* Base structural layout for calculator cards */
+.compare-result-card,
+.compare-result-card~.card,
 .tire-form {
-    padding: 20px;
+    padding: 32px 28px;
+    width: 100%;
 }
 
 .tire-form h3 {
-    font-size: 15px;
-    margin-bottom: 16px;
+    font-size: 16px;
+    margin-bottom: 18px;
+}
+
+.tire-form select {
+    max-width: 772px;
+}
+
+.tire-calculator-form select {
+    max-width: 800px;
+}
+
+.tire-calculator-form {
+    padding: 32px 28px;
+    width: 100%;
+}
+
+.tire-calculator-form h3 {
+    font-size: 16px;
+    margin-bottom: 18px;
+}
+
+.tire-plus-form {
+    padding: 32px 28px;
+    width: 100%;
+}
+
+.tire-plus-form h3 {
+    font-size: 16px;
+    margin-bottom: 18px;
+}
+
+.tire-plus-form select {
+    max-width: 800px;
 }
 
 .tire-input-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    max-width: 800px;
+}
+
+.tire-input-grid.narrow {
+    max-width: 260px;
+    margin-bottom: 16px;
+}
+
+.subheading-spaced {
+    margin: 24px 0 12px;
 }
 
 .tire-size-string {
-    margin-top: 14px;
+    margin-top: 16px;
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 17px;
@@ -1513,8 +1753,8 @@ ul {
     justify-content: center;
     align-items: flex-start;
     flex-wrap: wrap;
-    gap: 30px;
-    padding: 10px 0 26px;
+    gap: 40px;
+    padding: 20px 0 30px;
 }
 
 .wheel-col {
@@ -1559,6 +1799,7 @@ ul {
 
 .compare-table {
     width: 100%;
+    margin: 0 auto;
     border-collapse: collapse;
 }
 
@@ -1590,11 +1831,17 @@ ul {
 }
 
 /* --- Tire Preset Component CSS --- */
-
 .preset-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 16px;
+    margin-top: 16px;
+}
+
+.preset-grid .card {
+    margin-bottom: 0;
+    box-shadow: none;
+    border-radius: var(--radius-sm);
 }
 
 .preset-card {
@@ -1637,28 +1884,7 @@ ul {
     margin-bottom: 22px;
 }
 
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    width: 100%;
-}
-
-.alert-error {
-    background: var(--color-danger-soft);
-    color: var(--color-danger);
-    padding: 10px 14px;
-    border-radius: 10px;
-    font-size: 13px;
-    margin-bottom: 16px;
-}
-
-.text-muted {
-    color: var(--color-muted);
-}
-
 /* --- User Management & Tables CSS --- */
-
 .tabbar {
     display: flex;
     gap: 6px;
@@ -1699,15 +1925,6 @@ ul {
     border: 1px solid var(--color-border);
 }
 
-.search-box input {
-    border: none;
-    background: transparent;
-    outline: none;
-    font-size: 13.5px;
-    width: 100%;
-    padding: 0;
-}
-
 .user-table,
 .access-table {
     width: 100%;
@@ -1736,7 +1953,7 @@ ul {
 }
 
 .access-table td {
-    padding: 12px 14px;
+    padding: 12px 20px;
     border-bottom: 1px solid var(--color-border);
     font-size: 13.5px;
 }
@@ -1778,28 +1995,43 @@ ul {
 }
 
 /* --- Vehicle Notes Component CSS --- */
-
 .empty-state-card {
     padding: 40px;
     text-align: center;
 }
 
+.empty-state-card.inline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
 .vehicle-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+    gap: 20px;
 }
 
 .vehicle-card {
-    overflow: hidden;
+    padding: 16px;
+    margin-bottom: 0;
+    /* Overrides default .card bottom margin */
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 .vehicle-image {
-    height: 130px;
+    height: 145px;
     background: var(--color-border);
-    display: grid;
-    place-items: center;
+    border-radius: var(--radius-md);
+    /* Gives the image its own rounded corners inside the card */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 16px;
 }
 
 .vehicle-image img {
@@ -1809,32 +2041,78 @@ ul {
 }
 
 .vehicle-body {
-    padding: 16px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0;
+    flex: 1;
+    /* Pushes the gallery link to the bottom if names wrap to 2 lines */
 }
 
 .vehicle-name {
-    font-weight: 700;
-    font-size: 14.5px;
-    margin-bottom: 8px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--color-ink);
+    margin-bottom: 12px;
 }
 
 .vehicle-tags {
     display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    /* Stacks tags vertically like the screenshot */
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    width: 100%;
 }
 
 .vehicle-actions {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 24px;
+    right: 24px;
     display: flex;
-    gap: 6px;
+    gap: 8px;
+    z-index: 2;
 }
 
 .vehicle-actions .icon-btn {
-    background: rgba(255, 255, 255, 0.92);
+    width: 28px;
+    height: 28px;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 4px 10px rgba(42, 33, 24, 0.08);
+    color: var(--color-muted);
+    border-radius: 8px;
+}
+
+.vehicle-actions .icon-btn:hover {
+    background: var(--color-border);
+    color: var(--color-ink);
+}
+
+.vehicle-actions .icon-btn.danger:hover {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    border-color: transparent;
+}
+
+.vehicle-gallery-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-pink);
+    background: none;
     border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-top: auto;
+}
+
+.vehicle-gallery-btn:hover {
+    filter: brightness(0.85);
 }
 
 .image-upload {
@@ -1854,8 +2132,14 @@ ul {
     object-fit: cover;
 }
 
-/* --- Utility / Loading CSS --- */
+.image-upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
 
+/* --- Full Page Loader --- */
 .full-page-loader {
     display: grid;
     place-items: center;
@@ -1864,12 +2148,13 @@ ul {
 }
 
 /* --- Donut Chart Component CSS --- */
-
 .donut-chart-container {
     display: flex;
     align-items: center;
     gap: 20px;
     flex-wrap: wrap;
+    padding: 35px 0px 0px 0px;
+    justify-content: center;
 }
 
 .donut-chart-total-val {
@@ -1913,8 +2198,7 @@ ul {
     margin-left: auto;
 }
 
-/* --- Confirm Dialog Component CSS --- */
-
+/* --- Modals & Dialogs CSS --- */
 .confirm-dialog-body {
     display: flex;
     gap: 14px;
@@ -1939,8 +2223,6 @@ ul {
     line-height: 1.5;
 }
 
-/* --- Modal Component CSS --- */
-
 .modal-backdrop {
     position: fixed;
     inset: 0;
@@ -1949,7 +2231,7 @@ ul {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1100;
+    z-index: 1000;
     padding: 20px;
     animation: fadeIn 0.15s ease;
 }
@@ -2000,6 +2282,17 @@ ul {
     overflow-y: auto;
 }
 
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    width: 100%;
+}
+
+.modal-actions-start {
+    justify-content: flex-start;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -2023,7 +2316,6 @@ ul {
 }
 
 /* --- Session Expiry Modal CSS --- */
-
 .session-backdrop {
     position: fixed;
     inset: 0;
@@ -2074,8 +2366,6 @@ ul {
 /* =====================================================================
    SIDEBAR (Floating Pill + PERFECT Gooey Cutouts)
    ===================================================================== */
-
-/* Floating pill core styles */
 .sidebar {
     position: fixed;
     top: 24px;
@@ -2088,9 +2378,7 @@ ul {
     flex-direction: column;
     padding: 30px 0;
     z-index: 1000;
-    /* box-shadow: 0 10px 30px rgba(31, 24, 21, 0.4); */
     transition: width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-    /* CRITICAL: Allows gooey borders to render accurately outside typical bounds */
     overflow: visible;
 }
 
@@ -2098,15 +2386,12 @@ ul {
     width: var(--sidebar-expanded-w);
 }
 
-/* -- UPDATED SIDEBAR HEADER AREA -- */
-
 .sidebar-header {
     display: flex;
     align-items: center;
     padding: 0;
     margin-bottom: 40px;
     height: 48px;
-    /* Match avatar height perfectly */
     width: 100%;
     position: relative;
 }
@@ -2117,8 +2402,6 @@ ul {
     font-weight: 800;
     font-size: 22px;
     letter-spacing: 1px;
-
-    /* Avatar 'A' Layout logic applied here */
     width: 48px;
     height: 48px;
     display: flex;
@@ -2127,12 +2410,9 @@ ul {
     flex-shrink: 0;
     position: absolute;
     left: 20px;
-    /* Aligned vertically perfectly with Avatar container */
     transition: all 0.3s ease;
-    /* We DO NOT do opacity: 0 on expanded */
 }
 
-/* Target the image directly to ensure it sizes correctly inside the new 48x48 block */
 .sidebar-logo img {
     object-fit: none;
     width: 100%;
@@ -2152,8 +2432,6 @@ ul {
     opacity: 0;
     transform: rotate(-90deg);
     transition: all 0.3s ease;
-
-    /* Positioned absolutely on the right for symmetry */
     position: absolute;
     right: 20px;
     width: 48px;
@@ -2165,8 +2443,6 @@ ul {
     transform: rotate(0);
 }
 
-/* ----------------------------------------------------------- */
-
 .sidebar-nav {
     display: flex;
     flex-direction: column;
@@ -2175,7 +2451,6 @@ ul {
     position: relative;
 }
 
-/* Base item structure */
 .sidebar-item {
     background: transparent;
     border: none;
@@ -2193,30 +2468,22 @@ ul {
     z-index: 1;
 }
 
-/* -----------------------------------------------------------
-   1. COLLAPSED STATE: PERFECT GOOEY CUTOUT (FLUSH NO OVERSHOOT)
-   ----------------------------------------------------------- */
-
-/* Active / Hover main block */
+/* 1. COLLAPSED STATE: PERFECT GOOEY CUTOUT */
 .sidebar:not(.expanded) .sidebar-item:hover,
 .sidebar:not(.expanded) .sidebar-item.active {
     background-color: var(--color-bg);
     margin-left: 12px;
     width: calc(100% - 12px);
-    /* STRICTLY FLUSH TO THE EDGE - NO OVERSHOOT */
     border-radius: 24px 0 0 24px;
     z-index: 10;
 }
 
-/* Top Curve attached directly to the active item */
 .sidebar:not(.expanded) .sidebar-item::before {
     content: "";
     position: absolute;
     top: -24px;
     right: 0;
-    /* Perfectly anchored to the flush right edge */
     width: 24px;
-    /* MATCHES CURVE EXACTLY */
     height: 24px;
     background-image: radial-gradient(circle at top left, transparent 24px, var(--color-bg) 24.5px);
     opacity: 0;
@@ -2224,15 +2491,12 @@ ul {
     transition: opacity 0.2s ease;
 }
 
-/* Bottom Curve attached directly to the active item */
 .sidebar:not(.expanded) .sidebar-item::after {
     content: "";
     position: absolute;
     bottom: -24px;
     right: 0;
-    /* Perfectly anchored to the flush right edge */
     width: 24px;
-    /* MATCHES CURVE EXACTLY */
     height: 24px;
     background-image: radial-gradient(circle at bottom left, transparent 24px, var(--color-bg) 24.5px);
     opacity: 0;
@@ -2240,7 +2504,6 @@ ul {
     transition: opacity 0.2s ease;
 }
 
-/* Reveal both curves smoothly on hover/active */
 .sidebar:not(.expanded) .sidebar-item:hover::before,
 .sidebar:not(.expanded) .sidebar-item.active::before,
 .sidebar:not(.expanded) .sidebar-item:hover::after,
@@ -2248,7 +2511,6 @@ ul {
     opacity: 1;
 }
 
-/* Protect the Hamburger Item from the gooey effect entirely */
 .hamburger-item {
     background-color: transparent !important;
     margin-left: 0 !important;
@@ -2260,16 +2522,10 @@ ul {
     display: none !important;
 }
 
-
-/* -----------------------------------------------------------
-   ICON POSITIONING & HIGHLIGHT (COLLAPSED)
-   ----------------------------------------------------------- */
-
-/* Base icon wrapper positioning */
+/* ICON & LABEL POSITIONING */
 .icon-wrapper {
     position: absolute;
     left: 20px;
-    /* Perfectly Centered visually in standard 88px pill */
     width: 48px;
     height: 48px;
     border-radius: 50%;
@@ -2282,23 +2538,15 @@ ul {
     z-index: 2;
 }
 
-/* Active/Hover Icon: Slides smoothly inward */
 .sidebar:not(.expanded) .sidebar-item:hover .icon-wrapper,
 .sidebar:not(.expanded) .sidebar-item.active .icon-wrapper {
     left: 14px;
-    /* Mathematically centers the icon exactly within the newly carved cream block */
     background-color: var(--color-pink);
     color: var(--color-pink-soft);
-    box-shadow: none;
     transform: scale(1.05);
     box-shadow: 0 10px 30px #1f181566;
-    /* very slight pop */
 }
 
-
-/* -----------------------------------------------------------
-   LABEL DISPLAY (BASE)
-   ----------------------------------------------------------- */
 .sidebar-label {
     margin-left: 84px;
     font-size: 14px;
@@ -2315,11 +2563,7 @@ ul {
     transition-delay: 0.1s;
 }
 
-/* =====================================================================
-   2. EXPANDED STATE: Full Row Highlight
-   ===================================================================== */
-
-/* Format standard row highlight layout */
+/* 2. EXPANDED STATE */
 .sidebar.expanded .sidebar-item {
     width: calc(100% - 24px);
     margin: 0 12px;
@@ -2328,25 +2572,20 @@ ul {
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-/* Force-disable the collapsed gooey masks so they don't interfere */
 .sidebar.expanded .sidebar-item::before,
 .sidebar.expanded .sidebar-item::after {
     display: none !important;
 }
 
-/* Standardize icon wrapper spacing in expanded mode */
 .sidebar.expanded .icon-wrapper {
     left: 8px;
-    /* Standard internal padding */
     transition: all 0.2s ease;
 }
 
 .sidebar.expanded .sidebar-label {
     margin-left: 64px;
-    /* Pull label closer */
 }
 
-/* Apply full-width active styling */
 .sidebar.expanded .sidebar-item:hover,
 .sidebar.expanded .sidebar-item.active {
     background-color: var(--color-pink-soft) !important;
@@ -2360,7 +2599,6 @@ ul {
     background-color: transparent;
 }
 
-/* Exception for the Logout Button */
 .sidebar.expanded .logout-btn:hover {
     background-color: var(--color-danger-soft) !important;
 }
@@ -2370,10 +2608,7 @@ ul {
     color: var(--color-danger);
 }
 
-
-/* =====================================================================
-   3. SIDEBAR FOOTER & LOGOUT
-   ===================================================================== */
+/* 3. SIDEBAR FOOTER & LOGOUT */
 .sidebar-footer {
     margin-top: auto;
     display: flex;
@@ -2421,7 +2656,6 @@ ul {
     color: var(--color-danger);
 }
 
-/* Cross-fade Footer: Avatar -> Logout button */
 .sidebar.expanded .sidebar-avatar {
     opacity: 0;
     pointer-events: none;
@@ -2432,11 +2666,52 @@ ul {
     pointer-events: auto;
 }
 
+.threed-height {
+    height: 60vh;
+}
+
+/* =====================================================================
+   Dashboard Tire Showroom Full-Fit Fix
+   ===================================================================== */
+.dash-panel.threed-height {
+    display: flex;
+    flex-direction: column;
+}
+
+.dash-panel.threed-height .tire3d-wrap {
+    flex: 1;
+    min-height: 0;
+}
+
+.dash-panel.threed-height .tire3d-canvas-box {
+    flex: 1;
+    min-height: 0;
+    height: auto !important;
+}
+
+.alternate-tire-size h3 {
+    font-size: 15.5px;
+}
+
+.alternate-tire-size p {
+    font-size: 12.5px;
+}
+
+.alert-error {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    text-align: center;
+    border-radius: 12px;
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
 
 /* =====================================================================
    RESPONSIVE LAYOUT adjustments
    ===================================================================== */
-
 @media only screen and (min-width:1366px) and (max-width:1420px) {
     .page-main {
         padding: 28px 34px 40px calc(var(--sidebar-w) + 54px);
@@ -2563,7 +2838,6 @@ ul {
         flex-direction: column;
     }
 
-    /* Force Mobile Bottom Navigation Bar instead of Pill */
     .sidebar,
     .sidebar.expanded {
         width: 100%;
@@ -2601,7 +2875,6 @@ ul {
         justify-content: center;
     }
 
-    /* Kill Desktop Gooey Cutouts & Overrides natively on mobile */
     .icon-wrapper,
     .sidebar-item:hover .icon-wrapper,
     .sidebar-item.active .icon-wrapper,
@@ -2616,20 +2889,17 @@ ul {
         left: auto !important;
     }
 
-    /* Explicitly hide the pseudo elements creating the cutouts on mobile */
     .sidebar-item::before,
     .sidebar-item::after {
         display: none !important;
     }
 
-    /* Force mobile active state strictly on the icon */
     .sidebar-item.active .icon-wrapper,
     .sidebar.expanded .sidebar-item.active .icon-wrapper {
         color: var(--color-pink) !important;
         background-color: var(--color-pink-soft) !important;
     }
 
-    /* Reset Desktop Expanded overrides on Mobile */
     .sidebar.expanded .sidebar-item {
         width: auto;
         margin: 0;
@@ -2638,14 +2908,12 @@ ul {
 
     .sidebar.expanded .icon-wrapper {
         left: auto;
-        /* reset absolute position */
     }
 
     .sidebar-label {
         display: none !important;
     }
 
-    /* Fix Logout Button location on mobile */
     .sidebar-footer {
         display: flex !important;
         width: auto;
@@ -2720,6 +2988,20 @@ ul {
     }
 
     .dash-panel {
+        padding: 16px;
+    }
+
+    .compare-result-card,
+    .compare-result-card~.card,
+    .tire-form {
+        padding: 16px;
+    }
+
+    .tire-calculator-form {
+        padding: 16px;
+    }
+
+    .tire-plus-form {
         padding: 16px;
     }
 
@@ -2798,7 +3080,7 @@ ul {
 .error-modal-text {
     margin-top: 16px;
     text-align: center;
-    color: var(--color-text-main, #333);
+    color: var(--color-ink, #333);
     font-size: 14px;
     line-height: 1.5;
 }

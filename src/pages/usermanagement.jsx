@@ -132,7 +132,7 @@ export default function UserManagement() {
       <PageHeader
         eyebrow="Administration"
         title="User Management"
-        subtitle="Manage accounts and control which pages each role can reach — changes apply instantly, everywhere."
+        subtitle="Manage accounts and control which pages each role can reach"
         action={
           tab === "users" && (
             <button type="button" className="btn btn-accent" onClick={openAdd}>
@@ -153,12 +153,12 @@ export default function UserManagement() {
 
       {tab === "users" ? (
         !loading && users.length === 0 ? (
-          <div className="card" style={{ padding: "60px 20px", textAlign: "center", color: "var(--color-muted)" }}>
+          <div className="card empty-state-block">
             No users yet — add your first one.
           </div>
         ) : (
-          <div className="card" style={{ padding: 0 }}>
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-border)" }}>
+          <div className="card p-0">
+            <div className="panel-head-strip">
               <div className="search-box">
                 <Search size={16} color="var(--color-muted)" />
                 <input placeholder="Search by name or email…" value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -172,20 +172,20 @@ export default function UserManagement() {
                   <th>Email</th>
                   <th>Role</th>
                   <th>Joined</th>
-                  <th style={{ textAlign: "right" }}>Actions</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={5} style={{ textAlign: "center", padding: 30, color: "var(--color-muted)" }}>
+                    <td colSpan={5} className="text-center p-30 text-muted">
                       Loading users…
                     </td>
                   </tr>
                 )}
                 {!loading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} style={{ textAlign: "center", padding: 30, color: "var(--color-muted)" }}>
+                    <td colSpan={5} className="text-center p-30 text-muted">
                       No users match your search.
                     </td>
                   </tr>
@@ -193,14 +193,14 @@ export default function UserManagement() {
                 {!loading &&
                   filtered.map((u) => (
                     <tr key={u._id}>
-                      <td style={{ fontWeight: 600 }}>{u.name}</td>
-                      <td style={{ color: "var(--color-muted)" }}>{u.email}</td>
+                      <td className="fw-600">{u.name}</td>
+                      <td className="text-muted">{u.email}</td>
                       <td>
                         <span className={`badge badge-${u.role}`}>{u.role}</span>
                       </td>
-                      <td style={{ color: "var(--color-muted)" }}>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</td>
+                      <td className="text-muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</td>
                       <td>
-                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 6 }}>
+                        <div className="flex-row gap-6">
                           <button type="button" className="icon-btn" onClick={() => openEdit(u)} title="Edit">
                             <Pencil size={15} />
                           </button>
@@ -222,11 +222,9 @@ export default function UserManagement() {
           </div>
         )
       ) : (
-        <div className="card" style={{ padding: 22 }}>
-          <p style={{ color: "var(--color-muted)", fontSize: 13.5, marginBottom: 18 }}>
-            Choose which pages each role can open. Admin always keeps full access. Saving updates the sidebar and
-            routes immediately for anyone signed in — in this browser instantly, and on other devices within a few
-            seconds.
+        <div className="card p-22">
+          <p className="text-muted fs-13-5 mb-18">
+            Choose which pages each role can open. Admin always keeps full access.
           </p>
 
           <table className="access-table">
@@ -234,7 +232,7 @@ export default function UserManagement() {
               <tr>
                 <th>Page</th>
                 {ROLES.map((r) => (
-                  <th key={r} style={{ textAlign: "center", textTransform: "capitalize" }}>
+                  <th key={r} className="capitalize">
                     {r}
                   </th>
                 ))}
@@ -243,9 +241,9 @@ export default function UserManagement() {
             <tbody>
               {PAGES.map((page) => (
                 <tr key={page.key}>
-                  <td style={{ fontWeight: 600 }}>{page.label}</td>
+                  <td className="fw-600">{page.label}</td>
                   {ROLES.map((role) => (
-                    <td key={role} style={{ textAlign: "center" }}>
+                    <td key={role}>
                       <input
                         type="checkbox"
                         checked={(matrix[role] || []).includes(page.key)}
@@ -260,7 +258,7 @@ export default function UserManagement() {
             </tbody>
           </table>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
+          <div className="flex-end mt-20">
             <button type="button" className="btn btn-primary" onClick={saveMatrix} disabled={!matrixDirty || savingMatrix}>
               <Save size={16} /> {savingMatrix ? "Saving…" : "Save changes"}
             </button>
@@ -271,23 +269,23 @@ export default function UserManagement() {
       <Modal open={formOpen} onClose={closeForm} title={editing ? "Edit user" : "Add user"} width={440}>
         <form onSubmit={submitForm}>
           {formError && (
-            <div style={{ background: "var(--color-danger-soft)", color: "var(--color-danger)", padding: "10px 14px", borderRadius: 10, fontSize: 13, marginBottom: 16 }}>
+            <div className="alert-error">
               {formError}
             </div>
           )}
-          <div className="field" style={{ marginBottom: 14 }}>
+          <div className="field mb-14">
             <label htmlFor="uName">Full name</label>
             <input id="uName" name="name" value={form.name} onChange={onFormChange} placeholder="Jane Doe" />
           </div>
-          <div className="field" style={{ marginBottom: 14 }}>
+          <div className="field mb-14">
             <label htmlFor="uEmail">Email</label>
             <input id="uEmail" name="email" type="email" value={form.email} onChange={onFormChange} placeholder="jane@company.com" />
           </div>
-          <div className="field" style={{ marginBottom: 14 }}>
+          <div className="field mb-14">
             <label htmlFor="uPassword">{editing ? "New password (optional)" : "Password"}</label>
             <input id="uPassword" name="password" type="password" value={form.password} onChange={onFormChange} placeholder="••••••••" />
           </div>
-          <div className="field" style={{ marginBottom: 22 }}>
+          <div className="field field-mb-lg">
             <label htmlFor="uRole">Role</label>
             <select id="uRole" name="role" value={form.role} onChange={onFormChange}>
               {ROLES.map((r) => (
@@ -297,7 +295,7 @@ export default function UserManagement() {
               ))}
             </select>
           </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <div className="flex-end gap-10">
             <button type="button" className="btn btn-ghost" onClick={closeForm}>
               Cancel
             </button>

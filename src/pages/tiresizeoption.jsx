@@ -82,7 +82,7 @@ export default function TireSizeOption() {
       <PageHeader
         eyebrow="Tire library"
         title="Tire Size Option"
-        subtitle="Save the tire sizes your fleet uses so they're one click away in the comparison tool."
+        subtitle="Save the tire sizes so they're one click away in the comparison tool."
         action={
           <button type="button" className="btn btn-accent" onClick={openAdd}>
             <Plus size={16} /> Add preset
@@ -93,7 +93,7 @@ export default function TireSizeOption() {
       {loading ? (
         <p className="text-muted">Loading presets…</p>
       ) : presets.length === 0 ? (
-        <div className="card" style={{ padding: "60px 20px", textAlign: "center", color: "var(--color-muted)" }}>
+        <div className="card empty-state-block">
           No tire presets yet — add your first one.
         </div>
       ) : (

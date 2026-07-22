@@ -43,7 +43,7 @@ export default function PlusSizeOptions() {
         subtitle="Find alternate tire sizes that stay within tolerance of the OE overall diameter and tread width."
       />
 
-      <form className="card tire-form" onSubmit={runSearch}>
+      <form className="card tire-plus-form" onSubmit={runSearch}>
         <h3>OE (original equipment) size</h3>
 
         <div className="field field-mb">
@@ -82,7 +82,7 @@ export default function PlusSizeOptions() {
           </div>
         </div>
 
-        <div className="modal-actions" style={{ justifyContent: "flex-start", marginTop: 8 }}>
+        <div className="modal-actions modal-actions-start mt-8">
           <button type="submit" className="btn btn-accent" disabled={searchMutation.isPending}>
             <Search size={16} /> {searchMutation.isPending ? "Searching…" : "Find matches"}
           </button>
@@ -90,13 +90,13 @@ export default function PlusSizeOptions() {
       </form>
 
       {searchMutation.isError && (
-        <div className="alert-error" style={{ marginTop: 16 }}>
+        <div className="alert-error mt-16">
           {searchMutation.error?.response?.data?.message || "Search failed. Please try again."}
         </div>
       )}
 
       {data && (
-        <div className="card compare-result-card" style={{ marginTop: 20 }}>
+        <div className="card compare-result-card mt-20">
           <div className="speedo-banner ok">
             OE size <strong>{oe.width}/{oe.aspect} R{oe.rim}</strong> — overall height{" "}
             <strong>{data.oe.overallHeightIn}"</strong>, tread width <strong>{data.oe.treadWidthIn}"</strong>. Showing matches
@@ -127,7 +127,7 @@ export default function PlusSizeOptions() {
                     </td>
                     <td>{r.overallHeightIn}"</td>
                     <td>{r.treadWidthIn}"</td>
-                    <td style={{ color: Math.abs(r.heightDiffPct) < 0.01 ? "var(--color-mint)" : undefined }}>
+                    <td className={Math.abs(r.heightDiffPct) < 0.01 ? "text-mint" : undefined}>
                       {r.heightDiffPct >= 0 ? "+" : ""}{r.heightDiffPct}%
                     </td>
                     <td>{r.treadDiffPct >= 0 ? "+" : ""}{r.treadDiffPct}%</td>
@@ -148,7 +148,7 @@ export default function PlusSizeOptions() {
           )}
 
           {previewResult && (
-            <div className="wheel-viz" style={{ marginTop: 20 }}>
+            <div className="wheel-viz mt-20">
               <div className="wheel-col">
                 <Tire3DVisualizer
                   tire={{ width: oe.width, aspect: oe.aspect, rim: oe.rim }}
@@ -171,7 +171,7 @@ export default function PlusSizeOptions() {
       )}
 
       {!searched && (
-        <div className="card empty-state-card" style={{ marginTop: 20, display: "flex", gap: 10, alignItems: "center" }}>
+        <div className="card empty-state-card inline mt-20">
           <TrendingUp size={18} />
           Enter an OE size above and search your saved tire library for the closest plus-size matches.
         </div>

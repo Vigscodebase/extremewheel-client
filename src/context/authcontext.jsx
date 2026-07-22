@@ -14,7 +14,6 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  // 1. Pull the persisted sessionExpired flag directly from Zustand
   const { token, user, sessionExpired } = useAuthStore(useShallow((s) => ({
     token: s.token,
     user: s.user,
@@ -25,17 +24,15 @@ export const AuthProvider = ({ children }) => {
   const clearSession = useAuthStore((s) => s.clearSession);
   const setToken = useAuthStore((s) => s.setToken);
   const updateUser = useAuthStore((s) => s.updateUser);
-  const setSessionExpiredState = useAuthStore((s) => s.setSessionExpired); // 2. Pull the setter
+  const setSessionExpiredState = useAuthStore((s) => s.setSessionExpired);
 
   const [initializing, setInitializing] = useState(true);
-  // REMOVED: const [sessionExpired, setSessionExpired] = useState(false);
 
   const logout = useCallback(() => {
     clearSession();
   }, [clearSession]);
 
   const handleSessionExpired = useCallback(() => {
-    // 3. Update the global Zustand store instead of local state
     setSessionExpiredState(true);
   }, [setSessionExpiredState]);
 
@@ -56,6 +53,58 @@ export const AuthProvider = ({ children }) => {
       () => handleSessionExpired()
     );
   }, [handleSessionExpired, setToken, updateUser]);
+
+  // --- REVISED SILENT REFRESH LOGIC ---
+  useEffect(() => {
+    if (!token) return;
+
+    try {
+      const decoded = jwtDecode(token);
+      if (!decoded || !decoded.exp) return;
+
+      const expMs = decoded.exp * 1000;
+      const timeUntilExpiry = expMs - Date.now();
+      const refreshThreshold = 60 * 1000; // Trigger refresh 1 minute before expiry
+
+      // We ONLY set a proactive timeout if the expiration is safely in the future.
+      // We no longer forcefully call handleSessionExpired() if timeUntilExpiry <= 0.
+      // If the token is expired (or the client clock is wildly out of sync), 
+      // we just let the backend return a 401 on the next request to trigger the modal safely.
+      if (timeUntilExpiry > refreshThreshold) {
+        const timeoutId = setTimeout(async () => {
+          const lastActivity = parseInt(localStorage.getItem("lastActivity") || "0", 10);
+          const now = Date.now();
+          const isRecentlyActive = (now - lastActivity) < 5 * 60 * 1000;
+
+          if (isRecentlyActive && !useAuthStore.getState().sessionExpired) {
+            try {
+              const baseUrl = import.meta.env?.VITE_API_URL || "";
+              const response = await fetch(`${baseUrl}/auth/refresh`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${token}`
+                }
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+                setToken(data.token);
+                const { name, email, role } = jwtDecode(data.token);
+                updateUser({ name, email, role });
+              }
+            } catch (error) {
+              console.error("Silent token refresh network error", error);
+            }
+          }
+        }, timeUntilExpiry - refreshThreshold);
+
+        return () => clearTimeout(timeoutId);
+      }
+    } catch (e) {
+      console.error("Token decoding failed", e);
+    }
+  }, [token, setToken, updateUser]);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -114,7 +163,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    sessionExpired, // Now safely referencing Zustand's persistent state
+    sessionExpired,
     acknowledgeSessionExpired,
     triggerSessionExpired: handleSessionExpired,
     updateCurrentUser,
