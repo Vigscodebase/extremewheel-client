@@ -47,7 +47,7 @@ function parseTireSizeString(str) {
 function WheelOffsetChart({ record, show3D = true }) {
   const tire = show3D ? parseTireSizeString(record.txtTireSize) : null;
   return (
-    <div className="tire3d-grid">
+    <div className={tire ? "tire3d-grid" : ""}>
       <table className="compare-table">
         <tbody>
           <OffsetRow label="Tire size" value={record.txtTireSize} />
@@ -78,7 +78,7 @@ export default function TechData() {
         subtitle="Static fitment reference plus wheel offset lookups sourced from the Application Guide, Vehicle Notes and Tire Size Options."
       />
 
-      <div className="range-toggle" style={{ marginBottom: 20 }}>
+      <div className="segmented-toggle" style={{ marginBottom: 20 }}>
         <button type="button" className={tab === "lookup" ? "active" : ""} onClick={() => setTab("lookup")}>Vehicle lookup</button>
         <button type="button" className={tab === "manual" ? "active" : ""} onClick={() => setTab("manual")}>Manual reference</button>
         <button type="button" className={tab === "csv" ? "active" : ""} onClick={() => setTab("csv")}>CSV import / export</button>

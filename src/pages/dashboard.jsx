@@ -454,29 +454,27 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="dash-grid">
-        <div className="card dash-panel goal-card">
-          <div className="panel-head" style={{ width: "100%" }}>
-            <div>
-              <h3>Reports</h3>
-              <p>Activity captured for date-range exports</p>
-            </div>
+      <div className="card dash-panel goal-card" style={{ maxWidth: 360 }}>
+        <div className="panel-head" style={{ width: "100%" }}>
+          <div>
+            <h3>Reports</h3>
+            <p>Activity captured for date-range exports</p>
           </div>
-          <div className="goal-ring-wrap">
-            <GoalRing
-              value={stats.reportsSummary?.last7Days ?? 0}
-              goal={Math.max(stats.reportsSummary?.totalActivity ?? 1, 1)}
-              color="#4FCFB6"
-            />
-          </div>
-          <p className="goal-caption">Last 7 days vs. all-time activity</p>
-          <p className="goal-subcaption">
-            {stats.reportsSummary?.totalActivity ?? 0} events logged in total
-          </p>
-          <Link to="/reports" className="btn btn-accent" style={{ marginTop: 14 }}>
-            <FileBarChart size={15} /> Open Reporting & Data Export
-          </Link>
         </div>
+        <div className="goal-ring-wrap">
+          <GoalRing
+            value={stats.reportsSummary?.last7Days ?? 0}
+            goal={Math.max(stats.reportsSummary?.totalActivity ?? 1, 1)}
+            color="#4FCFB6"
+          />
+        </div>
+        <p className="goal-caption">Last 7 days vs. all-time activity</p>
+        <p className="goal-subcaption">
+          {stats.reportsSummary?.totalActivity ?? 0} events logged in total
+        </p>
+        <Link to="/reports" className="btn btn-accent" style={{ marginTop: 14 }}>
+          <FileBarChart size={15} /> Open Reporting & Data Export
+        </Link>
       </div>
     </div>
   );

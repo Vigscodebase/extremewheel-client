@@ -132,7 +132,7 @@ export default function TireSizeCalculator() {
           {tire.width}/{tire.aspect} R{tire.rim} · equivalent inch size ≈ {equivalentInchSize(tire)}
         </p>
 
-        <div className="range-toggle" style={{ marginTop: 10 }}>
+        <div className="segmented-toggle" style={{ marginTop: 10 }}>
           <button type="button" className={unit === "in" ? "active" : ""} onClick={() => setUnit("in")}>inches</button>
           <button type="button" className={unit === "mm" ? "active" : ""} onClick={() => setUnit("mm")}>mm</button>
         </div>

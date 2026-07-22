@@ -59,7 +59,7 @@ export default function Reports() {
             <input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
           </div>
         </div>
-        <div className="range-toggle" style={{ marginTop: 10 }}>
+        <div className="segmented-toggle" style={{ marginTop: 10 }}>
           <button type="button" onClick={() => applyQuickRange(7)}>Last 7 days</button>
           <button type="button" onClick={() => applyQuickRange(30)}>Last 30 days</button>
           <button type="button" onClick={() => applyQuickRange(90)}>Last 90 days</button>

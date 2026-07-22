@@ -306,7 +306,7 @@ export default function VehicleNotes() {
               <label>Gallery ({galleryVehicle.gallery?.length || 0})</label>
               <div className="gallery-grid">
                 {(galleryVehicle.gallery || []).map((photo, i) => (
-                  <div key={photo} className="gallery-thumb" onClick={() => setLightboxIndex(i)}>
+                  <div key={photo} className="gallery-thumb gallery-thumb-clickable" onClick={() => setLightboxIndex(i)}>
                     <img src={photo} alt={`gallery ${i + 1}`} />
                     <button
                       type="button"
