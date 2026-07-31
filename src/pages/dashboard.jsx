@@ -229,7 +229,7 @@ export default function Dashboard() {
       />
 
       <div className="kpi-grid">
-        <KpiCard icon={Users} label="Total users" value={stats.totalUsers} tint={{ soft: "var(--color-amber-dark)", solid: "var(--color-pink-soft)" }} />
+        {user.role === "admin" && <KpiCard icon={Users} label="Total users" value={stats.totalUsers} tint={{ soft: "var(--color-amber-dark)", solid: "var(--color-pink-soft)" }} />}
         <KpiCard icon={Car} label="Vehicles notes" value={stats.totalVehicles} tint={{ soft: "var(--color-pink)", solid: "var(--color-pink-soft)" }} />
         <KpiCard icon={Gauge} label="Tire presets" value={stats.tirePresets} tint={{ soft: "var(--color-sidebar)", solid: "var(--color-pink-soft)" }} />
         {/* <KpiCard icon={ShieldCheck} label="Active sessions" value={stats.activeSessions} tint={{ soft: "var(--color-pink-soft)", solid: "var(--color-pink)" }} /> */}
@@ -385,15 +385,17 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="card dash-panel">
-          <div className="panel-head">
-            <div>
-              <h3>Users by role</h3>
-              <p>Current access distribution</p>
+        {user.role === "admin" &&
+          <div className="card dash-panel">
+            <div className="panel-head">
+              <div>
+                <h3>Users by role</h3>
+                <p>Current access distribution</p>
+              </div>
             </div>
+            <DonutChart data={donutData} />
           </div>
-          <DonutChart data={donutData} />
-        </div>
+        }
 
         {/* <div className="card dash-panel">
           <div className="panel-head">

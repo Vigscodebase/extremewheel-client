@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }) => {
 
           if (isRecentlyActive && !useAuthStore.getState().sessionExpired) {
             try {
-              const baseUrl = import.meta.env?.VITE_API_URL || "";
+              const baseUrl = import.meta.env?.VITE_API_BASE_URL || "";
               const response = await fetch(`${baseUrl}/auth/refresh`, {
                 method: "POST",
                 headers: {
