@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import GroundShadow from "./GroundShadow";
 import OrbitControlsLite from "./OrbitControlsLite";
 import { getTireTextures } from "./textures";
@@ -89,18 +90,20 @@ function TireWheel({ tire, accent = "#FF6F91", spokeCount = 5 }) {
         <cylinderGeometry args={barrelArgs} />
         <meshStandardMaterial
           color="#c7cad2"
-          metalness={1}
-          roughness={0.3}
+          metalness={0.88}
+          roughness={0.32}
           roughnessMap={metalRoughnessMap}
-          envMapIntensity={1.1}
+          envMapIntensity={1.35}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Rear disc so the barrel doesn't look hollow from the back */}
+      {/* Rear disc so the barrel doesn't look hollow from the back — lightened
+          and given a touch of metalness/env reflection so it doesn't read as
+          a flat black hole when rotated away from the key light */}
       <mesh position={[0, 0, -dims.widthWorld * 0.43]}>
         <circleGeometry args={discArgs} />
-        <meshStandardMaterial color="#111114" metalness={0.4} roughness={0.6} />
+        <meshStandardMaterial color="#2b2c33" metalness={0.5} roughness={0.55} envMapIntensity={0.9} />
       </mesh>
 
       {/* Spokes + hub, front face */}
@@ -108,12 +111,12 @@ function TireWheel({ tire, accent = "#FF6F91", spokeCount = 5 }) {
         {spokes.map((angle, i) => (
           <mesh key={i} rotation={[0, 0, angle]} position={[Math.cos(angle) * dims.innerR * 0.42, Math.sin(angle) * dims.innerR * 0.42, 0]} castShadow>
             <boxGeometry args={spokeArgs} />
-            <meshStandardMaterial color="#d7dae1" metalness={1} roughness={0.26} envMapIntensity={1.1} />
+            <meshStandardMaterial color="#d7dae1" metalness={0.88} roughness={0.28} envMapIntensity={1.35} />
           </mesh>
         ))}
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={hubArgs} />
-          <meshStandardMaterial color={accent} metalness={0.75} roughness={0.35} />
+          <meshStandardMaterial color={accent} metalness={0.7} roughness={0.35} envMapIntensity={1.1} />
         </mesh>
       </group>
     </group>
@@ -127,14 +130,33 @@ function TireWheel({ tire, accent = "#FF6F91", spokeCount = 5 }) {
 function StudioLighting() {
   return (
     <>
-      <hemisphereLight args={["#f5f6fa", "#3a3a3f", 0.55]} />
-      <ambientLight intensity={0.25} />
+      <hemisphereLight args={["#f5f6fa", "#3a3a3f", 0.6]} />
+      <ambientLight intensity={0.3} />
       <directionalLight position={[3.2, 4.5, 3]} intensity={1.6} castShadow shadow-mapSize={[512, 512]} />
-      <directionalLight position={[-3.5, 2, -2]} intensity={0.5} color="#dfe6ff" />
+      <directionalLight position={[-3.5, 2, -2]} intensity={0.6} color="#dfe6ff" />
       <pointLight position={[0, -1.5, 2.5]} intensity={0.35} color="#ffffff" />
+      <pointLight position={[-2, 0.5, -3]} intensity={0.3} color="#eef1ff" />
       <GroundShadow />
     </>
   );
+}
+
+// The rim/spokes/hub use metalness-heavy materials, which take almost all
+// of their shading from reflected environment light rather than direct
+// lights — with no environment map at all, any face not squarely hit by a
+// directional light renders as flat black regardless of how bright the
+// scene lights are. This builds a small neutral studio-room environment
+// (via PMREMGenerator, three's own tool — no drei needed) once per canvas
+// and assigns it as `scene.environment`, so the whole rim reads as
+// polished metal from every angle instead of going black in the shadowed
+// side.
+function applyStudioEnvironment(gl, scene) {
+  const pmremGenerator = new THREE.PMREMGenerator(gl);
+  pmremGenerator.compileEquirectangularShader();
+  const envTexture = pmremGenerator.fromScene(new RoomEnvironment(), 0.035).texture;
+  scene.environment = envTexture;
+  pmremGenerator.dispose();
+  return envTexture;
 }
 
 export default function TireCanvas({
@@ -146,6 +168,7 @@ export default function TireCanvas({
   onContextLost,
 }) {
   const glRef = useRef(null);
+  const envTextureRef = useRef(null);
 
   useEffect(() => {
     const dom = glRef.current;
@@ -153,6 +176,12 @@ export default function TireCanvas({
     dom.addEventListener("webglcontextlost", onContextLost);
     return () => dom.removeEventListener("webglcontextlost", onContextLost);
   }, [onContextLost]);
+
+  useEffect(() => {
+    return () => {
+      envTextureRef.current?.dispose();
+    };
+  }, []);
 
   return (
     <Canvas
@@ -162,7 +191,10 @@ export default function TireCanvas({
       /* Pulled back further on X, Y, and Z, and widened FOV to completely clear the top/bottom cuts */
       camera={{ position: [3.5, 1.5, 6.0], fov: 40 }}
       className="tire3d-canvas-fill"
-      onCreated={({ gl }) => { glRef.current = gl.domElement; }}
+      onCreated={({ gl, scene }) => {
+        glRef.current = gl.domElement;
+        envTextureRef.current = applyStudioEnvironment(gl, scene);
+      }}
     >
       <StudioLighting />
       <TireWheel tire={tire} accent={accent} />

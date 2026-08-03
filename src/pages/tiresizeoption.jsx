@@ -4,6 +4,7 @@ import ConfirmDialog from "../components/confirmdialog";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
+import TireSuggestions from "../components/TireSuggestions";
 import {
   useCreateTireOption,
   useDeleteTireOption,
@@ -125,13 +126,17 @@ export default function TireSizeOption() {
 
       <Modal open={!!previewPreset} onClose={() => setPreviewPreset(null)} title={previewPreset?.label || "3D preview"} width={420}>
         {previewPreset && (
-          <Tire3DVisualizer
-            tire={previewPreset}
-            label={`${previewPreset.width}/${previewPreset.aspect}R${previewPreset.rim} · ≈ ${tireDiameterInches(previewPreset).toFixed(1)}" diameter`}
-            accent="#FF6F91"
-            height={280}
-            zoomable
-          />
+          <>
+            <Tire3DVisualizer
+              tire={previewPreset}
+              label={`${previewPreset.width}/${previewPreset.aspect}R${previewPreset.rim} · ≈ ${tireDiameterInches(previewPreset).toFixed(1)}" diameter`}
+              accent="#FF6F91"
+              height={280}
+              zoomable
+              variant="option-preview"
+            />
+            <TireSuggestions tire={previewPreset} />
+          </>
         )}
       </Modal>
 

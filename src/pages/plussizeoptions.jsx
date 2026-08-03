@@ -1,19 +1,22 @@
-import { Eye, Search, TrendingUp } from "lucide-react";
+import { Eye, Save, Search, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import PageHeader from "../components/pageheader";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
+import TireSuggestions from "../components/TireSuggestions";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
-import { usePlusSizeSearch } from "../hooks/queries/usePlusSize";
+import { usePlusSizeSearch, useSavePlusSizeMatch } from "../hooks/queries/usePlusSize";
 
 const emptyOe = { width: 225, aspect: 65, rim: 17, targetRim: "" };
 
 export default function PlusSizeOptions() {
   const { data: presets } = useTireOptionsQuery();
   const searchMutation = usePlusSizeSearch();
+  const saveMutation = useSavePlusSizeMatch();
 
   const [oe, setOe] = useState(emptyOe);
   const [searched, setSearched] = useState(false);
   const [previewResult, setPreviewResult] = useState(null);
+  const [savedIds, setSavedIds] = useState(new Set());
 
   const applyPreset = (id) => {
     const preset = (presets || []).find((p) => p._id === id);
@@ -24,6 +27,7 @@ export default function PlusSizeOptions() {
     e.preventDefault();
     setSearched(true);
     setPreviewResult(null);
+    setSavedIds(new Set());
     await searchMutation.mutateAsync({
       width: Number(oe.width),
       aspect: Number(oe.aspect),
@@ -34,6 +38,16 @@ export default function PlusSizeOptions() {
 
   const data = searchMutation.data;
   const results = data?.results || [];
+
+  const saveMatch = async (r) => {
+    await saveMutation.mutateAsync({
+      oe: { width: Number(oe.width), aspect: Number(oe.aspect), rim: Number(oe.rim) },
+      match: { label: r.label, width: r.width, aspect: r.aspect, rim: r.rim },
+      tolerances: data?.tolerances,
+      summary: `${oe.width}/${oe.aspect}R${oe.rim} → ${r.label} (${r.width}/${r.aspect}R${r.rim})`,
+    });
+    setSavedIds((prev) => new Set(prev).add(r._id));
+  };
 
   return (
     <div>
@@ -117,6 +131,7 @@ export default function PlusSizeOptions() {
                   <th>Height diff</th>
                   <th>Tread diff</th>
                   <th>3D</th>
+                  <th>Save</th>
                 </tr>
               </thead>
               <tbody>
@@ -141,6 +156,17 @@ export default function PlusSizeOptions() {
                         <Eye size={14} />
                       </button>
                     </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        title="Save this match"
+                        disabled={saveMutation.isPending || savedIds.has(r._id)}
+                        onClick={() => saveMatch(r)}
+                      >
+                        <Save size={14} className={savedIds.has(r._id) ? "text-mint" : undefined} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -155,6 +181,7 @@ export default function PlusSizeOptions() {
                   label={`OE · ${oe.width}/${oe.aspect}R${oe.rim}`}
                   accent="#FF6F91"
                   height={230}
+                  variant="plus-size"
                 />
               </div>
               <div className="wheel-col">
@@ -163,10 +190,14 @@ export default function PlusSizeOptions() {
                   label={`${previewResult.label} · ${previewResult.width}/${previewResult.aspect}R${previewResult.rim}`}
                   accent="#8B7CF6"
                   height={230}
+                  variant="plus-size"
                 />
               </div>
             </div>
           )}
+
+          <TireSuggestions tire={{ width: Number(oe.width), aspect: Number(oe.aspect), rim: Number(oe.rim) }} label="OE size" />
+          {previewResult && <TireSuggestions tire={previewResult} label={previewResult.label} />}
         </div>
       )}
 

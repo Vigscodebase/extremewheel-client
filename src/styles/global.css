@@ -614,6 +614,39 @@ ul {
     gap: 12px;
 }
 
+/* --- Existing / upgraded engine & tyre spec (Vehicle Notes before/after) --- */
+
+.spec-compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.spec-compare-grid.compact {
+    gap: 10px;
+    margin: 10px 0;
+    padding: 10px;
+    background: #F7F8FA;
+    border-radius: 10px;
+}
+
+.spec-compare-col {
+    min-width: 0;
+}
+
+.spec-compare-col-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-muted);
+    margin-bottom: 6px;
+}
+
+.spec-compare-col.upgraded .spec-compare-col-title {
+    color: var(--color-pink);
+}
+
 .gallery-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
@@ -709,14 +742,43 @@ ul {
 .tire3d-canvas-box {
     width: 100%;
     min-width: 0;
+    height: var(--tire3d-height, 260px);
     position: relative;
     border-radius: var(--radius-sm, 10px);
     overflow: hidden;
     touch-action: none;
 }
 
+/* Per-page sizing/layout — the visualizer is the same component everywhere,
+   but each page embeds it in a different context, so it should not look
+   "global"/identical on every screen. Comparison & plus-size show two
+   side-by-side, narrower columns; the calculator gets a wide single
+   showcase; the option-preview sits inside a compact modal; the dashboard
+   fills its panel (handled by the .threed-height override below). */
+.tire3d-canvas-box--compare,
+.tire3d-canvas-box--plus-size {
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+.tire3d-canvas-box--calculator {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.tire3d-canvas-box--option-preview {
+    max-width: 360px;
+    margin: 0 auto;
+    border: 1px solid var(--color-border);
+}
+
+.tire3d-canvas-box--dashboard {
+    border-radius: var(--radius-lg, 14px);
+}
+
 .tire3d-skeleton {
     width: 100%;
+    height: var(--tire3d-height, 260px);
     border-radius: var(--radius-sm, 10px);
     background: linear-gradient(100deg, #F0F1F5 30%, #F7F8FA 50%, #F0F1F5 70%);
     background-size: 200% 100%;
@@ -873,12 +935,7 @@ ul {
     display: flex;
     align-items: center;
     gap: 14px;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.kpi-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-pop);
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
 }
 
 .kpi-icon {
@@ -888,6 +945,8 @@ ul {
     display: grid;
     place-items: center;
     flex-shrink: 0;
+    background: var(--kpi-icon-bg);
+    color: var(--kpi-icon-fg);
 }
 
 .kpi-value {
@@ -1038,6 +1097,25 @@ ul {
 
 .dash-panel {
     padding: 22px;
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
+}
+
+/* Any dashboard card wrapped in the ClickableCard helper — whole surface
+   navigates to its page, with a deliberately larger lift on hover/focus
+   than a plain static card gets. */
+.dash-card-clickable {
+    cursor: pointer;
+}
+
+.dash-card-clickable:hover,
+.dash-card-clickable:focus-visible {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-pop);
+}
+
+.dash-card-clickable:focus-visible {
+    outline: 2px solid var(--color-pink);
+    outline-offset: 2px;
 }
 
 .panel-head {
@@ -2188,6 +2266,7 @@ ul {
     height: 9px;
     border-radius: 3px;
     display: inline-block;
+    background: var(--swatch-color, var(--color-pink));
 }
 
 .donut-legend-label {
@@ -2240,6 +2319,7 @@ ul {
     background: #fff;
     border-radius: var(--radius-lg);
     width: 100%;
+    max-width: var(--modal-max-width, 480px);
     box-shadow: var(--shadow-pop);
     animation: popIn 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
     max-height: 88vh;
@@ -2695,6 +2775,164 @@ ul {
 
 .alternate-tire-size p {
     font-size: 12.5px;
+}
+
+/* --- Tire Suggestions (saved presets / comparisons / vehicle notes matches) --- */
+
+.suggestion-panel {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--color-border);
+}
+
+.suggestion-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-pink);
+    margin-bottom: 12px;
+}
+
+.suggestion-panel-head h3,
+.suggestion-panel-head h4 {
+    font-size: 14px;
+    color: var(--color-ink);
+    font-weight: 700;
+    margin: 0;
+}
+
+.suggestion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+    margin-bottom: 12px;
+}
+
+.suggestion-card {
+    padding: 14px;
+}
+
+.suggestion-photo-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.suggestion-photo {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    background: #F1F1F5;
+}
+
+.suggestion-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.suggestion-photo-tag {
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+
+.suggestion-photo-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-muted);
+}
+
+.suggestion-photo-fallback-block {
+    flex-direction: column;
+    gap: 6px;
+    aspect-ratio: unset;
+    padding: 16px;
+    border-radius: 10px;
+    border: 1.5px dashed var(--color-border);
+    font-size: 11.5px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.suggestion-vehicle-name {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.suggestion-spec-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    border-top: 1px solid var(--color-border);
+    padding-top: 10px;
+}
+
+.suggestion-spec-col-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-muted);
+    margin-bottom: 4px;
+}
+
+.suggestion-spec-col.upgraded .suggestion-spec-col-title {
+    color: var(--color-pink);
+}
+
+.suggestion-spec-row {
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+    line-height: 1.4;
+    margin-bottom: 2px;
+}
+
+.suggestion-spec-row span {
+    font-size: 10px;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.suggestion-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.suggestion-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--color-ink);
+    background: #F7F8FA;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 6px 12px;
+}
+
+.suggestion-chip svg {
+    color: var(--color-pink);
+    flex-shrink: 0;
 }
 
 .alert-error {

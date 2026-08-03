@@ -8,3 +8,9 @@ export const logTireComparison = (payload) =>
 
 export const logVehicleSearch = (payload) =>
   axios.post("/activity/vehicle-search", payload).then((r) => r.data.activity);
+
+// Cross-feature "you've saved something like this before" lookup — used to
+// surface matching saved presets, past comparisons and vehicle notes
+// (with before/after photos) under a freshly computed tire result.
+export const fetchTireSuggestions = ({ width, aspect, rim }) =>
+  axios.get("/activity/suggestions", { params: { width, aspect, rim } }).then((r) => r.data);

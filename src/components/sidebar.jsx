@@ -32,8 +32,7 @@ const ICONS_MAP = {
 };
 
 const FALLBACK_NAV = [
-  { key: "dashboard", label: "Dashboard", path: "/dashboard", icon: "LayoutDashboard" },
-  { key: "user-management", label: "User Management", path: "/user-management", icon: "Users" },
+  { key: "dashboard", label: "Dashboard", path: "/dashboard", icon: "LayoutDashboard" }, ,
   { key: "tire-calculator", label: "Tire Size Calculator", path: "/tire-calculator", icon: "Calculator" },
   { key: "tire-comparison", label: "Tire Size Comparison", path: "/tire-comparison", icon: "Scale" },
   { key: "tire-options", label: "Tire Size Option", path: "/tire-options", icon: "SlidersHorizontal" },
@@ -42,6 +41,7 @@ const FALLBACK_NAV = [
   { key: "tech-data", label: "Tech Data", path: "/tech-data", icon: "Wrench" },
   { key: "vehicle-notes", label: "Vehicle Notes", path: "/vehicle-notes", icon: "Car" },
   { key: "reports", label: "Reporting & Data Export", path: "/reports", icon: "FileBarChart" },
+  { key: "user-management", label: "User Management", path: "/user-management", icon: "Users" }
 ];
 
 export default function Sidebar() {

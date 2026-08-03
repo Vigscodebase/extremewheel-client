@@ -21,7 +21,7 @@ export default function Modal({ open, onClose, title, children, width = 480 }) {
     <div className="modal-backdrop" role="presentation">
       <div
         className="modal-box"
-        style={{ maxWidth: width }}
+        style={{ "--modal-max-width": `${width}px` }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"

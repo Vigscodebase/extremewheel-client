@@ -19,7 +19,17 @@ const MOCK_VEHICLES = [
   { _id: "v3", name: "Tata Ace", type: "Mini Truck", model: "2021", image: "", beforeImage: "", afterImage: "", gallery: [] },
 ];
 
-const emptyForm = { name: "", type: "", model: "", image: "", beforeImage: "", afterImage: "", gallery: [] };
+const emptyForm = {
+  name: "",
+  type: "",
+  model: "",
+  image: "",
+  beforeImage: "",
+  afterImage: "",
+  gallery: [],
+  existingSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
+  upgradedSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
+};
 
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -70,9 +80,38 @@ export default function VehicleNotes() {
       beforeImage: v.beforeImage || "",
       afterImage: v.afterImage || "",
       gallery: v.gallery || [],
+      existingSpec: {
+        engine: v.existingSpec?.engine || "",
+        tyre: {
+          width: v.existingSpec?.tyre?.width ?? "",
+          aspect: v.existingSpec?.tyre?.aspect ?? "",
+          rim: v.existingSpec?.tyre?.rim ?? "",
+        },
+      },
+      upgradedSpec: {
+        engine: v.upgradedSpec?.engine || "",
+        tyre: {
+          width: v.upgradedSpec?.tyre?.width ?? "",
+          aspect: v.upgradedSpec?.tyre?.aspect ?? "",
+          rim: v.upgradedSpec?.tyre?.rim ?? "",
+        },
+      },
     });
     setFormError("");
     setFormOpen(true);
+  };
+
+  // Updates a single field within existingSpec/upgradedSpec (engine text, or
+  // one of the tyre width/aspect/rim numbers) without clobbering the rest.
+  const updateSpec = (which) => (patch) => {
+    setForm((f) => ({
+      ...f,
+      [which]: {
+        ...f[which],
+        ...patch,
+        tyre: { ...f[which].tyre, ...(patch.tyre || {}) },
+      },
+    }));
   };
 
   const onSingleFileChange = (field) => async (e) => {
@@ -186,6 +225,26 @@ export default function VehicleNotes() {
                     {v.model}
                   </span>
                 </div>
+                {(v.existingSpec?.engine || v.existingSpec?.tyre?.width || v.upgradedSpec?.engine || v.upgradedSpec?.tyre?.width) && (
+                  <div className="spec-compare-grid compact">
+                    <div className="spec-compare-col">
+                      <p className="spec-compare-col-title">Existing</p>
+                      <p className="suggestion-spec-row"><span>Engine</span>{v.existingSpec?.engine || "—"}</p>
+                      <p className="suggestion-spec-row">
+                        <span>Tyre</span>
+                        {v.existingSpec?.tyre?.width ? `${v.existingSpec.tyre.width}/${v.existingSpec.tyre.aspect} R${v.existingSpec.tyre.rim}` : "—"}
+                      </p>
+                    </div>
+                    <div className="spec-compare-col upgraded">
+                      <p className="spec-compare-col-title">Upgraded</p>
+                      <p className="suggestion-spec-row"><span>Engine</span>{v.upgradedSpec?.engine || "—"}</p>
+                      <p className="suggestion-spec-row">
+                        <span>Tyre</span>
+                        {v.upgradedSpec?.tyre?.width ? `${v.upgradedSpec.tyre.width}/${v.upgradedSpec.tyre.aspect} R${v.upgradedSpec.tyre.rim}` : "—"}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {(v.gallery?.length > 0 || v.beforeImage || v.afterImage) && (
                   <button type="button" className="vehicle-gallery-btn" onClick={() => openGallery(v)}>
                     <Images size={13} />
@@ -255,6 +314,87 @@ export default function VehicleNotes() {
           </div>
 
           <div className="field field-mb-lg">
+            <label>Existing &amp; upgraded engine / tyre specification</label>
+            <div className="spec-compare-grid">
+              <div className="spec-compare-col">
+                <p className="spec-compare-col-title">Existing (before)</p>
+                <div className="field field-mb">
+                  <label>Engine spec</label>
+                  <input
+                    value={form.existingSpec.engine}
+                    onChange={(e) => updateSpec("existingSpec")({ engine: e.target.value })}
+                    placeholder="e.g. 2.2L Duratorq TDCi Diesel"
+                  />
+                </div>
+                <div className="tire-input-grid">
+                  <div className="field">
+                    <label>Width</label>
+                    <input
+                      type="number"
+                      value={form.existingSpec.tyre.width}
+                      onChange={(e) => updateSpec("existingSpec")({ tyre: { width: e.target.value } })}
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Aspect</label>
+                    <input
+                      type="number"
+                      value={form.existingSpec.tyre.aspect}
+                      onChange={(e) => updateSpec("existingSpec")({ tyre: { aspect: e.target.value } })}
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Rim</label>
+                    <input
+                      type="number"
+                      value={form.existingSpec.tyre.rim}
+                      onChange={(e) => updateSpec("existingSpec")({ tyre: { rim: e.target.value } })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="spec-compare-col upgraded">
+                <p className="spec-compare-col-title">Upgraded (after)</p>
+                <div className="field field-mb">
+                  <label>Engine spec</label>
+                  <input
+                    value={form.upgradedSpec.engine}
+                    onChange={(e) => updateSpec("upgradedSpec")({ engine: e.target.value })}
+                    placeholder="e.g. 2.0L EcoBlue Bi-Turbo Diesel"
+                  />
+                </div>
+                <div className="tire-input-grid">
+                  <div className="field">
+                    <label>Width</label>
+                    <input
+                      type="number"
+                      value={form.upgradedSpec.tyre.width}
+                      onChange={(e) => updateSpec("upgradedSpec")({ tyre: { width: e.target.value } })}
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Aspect</label>
+                    <input
+                      type="number"
+                      value={form.upgradedSpec.tyre.aspect}
+                      onChange={(e) => updateSpec("upgradedSpec")({ tyre: { aspect: e.target.value } })}
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Rim</label>
+                    <input
+                      type="number"
+                      value={form.upgradedSpec.tyre.rim}
+                      onChange={(e) => updateSpec("upgradedSpec")({ tyre: { rim: e.target.value } })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="field field-mb-lg">
             <label>Image gallery</label>
             <div className="gallery-grid">
               {form.gallery.map((photo) => (
@@ -297,6 +437,34 @@ export default function VehicleNotes() {
                   </div>
                   <div className="gallery-thumb wide">
                     {galleryVehicle.afterImage ? <img src={galleryVehicle.afterImage} alt="after" /> : <span className="text-muted fs-11">No after photo</span>}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {(galleryVehicle.existingSpec?.engine || galleryVehicle.existingSpec?.tyre?.width || galleryVehicle.upgradedSpec?.engine || galleryVehicle.upgradedSpec?.tyre?.width) && (
+              <div className="field field-mb-lg">
+                <label>Existing vs. upgraded specification</label>
+                <div className="spec-compare-grid">
+                  <div className="spec-compare-col">
+                    <p className="spec-compare-col-title">Existing</p>
+                    <p className="suggestion-spec-row"><span>Engine</span>{galleryVehicle.existingSpec?.engine || "—"}</p>
+                    <p className="suggestion-spec-row">
+                      <span>Tyre</span>
+                      {galleryVehicle.existingSpec?.tyre?.width
+                        ? `${galleryVehicle.existingSpec.tyre.width}/${galleryVehicle.existingSpec.tyre.aspect} R${galleryVehicle.existingSpec.tyre.rim}`
+                        : "—"}
+                    </p>
+                  </div>
+                  <div className="spec-compare-col upgraded">
+                    <p className="spec-compare-col-title">Upgraded</p>
+                    <p className="suggestion-spec-row"><span>Engine</span>{galleryVehicle.upgradedSpec?.engine || "—"}</p>
+                    <p className="suggestion-spec-row">
+                      <span>Tyre</span>
+                      {galleryVehicle.upgradedSpec?.tyre?.width
+                        ? `${galleryVehicle.upgradedSpec.tyre.width}/${galleryVehicle.upgradedSpec.tyre.aspect} R${galleryVehicle.upgradedSpec.tyre.rim}`
+                        : "—"}
+                    </p>
                   </div>
                 </div>
               </div>

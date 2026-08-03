@@ -36,13 +36,18 @@ function UnavailableFallback({ tire }) {
  *  - tire: { width, aspect, rim } (required)
  *  - label: caption under the canvas
  *  - accent: hub/spoke accent color, used to tell multiple tires apart
- *  - height: canvas height in px (default 260)
+ *  - height: canvas height in px, or any CSS length ("100%" etc.) (default 260)
  *  - interactive: allow drag-to-rotate so the user can confirm it's a real
  *    3D object from any angle (default true)
  *  - zoomable: allow scroll-wheel zoom. Off by default for visualizers that
  *    sit inline in normal page flow, so hovering one doesn't hijack page
  *    scroll — turn on inside modals/dedicated viewers where that's safe.
  *  - autoRotate: slow showroom spin (default true)
+ *  - variant: per-page layout/sizing hook ("dashboard" | "compare" |
+ *    "calculator" | "option-preview" | "plus-size" | undefined). Each page
+ *    embeds this visualizer in a different layout, so instead of one global
+ *    look, `variant` selects a dedicated `.tire3d-canvas-box--<variant>`
+ *    rule in global.css (max-width, aspect handling, etc.) for that page.
  */
 export default function Tire3DVisualizer({
   tire,
@@ -52,6 +57,7 @@ export default function Tire3DVisualizer({
   interactive = true,
   zoomable = false,
   autoRotate = true,
+  variant,
 }) {
   const [webglLost, setWebglLost] = useState(false);
   const [webglOk] = useState(isWebGLAvailable);
@@ -59,13 +65,15 @@ export default function Tire3DVisualizer({
   if (!tire || !tire.width || !tire.rim) return null;
 
   const fallback = <UnavailableFallback tire={tire} />;
+  const heightVar = typeof height === "number" ? `${height}px` : height;
+  const boxClassName = `tire3d-canvas-box${variant ? ` tire3d-canvas-box--${variant}` : ""}`;
 
   return (
-    <div className="tire3d-wrap">
-      <div className="tire3d-canvas-box" style={{ height }}>
+    <div className={`tire3d-wrap${variant ? ` tire3d-wrap--${variant}` : ""}`}>
+      <div className={boxClassName} style={{ "--tire3d-height": heightVar }}>
         {webglOk && !webglLost ? (
           <Tire3DErrorBoundary fallback={fallback}>
-            <Suspense fallback={<div className="tire3d-skeleton" style={{ height }} />}>
+            <Suspense fallback={<div className="tire3d-skeleton" style={{ "--tire3d-height": heightVar }} />}>
               <TireCanvas
                 tire={tire}
                 accent={accent}

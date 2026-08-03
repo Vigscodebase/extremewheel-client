@@ -69,7 +69,7 @@ export default function Reports() {
       <div className="kpi-grid">
         {REPORT_TYPES.map(({ type, label, icon: Icon, tint }) => (
           <div key={type} className="card kpi-card">
-            <div className="kpi-icon" style={{ background: tint.soft, color: tint.solid }}>
+            <div className="kpi-icon" style={{ "--kpi-icon-bg": tint.soft, "--kpi-icon-fg": tint.solid }}>
               <Icon size={19} />
             </div>
             <div>

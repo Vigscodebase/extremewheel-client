@@ -2,6 +2,7 @@ import { ArrowRightLeft, Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import PageHeader from "../components/pageheader";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
+import TireSuggestions from "../components/TireSuggestions";
 import { useLogTireComparison } from "../hooks/queries/useActivity";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import { speedoDifferencePct, tireCircumferenceMm, tireDiameterInches } from "../utils/tireMath";
@@ -109,10 +110,10 @@ export default function TireSizeComparison() {
         </div>
         <div className="wheel-viz">
           <div className="wheel-col">
-            <Tire3DVisualizer tire={tireA} label={`Tire A · ${diameterA.toFixed(1)}"`} accent="#FF6F91" height={230} />
+            <Tire3DVisualizer tire={tireA} label={`Tire A · ${diameterA.toFixed(1)}"`} accent="#FF6F91" height={230} variant="compare" />
           </div>
           <div className="wheel-col">
-            <Tire3DVisualizer tire={tireB} label={`Tire B · ${diameterB.toFixed(1)}"`} accent="#8B7CF6" height={230} />
+            <Tire3DVisualizer tire={tireB} label={`Tire B · ${diameterB.toFixed(1)}"`} accent="#8B7CF6" height={230} variant="compare" />
           </div>
         </div>
 
@@ -142,6 +143,9 @@ export default function TireSizeComparison() {
             ))}
           </tbody>
         </table>
+
+        <TireSuggestions tire={tireA} label="Tire A" />
+        <TireSuggestions tire={tireB} label="Tire B" />
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { Calculator, Gauge, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 import PageHeader from "../components/pageheader";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
+import TireSuggestions from "../components/TireSuggestions";
 import { useLogTireComparison } from "../hooks/queries/useActivity";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import {
@@ -140,7 +141,7 @@ export default function TireSizeCalculator() {
 
       <div className="card compare-result-card">
         <div className="wheel-viz">
-          <Tire3DVisualizer tire={tire} label={`${tire.width}/${tire.aspect}R${tire.rim}`} accent="#FF6F91" height={240} />
+          <Tire3DVisualizer tire={tire} label={`${tire.width}/${tire.aspect}R${tire.rim}`} accent="#FF6F91" height={240} variant="calculator" />
         </div>
 
         <table className="compare-table">
@@ -158,6 +159,8 @@ export default function TireSizeCalculator() {
             <tr><td className="compare-table-label">Revs / mile</td><td className="compare-table-value">{spec.revsPerMile.toFixed(0)}</td></tr>
           </tbody>
         </table>
+
+        <TireSuggestions tire={tire} />
       </div>
 
       <div className="card">
@@ -182,10 +185,10 @@ export default function TireSizeCalculator() {
 
             <div className="wheel-viz">
               <div className="wheel-col">
-                <Tire3DVisualizer tire={tire} label={`Current · ${tire.width}/${tire.aspect}R${tire.rim}`} accent="#FF6F91" height={220} />
+                <Tire3DVisualizer tire={tire} label={`Current · ${tire.width}/${tire.aspect}R${tire.rim}`} accent="#FF6F91" height={220} variant="calculator" />
               </div>
               <div className="wheel-col">
-                <Tire3DVisualizer tire={convertedTire} label={`New · ${convertedTire.width}/${convertedTire.aspect}R${convertedTire.rim}`} accent="#8B7CF6" height={220} />
+                <Tire3DVisualizer tire={convertedTire} label={`New · ${convertedTire.width}/${convertedTire.aspect}R${convertedTire.rim}`} accent="#8B7CF6" height={220} variant="calculator" />
               </div>
             </div>
 
@@ -225,6 +228,8 @@ export default function TireSizeCalculator() {
                 </tr>
               </tbody>
             </table>
+
+            <TireSuggestions tire={convertedTire} label="new wheel size" />
           </>
         )}
       </div>

@@ -44,7 +44,7 @@ export default function DonutChart({ data, size = 150, thickness = 20 }) {
       <div className="donut-legend">
         {data.map((d) => (
           <div key={d.label} className="donut-legend-item">
-            <span className="donut-legend-swatch" style={{ background: d.color }} />
+            <span className="donut-legend-swatch" style={{ "--swatch-color": d.color }} />
             <span className="donut-legend-label">{d.label}</span>
             <strong className="donut-legend-value">{d.value}</strong>
           </div>
