@@ -1,6 +1,6 @@
 import { Eye, EyeOff, Lock, Mail, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authcontext";
 
 export default function Login() {
@@ -111,6 +111,12 @@ export default function Login() {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+
+            <p className="mb-8" style={{ textAlign: "right" }}>
+              <Link to="/forgot-password" className="see-all-link" style={{ display: "inline-flex" }}>
+                Forgot password?
+              </Link>
+            </p>
 
             <button type="submit" className="smart-btn-primary" disabled={loading}>
               {loading ? "Signing in…" : "Continue"}

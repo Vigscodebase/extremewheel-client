@@ -5,10 +5,12 @@ import { PermissionProvider } from "./context/permissioncontext";
 import DashboardLayout from "./layouts/dashboardlayout";
 import ApplicationGuide from "./pages/applicationguide";
 import Dashboard from "./pages/dashboard";
+import ForgotPassword from "./pages/forgotpassword";
 import Login from "./pages/login";
 import NotAuthorized from "./pages/notauthorized";
 import PlusSizeOptions from "./pages/plussizeoptions";
 import Reports from "./pages/reports";
+import ResetPassword from "./pages/resetpassword";
 import TechData from "./pages/techdata";
 import TireSizeCalculator from "./pages/tiresizecalculator";
 import TireSizeComparison from "./pages/tiresizecomparison";
@@ -45,6 +47,8 @@ export default function App() {
               PermissionProvider is completely bypassed here 
               ========================================= */}
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* =========================================
               PRIVATE ROUTES 

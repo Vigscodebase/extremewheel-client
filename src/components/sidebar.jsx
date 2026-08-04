@@ -54,6 +54,21 @@ export default function Sidebar() {
   const [isPinned, setIsPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [forceClose, setForceClose] = useState(false);
+  // Mobile-only off-canvas drawer (320px–767px breakpoint). Independent of
+  // the desktop hover-pill's isPinned/isHovered state since the two never
+  // render at the same time.
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close the drawer whenever the route changes (e.g. a nav item was
+  // tapped) and lock page scroll behind it while it's open.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
 
   useEffect(() => {
     const fetchNavigation = async () => {
@@ -115,73 +130,137 @@ export default function Sidebar() {
   const isSidebarExpanded = isPinned || (isHovered && !forceClose);
 
   return (
-    <aside
-      className={`sidebar ${isSidebarExpanded ? "expanded" : ""}${isPinned ? " pinned" : ""}`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onKeyDown={handleKeyDown}
-      aria-expanded={isSidebarExpanded}
-    >
-      <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <img src="/sidebar-logo.png" alt="sidebar-logo" />
-        </div>
-        {isSidebarExpanded && (
-          <button className="close-btn" onClick={handleClose} aria-label="Close menu">
-            <X size={20} />
-          </button>
-        )}
-      </div>
-
-      <nav className="sidebar-nav">
-        {/* Hamburger sits at the top of the nav list when collapsed */}
-        {/* {!isSidebarExpanded && (
-          <button
-            type="button"
-            className="sidebar-item hamburger-item"
-            onClick={handleOpen}
-            aria-label="Open menu"
-          >
-            <div className="icon-wrapper">
-              <Menu size={22} />
-            </div>
-          </button>
-        )} */}
-
-        {visibleItems.map((item) => {
-          const Icon = ICONS_MAP[item.icon] || Circle; // fallback if backend sends an unmapped icon key
-          const active = location.pathname.startsWith(item.path);
-
-          return (
-            <button
-              key={item.key}
-              type="button"
-              className={`sidebar-item ${active ? "active" : ""}`}
-              onClick={() => navigate(item.path)}
-              title={!isSidebarExpanded ? item.label : undefined}
-              aria-current={active ? "page" : undefined}
-            >
-              <div className="icon-wrapper">
-                <Icon size={20} />
-              </div>
-              <span className="sidebar-label">{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
-
-      <div className="sidebar-footer">
-        <div className="sidebar-avatar" title={user?.name || user?.email}>
+    <>
+      {/* --- Mobile top bar (320px–767px only; hidden above via CSS) --- */}
+      <header className="mobile-topbar">
+        <button
+          type="button"
+          className={`hamburger-btn ${mobileOpen ? "is-open" : ""}`}
+          onClick={() => setMobileOpen((o) => !o)}
+          aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-nav-drawer"
+        >
+          <span className="hamburger-line" />
+          <span className="hamburger-line" />
+          <span className="hamburger-line" />
+        </button>
+        <img src="/sidebar-logo.png" alt="logo" className="mobile-topbar-logo" />
+        <div className="sidebar-avatar mobile-topbar-avatar" title={user?.name || user?.email}>
           {initials}
         </div>
+      </header>
 
-        <button type="button" className="sidebar-item logout-btn" onClick={handleLogout} title="Log out">
-          <div className="icon-wrapper text-danger">
-            <LogOut size={20} />
+      {/* --- Mobile off-canvas drawer + backdrop --- */}
+      <div
+        className={`mobile-drawer-backdrop ${mobileOpen ? "open" : ""}`}
+        onClick={() => setMobileOpen(false)}
+        aria-hidden="true"
+      />
+      <nav
+        id="mobile-nav-drawer"
+        className={`mobile-drawer ${mobileOpen ? "open" : ""}`}
+        aria-hidden={!mobileOpen}
+      >
+        <div className="mobile-drawer-header">
+          <img src="/sidebar-logo.png" alt="logo" />
+          <button type="button" className="close-btn mobile-drawer-close" onClick={() => setMobileOpen(false)} aria-label="Close menu">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="mobile-drawer-items">
+          {visibleItems.map((item, i) => {
+            const Icon = ICONS_MAP[item.icon] || Circle;
+            const active = location.pathname.startsWith(item.path);
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={`mobile-drawer-item ${active ? "active" : ""}`}
+                style={{ transitionDelay: mobileOpen ? `${60 + i * 45}ms` : "0ms" }}
+                onClick={() => navigate(item.path)}
+                aria-current={active ? "page" : undefined}
+              >
+                <span className="icon-wrapper">
+                  <Icon size={20} />
+                </span>
+                <span className="sidebar-label">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mobile-drawer-footer">
+          <button
+            type="button"
+            className="mobile-drawer-item mobile-logout-btn"
+            style={{ transitionDelay: mobileOpen ? `${60 + visibleItems.length * 45}ms` : "0ms" }}
+            onClick={handleLogout}
+          >
+            <span className="icon-wrapper text-danger">
+              <LogOut size={20} />
+            </span>
+            <span className="sidebar-label text-danger">Log out</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* --- Desktop / tablet hover-pill sidebar (768px and up) --- */}
+      <aside
+        className={`sidebar ${isSidebarExpanded ? "expanded" : ""}${isPinned ? " pinned" : ""}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onKeyDown={handleKeyDown}
+        aria-expanded={isSidebarExpanded}
+      >
+        <div className="sidebar-header">
+          <div className="sidebar-logo">
+            <img src="/sidebar-logo.png" alt="sidebar-logo" />
           </div>
-          <span className="sidebar-label text-danger">Log out</span>
-        </button>
-      </div>
-    </aside>
+          {isSidebarExpanded && (
+            <button className="close-btn" onClick={handleClose} aria-label="Close menu">
+              <X size={20} />
+            </button>
+          )}
+        </div>
+
+        <nav className="sidebar-nav">
+          {visibleItems.map((item) => {
+            const Icon = ICONS_MAP[item.icon] || Circle; // fallback if backend sends an unmapped icon key
+            const active = location.pathname.startsWith(item.path);
+
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={`sidebar-item ${active ? "active" : ""}`}
+                onClick={() => navigate(item.path)}
+                title={!isSidebarExpanded ? item.label : undefined}
+                aria-current={active ? "page" : undefined}
+              >
+                <div className="icon-wrapper">
+                  <Icon size={20} />
+                </div>
+                <span className="sidebar-label">{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="sidebar-avatar" title={user?.name || user?.email}>
+            {initials}
+          </div>
+
+          <button type="button" className="sidebar-item logout-btn" onClick={handleLogout} title="Log out">
+            <div className="icon-wrapper text-danger">
+              <LogOut size={20} />
+            </div>
+            <span className="sidebar-label text-danger">Log out</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

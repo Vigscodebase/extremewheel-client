@@ -22,6 +22,7 @@ import PageHeader from "../components/pageheader";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import { useAuth } from "../context/authcontext";
 import { useDashboardSummary } from "../hooks/queries/useDashboard";
+import { useAppGuideMakes, useAppGuideModels, useAppGuideYears } from "../hooks/queries/useAppGuide";
 
 const RANGES = ["W", "M", "Y"];
 
@@ -231,6 +232,90 @@ function ContactRow({ name, role, online }) {
   );
 }
 
+const QUICK_LINKS = [
+  { to: "/tire-calculator", icon: Gauge, label: "Tire Size Calculator", desc: "Convert & size up a single tire spec" },
+  { to: "/tire-comparison", icon: Scale, label: "Tire Size Comparison", desc: "Compare two tire specs side by side" },
+  { to: "/tire-options", icon: Car, label: "Tire Size Option", desc: "Manage saved tire size presets" },
+  { to: "/plus-size", icon: TrendingUp, label: "Plus Size Option", desc: "Find plus-size matches within tolerance" },
+];
+
+// Staff (and admin) quick-access panel: a jump-off point for the tools used
+// most during a shop visit — a live vehicle search & fitment lookup, plus
+// one-click shortcuts into the tire calculator/comparison/option/plus-size
+// pages, so none of them are more than a click away from the dashboard.
+function QuickAccessPanel() {
+  const navigate = useNavigate();
+  const [year, setYear] = useState("");
+  const [make, setMake] = useState("");
+  const [model, setModel] = useState("");
+
+  const { data: years, isLoading: loadingYears } = useAppGuideYears();
+  const { data: makes, isLoading: loadingMakes } = useAppGuideMakes(year);
+  const { data: models, isLoading: loadingModels } = useAppGuideModels(year, make);
+
+  const goToFitment = () => {
+    navigate("/application-guide", { state: { prefillYear: year, prefillMake: make, prefillModel: model } });
+  };
+
+  return (
+    <div className="card dash-panel mb-20">
+      <div className="panel-head">
+        <div>
+          <h3>Quick access</h3>
+          <p>Vehicle search & fitment lookup, plus one-click shortcuts to the tools you use most</p>
+        </div>
+      </div>
+
+      <div className="tire-input-grid mb-16">
+        <div className="field">
+          <label>Year</label>
+          <select
+            value={year}
+            onChange={(e) => { setYear(e.target.value); setMake(""); setModel(""); }}
+            disabled={loadingYears}
+          >
+            <option value="">{loadingYears ? "Loading…" : "Select year"}</option>
+            {(years || []).map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label>Make</label>
+          <select value={make} onChange={(e) => { setMake(e.target.value); setModel(""); }} disabled={!year || loadingMakes}>
+            <option value="">{!year ? "Select year first" : loadingMakes ? "Loading…" : "Select make"}</option>
+            {(makes || []).map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label>Model</label>
+          <select value={model} onChange={(e) => setModel(e.target.value)} disabled={!make || loadingModels}>
+            <option value="">{!make ? "Select make first" : loadingModels ? "Loading…" : "Select model"}</option>
+            {(models || []).map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ display: "flex", alignItems: "flex-end" }}>
+          <button type="button" className="btn btn-accent" disabled={!year || !make || !model} onClick={goToFitment}>
+            <Search size={15} /> Look up fitment
+          </button>
+        </div>
+      </div>
+
+      <div className="quick-links-grid">
+        {QUICK_LINKS.map((q) => (
+          <Link key={q.to} to={q.to} className="quick-link-card">
+            <span className="quick-link-icon"><q.icon size={17} /></span>
+            <span>
+              <span className="quick-link-label">{q.label}</span>
+              <span className="quick-link-desc">{q.desc}</span>
+            </span>
+            <ChevronRight size={15} className="quick-link-arrow" />
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { data } = useDashboardSummary();
@@ -273,6 +358,8 @@ export default function Dashboard() {
         <KpiCard icon={Gauge} label="Tire presets" value={stats.tirePresets} tint={{ soft: "var(--color-sidebar)", solid: "var(--color-pink-soft)" }} to="/tire-options" />
         {/* <KpiCard icon={ShieldCheck} label="Active sessions" value={stats.activeSessions} tint={{ soft: "var(--color-pink-soft)", solid: "var(--color-pink)" }} /> */}
       </div>
+
+      {(user.role === "staff" || user.role === "admin") && <QuickAccessPanel />}
 
       <ClickableCard to="/tire-calculator" className="card dash-panel threed-height mb-20">
         <div className="panel-head">

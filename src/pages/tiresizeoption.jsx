@@ -1,5 +1,6 @@
 import { Box, Pencil, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import ConfirmDialog from "../components/confirmdialog";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
@@ -22,6 +23,7 @@ const MOCK_PRESETS = [
 const emptyForm = { label: "", width: 205, aspect: 55, rim: 16 };
 
 export default function TireSizeOption() {
+  const location = useLocation();
   const { data: fetchedPresets, isLoading: loading, isError: presetsError } = useTireOptionsQuery();
   const presets = presetsError ? MOCK_PRESETS : fetchedPresets || [];
   const createMutation = useCreateTireOption();
@@ -34,6 +36,20 @@ export default function TireSizeOption() {
   const [formError, setFormError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [previewPreset, setPreviewPreset] = useState(null);
+
+  // Arrived here via a "Saved preset" suggestion chip elsewhere in the app —
+  // open the add-preset form pre-loaded with that size so it's one click
+  // away from being saved for real.
+  useEffect(() => {
+    const prefill = location.state?.prefillPreset;
+    if (prefill) {
+      setEditing(null);
+      setForm({ label: prefill.label || "", width: prefill.width, aspect: prefill.aspect, rim: prefill.rim });
+      setFormError("");
+      setFormOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   const saving = createMutation.isPending || updateMutation.isPending;
 

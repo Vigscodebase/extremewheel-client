@@ -1,14 +1,17 @@
-import { Camera, Car, ImagePlus, Images, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Camera, Car, ImagePlus, Images, MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import ConfirmDialog from "../components/confirmdialog";
 import Lightbox from "../components/lightbox";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
+import { useAuth } from "../context/authcontext";
 import {
   useAddVehicleGalleryPhoto,
+  useAddVehicleStaffNote,
   useCreateVehicleNote,
   useDeleteVehicleNote,
   useRemoveVehicleGalleryPhoto,
+  useRemoveVehicleStaffNote,
   useUpdateVehicleNote,
   useVehicleNotesQuery,
 } from "../hooks/queries/useVehicleNotes";
@@ -27,6 +30,7 @@ const emptyForm = {
   beforeImage: "",
   afterImage: "",
   gallery: [],
+  eventDate: "",
   existingSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
   upgradedSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
 };
@@ -40,7 +44,18 @@ function fileToDataUrl(file) {
   });
 }
 
+// Formats an ISO date string (or Date) down to the yyyy-mm-dd value an
+// <input type="date"> expects.
+function toDateInputValue(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
+
 export default function VehicleNotes() {
+  const { user } = useAuth();
+  const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
   const { data: fetchedVehicles, isLoading: loading, isError: vehiclesError } = useVehicleNotesQuery();
   const vehicles = vehiclesError ? MOCK_VEHICLES : fetchedVehicles || [];
   const createMutation = useCreateVehicleNote();
@@ -48,12 +63,15 @@ export default function VehicleNotes() {
   const deleteMutation = useDeleteVehicleNote();
   const addGalleryPhoto = useAddVehicleGalleryPhoto();
   const removeGalleryPhoto = useRemoveVehicleGalleryPhoto();
+  const addStaffNote = useAddVehicleStaffNote();
+  const removeStaffNote = useRemoveVehicleStaffNote();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [newNoteText, setNewNoteText] = useState("");
 
   // Gallery viewer: which vehicle's gallery is open + which photo index is
   // showing in the lightbox (null = lightbox closed).
@@ -62,6 +80,11 @@ export default function VehicleNotes() {
 
   const saving = createMutation.isPending || updateMutation.isPending;
   const deleting = deleteMutation.isPending;
+  // Looks up the freshest copy of the vehicle being edited from the query
+  // cache (rather than the snapshot captured when the modal opened), so
+  // newly added/removed staff notes show up immediately without closing
+  // and reopening the modal.
+  const currentEditingVehicle = editing ? vehicles.find((v) => v._id === editing._id) || editing : null;
 
   const openAdd = () => {
     setEditing(null);
@@ -80,6 +103,7 @@ export default function VehicleNotes() {
       beforeImage: v.beforeImage || "",
       afterImage: v.afterImage || "",
       gallery: v.gallery || [],
+      eventDate: toDateInputValue(v.eventDate),
       existingSpec: {
         engine: v.existingSpec?.engine || "",
         tyre: {
@@ -225,6 +249,10 @@ export default function VehicleNotes() {
                     {v.model}
                   </span>
                 </div>
+                <p className="text-muted fs-11 mt-4">
+                  {v.eventDate ? `Event date: ${new Date(v.eventDate).toLocaleDateString()}` : "No event date set"}
+                  {" · "}Added {new Date(v.createdAt).toLocaleDateString()}
+                </p>
                 {(v.existingSpec?.engine || v.existingSpec?.tyre?.width || v.upgradedSpec?.engine || v.upgradedSpec?.tyre?.width) && (
                   <div className="spec-compare-grid compact">
                     <div className="spec-compare-col">
@@ -286,6 +314,10 @@ export default function VehicleNotes() {
             <div className="field">
               <label>Model / year</label>
               <input value={form.model} onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))} placeholder="2023" />
+            </div>
+            <div className="field">
+              <label>Event date</label>
+              <input type="date" value={form.eventDate} onChange={(e) => setForm((f) => ({ ...f, eventDate: e.target.value }))} />
             </div>
           </div>
 
@@ -393,6 +425,66 @@ export default function VehicleNotes() {
               </div>
             </div>
           </div>
+
+          {editing && (
+            <div className="field field-mb-lg">
+              <label>
+                <MessageSquare size={13} style={{ verticalAlign: "-2px", marginRight: 4 }} />
+                Internal staff notes &amp; comments
+              </label>
+              {!isStaffOrAdmin ? (
+                <p className="text-muted fs-11">Only staff and admin accounts can view or add internal notes.</p>
+              ) : (
+                <>
+                  <div className="staff-notes-list">
+                    {(currentEditingVehicle?.staffNotes || []).length === 0 ? (
+                      <p className="text-muted fs-11">No internal notes yet.</p>
+                    ) : (
+                      currentEditingVehicle.staffNotes
+                        .slice()
+                        .reverse()
+                        .map((n) => (
+                          <div key={n._id} className="staff-note-row">
+                            <div>
+                              <p className="staff-note-text">{n.text}</p>
+                              <p className="staff-note-meta">
+                                {n.authorName || "Staff"} · {new Date(n.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              className="icon-btn danger"
+                              title="Delete note"
+                              onClick={() => removeStaffNote.mutateAsync({ id: editing._id, noteId: n._id })}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        ))
+                    )}
+                  </div>
+                  <div className="staff-note-add-row">
+                    <input
+                      value={newNoteText}
+                      onChange={(e) => setNewNoteText(e.target.value)}
+                      placeholder="Add an internal note or comment…"
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      disabled={!newNoteText.trim() || addStaffNote.isPending}
+                      onClick={async () => {
+                        await addStaffNote.mutateAsync({ id: editing._id, text: newNoteText.trim() });
+                        setNewNoteText("");
+                      }}
+                    >
+                      {addStaffNote.isPending ? "Adding…" : "Add note"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           <div className="field field-mb-lg">
             <label>Image gallery</label>

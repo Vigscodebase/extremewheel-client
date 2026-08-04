@@ -1,4 +1,5 @@
 import { Car, ImageOff, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useTireSuggestions } from "../hooks/queries/useActivity";
 
 function specText(spec) {
@@ -8,12 +9,25 @@ function specText(spec) {
 }
 
 function VehicleSuggestionCard({ vehicle }) {
+  const navigate = useNavigate();
   const photo = vehicle.beforeImage || vehicle.afterImage || vehicle.image || vehicle.gallery?.[0] || "";
   const existing = specText(vehicle.existingSpec);
   const upgraded = specText(vehicle.upgradedSpec);
 
   return (
-    <div className="card suggestion-card">
+    <div
+      className="card suggestion-card suggestion-card-clickable"
+      role="button"
+      tabIndex={0}
+      title="Open this vehicle in Vehicle Notes"
+      onClick={() => navigate("/vehicle-notes", { state: { openVehicleId: vehicle._id } })}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          navigate("/vehicle-notes", { state: { openVehicleId: vehicle._id } });
+        }
+      }}
+    >
       {photo ? (
         <div className="suggestion-photo-row">
           <div className="suggestion-photo">
@@ -61,10 +75,31 @@ function VehicleSuggestionCard({ vehicle }) {
 // Preset / past-comparison / plus-size matches never have a photo or an
 // existing/upgraded spec (they aren't vehicle records) — rendered as a
 // compact chip instead of a full card, with the image column hidden
-// entirely rather than showing an empty placeholder.
-function ChipSuggestion({ icon: Icon, text }) {
+// entirely rather than showing an empty placeholder. Clicking a chip
+// navigates to the page that produced it, with the underlying data
+// pre-loaded via router state.
+function ChipSuggestion({ icon: Icon, text, to, state }) {
+  const navigate = useNavigate();
+  const clickable = Boolean(to);
+
   return (
-    <div className="suggestion-chip">
+    <div
+      className={`suggestion-chip${clickable ? " suggestion-chip-clickable" : ""}`}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      title={clickable ? "Open this in its page, loaded" : undefined}
+      onClick={clickable ? () => navigate(to, { state }) : undefined}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate(to, { state });
+              }
+            }
+          : undefined
+      }
+    >
       <Icon size={13} />
       <span>{text}</span>
     </div>
@@ -77,7 +112,8 @@ function ChipSuggestion({ icon: Icon, text }) {
  * Comparison / Calculator runs, past Plus Size saves, and Vehicle Notes
  * (the latter shown with before/after photos + existing/upgraded engine &
  * tyre spec). Renders nothing when there's no match, so it never clutters
- * a fresh/unmatched result.
+ * a fresh/unmatched result. Every chip/card is clickable and deep-links to
+ * the page it came from with the underlying data pre-loaded.
  */
 export default function TireSuggestions({ tire, label }) {
   const { data, isLoading } = useTireSuggestions(tire);
@@ -108,13 +144,31 @@ export default function TireSuggestions({ tire, label }) {
       {(presets.length > 0 || comparisons.length > 0 || plusSizeSaves.length > 0) && (
         <div className="suggestion-chip-row">
           {presets.map((p) => (
-            <ChipSuggestion key={p._id} icon={Sparkles} text={`Saved preset — ${p.label}`} />
+            <ChipSuggestion
+              key={p._id}
+              icon={Sparkles}
+              text={`Saved preset — ${p.label}`}
+              to="/tire-options"
+              state={{ prefillPreset: { label: p.label, width: p.width, aspect: p.aspect, rim: p.rim } }}
+            />
           ))}
           {comparisons.map((c) => (
-            <ChipSuggestion key={c._id} icon={Sparkles} text={`Past comparison — ${c.summary}`} />
+            <ChipSuggestion
+              key={c._id}
+              icon={Sparkles}
+              text={`Past comparison — ${c.summary}`}
+              to="/tire-comparison"
+              state={{ prefillComparison: { tireA: c.data?.tireA, tireB: c.data?.tireB } }}
+            />
           ))}
           {plusSizeSaves.map((s) => (
-            <ChipSuggestion key={s._id} icon={Sparkles} text={`Saved plus-size match — ${s.summary}`} />
+            <ChipSuggestion
+              key={s._id}
+              icon={Sparkles}
+              text={`Saved plus-size match — ${s.summary}`}
+              to="/plus-size"
+              state={{ prefillOe: s.data?.oe, prefillTargetRim: s.data?.match?.rim }}
+            />
           ))}
         </div>
       )}

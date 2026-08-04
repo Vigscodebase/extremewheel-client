@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import PageHeader from "../components/pageheader";
 import {
   useAppGuideFitment,
@@ -47,15 +48,30 @@ function FitmentSpecs({ record }) {
 }
 
 export default function ApplicationGuide() {
-  const [year, setYear] = useState("");
-  const [make, setMake] = useState("");
-  const [model, setModel] = useState("");
+  const location = useLocation();
+  const prefill = location.state;
+  const [year, setYear] = useState(prefill?.prefillYear || "");
+  const [make, setMake] = useState(prefill?.prefillMake || "");
+  const [model, setModel] = useState(prefill?.prefillModel || "");
   const [typeOption, setTypeOption] = useState(""); // encodes "type|option"
 
   const { data: years, isLoading: loadingYears } = useAppGuideYears();
   const { data: makes, isLoading: loadingMakes } = useAppGuideMakes(year);
   const { data: models, isLoading: loadingModels } = useAppGuideModels(year, make);
   const { data: types, isLoading: loadingTypes } = useAppGuideTypes(year, make, model);
+
+  // If we arrived with a full year/make/model pre-selected (from the
+  // Dashboard's Quick Access vehicle search), re-apply it once the make/
+  // model option lists have actually loaded, since <select> can't select a
+  // value that isn't in its options yet.
+  useEffect(() => {
+    if (prefill?.prefillMake && makes?.includes(prefill.prefillMake)) setMake(prefill.prefillMake);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [makes]);
+  useEffect(() => {
+    if (prefill?.prefillModel && models?.includes(prefill.prefillModel)) setModel(prefill.prefillModel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [models]);
 
   const [selType, selOption] = typeOption ? typeOption.split("|") : [null, null];
   const { data: fitment, isLoading: loadingFitment } = useAppGuideFitment(year, make, model, selType, selOption);

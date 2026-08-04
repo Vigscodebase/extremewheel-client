@@ -1,5 +1,6 @@
 import { ArrowRightLeft, Save } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import PageHeader from "../components/pageheader";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
@@ -56,10 +57,12 @@ function TireForm({ title, value, onChange, presets }) {
 }
 
 export default function TireSizeComparison() {
+  const location = useLocation();
+  const prefill = location.state?.prefillComparison;
   const { data: fetchedPresets, isError: presetsError } = useTireOptionsQuery();
   const presets = presetsError || !fetchedPresets?.length ? MOCK_PRESETS : fetchedPresets;
-  const [tireA, setTireA] = useState({ width: 225, aspect: 65, rim: 17 });
-  const [tireB, setTireB] = useState({ width: 265, aspect: 70, rim: 17 });
+  const [tireA, setTireA] = useState(prefill?.tireA || { width: 225, aspect: 65, rim: 17 });
+  const [tireB, setTireB] = useState(prefill?.tireB || { width: 265, aspect: 70, rim: 17 });
 
   const update = (setter) => (patch) => setter((prev) => ({ ...prev, ...patch }));
 

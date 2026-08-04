@@ -49,3 +49,21 @@ export function useRemoveVehicleGalleryPhoto() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: vehicleNotesKey }),
   });
 }
+
+// Internal staff notes & comments (content-management layer for Vehicle
+// Notes) — timestamped, attributed to the staff member who wrote them.
+export function useAddVehicleStaffNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: vehicleNotesApi.addVehicleStaffNote,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: vehicleNotesKey }),
+  });
+}
+
+export function useRemoveVehicleStaffNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: vehicleNotesApi.removeVehicleStaffNote,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: vehicleNotesKey }),
+  });
+}
