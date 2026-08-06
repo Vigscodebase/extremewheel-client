@@ -28,12 +28,26 @@ export default function Reports() {
   const [from, setFrom] = useState(() => toDateInputValue(monthAgo));
   const [to, setTo] = useState(() => toDateInputValue(today));
 
+  // Track active tab. Defaults to 30 since monthAgo is the default state.
+  const [activeTab, setActiveTab] = useState(30);
+
   const { data: summary, isLoading } = useReportsSummary({ from, to });
   const downloadCsv = useDownloadReportCsv();
 
   const applyQuickRange = (days) => {
     setFrom(toDateInputValue(new Date(Date.now() - days * 24 * 60 * 60 * 1000)));
     setTo(toDateInputValue(today));
+    setActiveTab(days); // Highlight the clicked button
+  };
+
+  const handleFromChange = (e) => {
+    setFrom(e.target.value);
+    setActiveTab(null); // Clear active tab on manual date change
+  };
+
+  const handleToChange = (e) => {
+    setTo(e.target.value);
+    setActiveTab(null); // Clear active tab on manual date change
   };
 
   return (
@@ -52,17 +66,35 @@ export default function Reports() {
         <div className="tire-input-grid">
           <div className="field">
             <label>From</label>
-            <input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
+            <input type="date" value={from} max={to} onChange={handleFromChange} />
           </div>
           <div className="field">
             <label>To</label>
-            <input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
+            <input type="date" value={to} min={from} onChange={handleToChange} />
           </div>
         </div>
         <div className="range-toggle mt-10">
-          <button type="button" onClick={() => applyQuickRange(7)}>Last 7 days</button>
-          <button type="button" onClick={() => applyQuickRange(30)}>Last 30 days</button>
-          <button type="button" onClick={() => applyQuickRange(90)}>Last 90 days</button>
+          <button
+            type="button"
+            className={activeTab === 7 ? "active" : ""}
+            onClick={() => applyQuickRange(7)}
+          >
+            Last 7 days
+          </button>
+          <button
+            type="button"
+            className={activeTab === 30 ? "active" : ""}
+            onClick={() => applyQuickRange(30)}
+          >
+            Last 30 days
+          </button>
+          <button
+            type="button"
+            className={activeTab === 90 ? "active" : ""}
+            onClick={() => applyQuickRange(90)}
+          >
+            Last 90 days
+          </button>
         </div>
       </div>
 

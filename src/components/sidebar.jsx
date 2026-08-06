@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Car,
   LayoutDashboard,
@@ -12,7 +12,8 @@ import {
   Search,
   Calculator,
   Wrench,
-  FileBarChart
+  FileBarChart,
+  ChevronDown
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authcontext";
@@ -32,7 +33,7 @@ const ICONS_MAP = {
 };
 
 const FALLBACK_NAV = [
-  { key: "dashboard", label: "Dashboard", path: "/dashboard", icon: "LayoutDashboard" }, ,
+  { key: "dashboard", label: "Dashboard", path: "/dashboard", icon: "LayoutDashboard" },
   { key: "tire-calculator", label: "Tire Size Calculator", path: "/tire-calculator", icon: "Calculator" },
   { key: "tire-comparison", label: "Tire Size Comparison", path: "/tire-comparison", icon: "Scale" },
   { key: "tire-options", label: "Tire Size Option", path: "/tire-options", icon: "SlidersHorizontal" },
@@ -54,15 +55,19 @@ export default function Sidebar() {
   const [isPinned, setIsPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [forceClose, setForceClose] = useState(false);
-  // Mobile-only off-canvas drawer (320px–767px breakpoint). Independent of
-  // the desktop hover-pill's isPinned/isHovered state since the two never
-  // render at the same time.
+  const sidebarRef = useRef(null);
+  const profileRef = useRef(null);
+
+  // Mobile-only off-canvas drawer (320px–767px breakpoint).
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Close the drawer whenever the route changes (e.g. a nav item was
-  // tapped) and lock page scroll behind it while it's open.
+  // Mobile profile dropdown state
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  // Close the drawer whenever the route changes
   useEffect(() => {
     setMobileOpen(false);
+    setProfileOpen(false); // also close profile dropdown on navigation
   }, [location.pathname]);
 
   useEffect(() => {
@@ -97,16 +102,26 @@ export default function Sidebar() {
 
   const initials = (user?.name || user?.email || "?").trim().charAt(0).toUpperCase();
 
-  // --- Hover / pin / close state machine ---
-  // isPinned   -> sidebar stays open because the hamburger was clicked
-  // isHovered  -> the mouse is currently over the sidebar
-  // forceClose -> the X was just clicked; keeps the sidebar closed even
-  //               though the mouse hasn't left yet (fixes "close icon not
-  //               working" — without this flag, onMouseEnter never re-fires
-  //               while the cursor stays inside the pill, so the sidebar
-  //               would instantly reopen after clicking X).
+  useEffect(() => {
+    const handleOutsideTap = (e) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+        setIsHovered(false);
+        setIsPinned(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("touchstart", handleOutsideTap);
+    document.addEventListener("mousedown", handleOutsideTap);
+    return () => {
+      document.removeEventListener("touchstart", handleOutsideTap);
+      document.removeEventListener("mousedown", handleOutsideTap);
+    };
+  }, []);
+
   const handleMouseEnter = () => {
-    setForceClose(false); // re-arm hover-to-open once the mouse re-enters
+    setForceClose(false);
     setIsHovered(true);
   };
 
@@ -117,10 +132,9 @@ export default function Sidebar() {
   const handleClose = (e) => {
     if (e) e.stopPropagation();
     setIsPinned(false);
-    setForceClose(true); // forces closed despite mouse still hovering
+    setForceClose(true);
   };
 
-  // Escape closes the sidebar for keyboard users
   const handleKeyDown = (e) => {
     if (e.key === "Escape" && isSidebarExpanded) {
       handleClose(e);
@@ -145,9 +159,36 @@ export default function Sidebar() {
           <span className="hamburger-line" />
           <span className="hamburger-line" />
         </button>
-        <img src="/sidebar-logo.png" alt="logo" className="mobile-topbar-logo" />
-        <div className="sidebar-avatar mobile-topbar-avatar" title={user?.name || user?.email}>
-          {initials}
+        <img src="/login-logo.webp" alt="logo" className="mobile-topbar-logo" />
+
+        {/* Profile Dropdown Container */}
+        <div className="mobile-profile-container" ref={profileRef}>
+          <button
+            type="button"
+            className={`sidebar-avatar mobile-topbar-avatar ${profileOpen ? "is-open" : ""}`}
+            title={user?.name || user?.email}
+            onClick={() => setProfileOpen((prev) => !prev)}
+          >
+            {initials}
+
+            {/* --- NEW UX ARROW BADGE --- */}
+            <span className="mobile-avatar-indicator">
+              <ChevronDown size={11} strokeWidth={3.5} />
+            </span>
+          </button>
+
+          {profileOpen && (
+            <div className="mobile-profile-dropdown">
+              <button
+                type="button"
+                className="mobile-profile-logout-btn"
+                onClick={handleLogout}
+              >
+                <LogOut size={16} />
+                <span>Log out</span>
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -208,9 +249,11 @@ export default function Sidebar() {
 
       {/* --- Desktop / tablet hover-pill sidebar (768px and up) --- */}
       <aside
+        ref={sidebarRef}
         className={`sidebar ${isSidebarExpanded ? "expanded" : ""}${isPinned ? " pinned" : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        onTouchStart={handleMouseEnter}
         onKeyDown={handleKeyDown}
         aria-expanded={isSidebarExpanded}
       >
@@ -227,7 +270,7 @@ export default function Sidebar() {
 
         <nav className="sidebar-nav">
           {visibleItems.map((item) => {
-            const Icon = ICONS_MAP[item.icon] || Circle; // fallback if backend sends an unmapped icon key
+            const Icon = ICONS_MAP[item.icon] || Circle;
             const active = location.pathname.startsWith(item.path);
 
             return (

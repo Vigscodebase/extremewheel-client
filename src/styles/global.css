@@ -1157,7 +1157,7 @@ ul {
     color: var(--color-pink);
 }
 
-.quick-link-card > span:nth-child(2) {
+.quick-link-card>span:nth-child(2) {
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -3143,6 +3143,10 @@ ul {
     font-weight: 600;
 }
 
+.sidebar-footer {
+    margin-top: 25px;
+}
+
 /* =====================================================================
    RESPONSIVE LAYOUT adjustments
    ===================================================================== */
@@ -3153,6 +3157,10 @@ ul {
 
     .kpi-grid {
         grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+    }
+
+    button.sidebar-item.active {
+        padding: 20px 0px 20px 0px;
     }
 }
 
@@ -3172,6 +3180,10 @@ ul {
 
     .alerts-row {
         gap: 14px;
+    }
+
+    button.sidebar-item.active {
+        padding: 20px 0px 20px 0px;
     }
 }
 
@@ -3197,6 +3209,14 @@ ul {
     .alerts-row {
         gap: 12px;
     }
+
+    .sidebar-logo {
+        left: 17px;
+    }
+
+    .sidebar-avatar {
+        left: 17px;
+    }
 }
 
 @media only screen and (min-width:1024px) and (max-width:1179px) {
@@ -3221,6 +3241,14 @@ ul {
         grid-template-columns: repeat(3, minmax(200px, 1fr));
         overflow-x: auto;
         padding-bottom: 4px;
+    }
+
+    .sidebar-logo {
+        left: 15px;
+    }
+
+    .sidebar-avatar {
+        left: 15px;
     }
 }
 
@@ -3264,6 +3292,14 @@ ul {
     .compare-grid {
         grid-template-columns: 1fr;
     }
+
+    .sidebar-logo {
+        left: 13px;
+    }
+
+    .sidebar-avatar {
+        left: 13px;
+    }
 }
 
 /* --- MOBILE SPECIFIC: hamburger top bar + off-canvas drawer nav --- */
@@ -3295,11 +3331,11 @@ ul {
     }
 
     .mobile-topbar-logo {
-        height: 30px;
-        width: 30px;
+        height: 32px;
+        /* width: 30px;
         object-fit: contain;
         border-radius: 50%;
-        background: var(--color-pink);
+        background: var(--color-pink); */
     }
 
     .mobile-topbar-avatar {
@@ -3604,4 +3640,279 @@ ul {
     margin-top: 24px;
     display: flex;
     justify-content: flex-end;
+}
+
+/* =====================================================================
+   1. SIDEBAR SCROLLING FIX (Fixed Logo & Footer)
+   ===================================================================== */
+.sidebar {
+    /* Ensure the main sidebar constraints handle child scrolling */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.sidebar-header {
+    flex-shrink: 0;
+    /* Keeps the logo permanently fixed at the top */
+}
+
+.sidebar-footer {
+    flex-shrink: 0;
+    /* Keeps the profile/logout permanently fixed at the bottom */
+    margin-top: 0;
+}
+
+.sidebar-nav {
+    flex: 1;
+    /* Takes up the remaining middle space */
+    overflow-y: auto;
+    /* Enables vertical scrolling */
+    overflow-x: hidden;
+    /* Prevents horizontal overflow from breaking the pill */
+
+    /* Padding buffer to prevent the gooey cutout effect from being 
+       clipped at the very top and bottom edges while scrolling */
+    padding-top: 12px;
+    padding-bottom: 12px;
+    margin-top: -12px;
+    margin-bottom: -12px;
+}
+
+/* Custom Scrollbar Styling (Thin & unobtrusive for the floating pill) */
+.sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+}
+
+.sidebar.expanded .sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    /* Slightly brighter when expanded */
+}
+
+
+/* =====================================================================
+   1. SIDEBAR SCROLLING FIX (Completely Invisible Scrollbar)
+   ===================================================================== */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.sidebar-header {
+    flex-shrink: 0;
+}
+
+.sidebar-footer {
+    flex-shrink: 0;
+    margin-top: 0;
+}
+
+.sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    margin-top: -12px;
+    margin-bottom: -12px;
+
+    /* Hides scrollbar in Firefox */
+    scrollbar-width: none;
+    /* Hides scrollbar in IE/Edge */
+    -ms-overflow-style: none;
+}
+
+/* Hides scrollbar in Chrome/Safari/Webkit completely */
+.sidebar-nav::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
+}
+
+
+/* =====================================================================
+   FIX: Restore Missing Shapes & Apply Flawless Cutout
+   ===================================================================== */
+/* 1. RESTORE the pill shape and margin, while applying the 1px width fix */
+.sidebar:not(.expanded) .sidebar-item:hover,
+.sidebar:not(.expanded) .sidebar-item.active {
+    background-color: var(--color-bg) !important;
+    margin-left: 12px !important;
+    /* Restores the left gap */
+    border-radius: 24px 0 0 24px !important;
+    /* Restores the curved left corners */
+    width: calc(100% - 11px) !important;
+    /* Seals the right gap */
+    z-index: 10 !important;
+}
+
+/* 2. Remove the drop shadow from the active/hovered pink icon */
+.sidebar:not(.expanded) .sidebar-item:hover .icon-wrapper,
+.sidebar:not(.expanded) .sidebar-item.active .icon-wrapper {
+    box-shadow: none !important;
+}
+
+/* 3. Stretch the top curve 1px down & 1px right to overlap and seal edges */
+.sidebar:not(.expanded) .sidebar-item::before {
+    top: -24px !important;
+    height: 25px !important;
+    right: -1px !important;
+    width: 25px !important;
+    box-shadow: none !important;
+}
+
+/* 4. Stretch the bottom curve 1px up & 1px right to overlap and seal edges */
+.sidebar:not(.expanded) .sidebar-item::after {
+    bottom: -24px !important;
+    height: 25px !important;
+    right: -1px !important;
+    width: 25px !important;
+    box-shadow: none !important;
+}
+
+/* =====================================================================
+   FIX: Flawless Cutout & Perfect Icon Centering
+   ===================================================================== */
+/* 1. Pill shape, margin, and 1px width stretch to seal right gap */
+.sidebar:not(.expanded) .sidebar-item:hover,
+.sidebar:not(.expanded) .sidebar-item.active {
+    background-color: var(--color-bg) !important;
+    margin-left: 12px !important;
+    border-radius: 24px 0 0 24px !important;
+    width: calc(100% - 9px) !important;
+    z-index: 10 !important;
+}
+
+/* 2. Stretch the top curve 1px down & 1px right to overlap and seal edges */
+.sidebar:not(.expanded) .sidebar-item::before {
+    top: -24px !important;
+    height: 25px !important;
+    right: -1px !important;
+    width: 25px !important;
+    box-shadow: none !important;
+}
+
+/* 3. Stretch the bottom curve 1px up & 1px right to overlap and seal edges */
+.sidebar:not(.expanded) .sidebar-item::after {
+    bottom: -24px !important;
+    height: 25px !important;
+    right: -1px !important;
+    width: 28px !important;
+    box-shadow: none !important;
+}
+
+/* 4. PERFECT ICON CENTERING & GAP */
+.sidebar:not(.expanded) .sidebar-item:hover .icon-wrapper,
+.sidebar:not(.expanded) .sidebar-item.active .icon-wrapper {
+    /* Remove the heavy shadow */
+    box-shadow: none !important;
+
+    /* Pin to the exact horizontal center of the white background */
+    left: 50% !important;
+
+    /* Shift back by 50% of its own width to center it flawlessly, 
+       and shrink it to 0.85 to create a clean, even white gap */
+    transform: translateX(-50%) scale(0.85) !important;
+}
+
+/* =====================================================================
+   Mobile Profile Dropdown Styles (Added for Header Avatar)
+   ===================================================================== */
+.mobile-profile-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+button.mobile-topbar-avatar {
+    position: relative;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+    transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Soft ring around avatar when menu is open */
+button.mobile-topbar-avatar.is-open {
+    box-shadow: 0 0 0 3px var(--color-pink-soft);
+}
+
+button.mobile-topbar-avatar:active {
+    transform: scale(0.92);
+    filter: brightness(0.9);
+}
+
+/* --- The overlapping chevron indicator --- */
+.mobile-avatar-indicator {
+    position: absolute;
+    bottom: -3px;
+    right: -5px;
+    width: 17px;
+    height: 17px;
+    background: #ffffff;
+    border: 1.5px solid #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-ink);
+    box-shadow: 0 2px 6px rgba(42, 33, 24, 0.2);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
+}
+
+/* Rotate arrow beautifully when open */
+button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
+    transform: rotate(-180deg);
+    color: var(--color-pink);
+}
+
+.mobile-profile-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 12px);
+    box-shadow: 0 10px 30px -10px rgba(42, 33, 24, 0.25);
+    padding: 6px;
+    min-width: 150px;
+    z-index: 1200;
+    animation: popIn 0.18s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+.mobile-profile-logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    /* Forces the icon and text to align neatly to the left */
+    text-align: left;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    /* Adjusted padding for perfectly even side spacing */
+    border: none;
+    background: transparent;
+    color: var(--color-danger);
+    font-size: 13.5px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.mobile-profile-logout-btn:hover,
+.mobile-profile-logout-btn:active {
+    background: var(--color-danger-soft);
 }
