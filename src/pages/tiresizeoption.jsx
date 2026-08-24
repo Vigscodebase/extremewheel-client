@@ -117,10 +117,10 @@ export default function TireSizeOption() {
         <div className="preset-grid">
           {presets.map((p) => (
             <div key={p._id} className="card preset-card">
-              <div>
+              <div className="preset-info">
                 <p className="preset-label">{p.label}</p>
                 <p className="preset-size">
-                  {p.width}/{p.aspect} R{p.rim}
+                  {p.width}/{p.aspect}R{p.rim}
                 </p>
                 <p className="preset-diameter">≈ {tireDiameterInches(p).toFixed(1)}" diameter</p>
                 <button type="button" className="tire3d-modal-trigger" onClick={() => setPreviewPreset(p)}>

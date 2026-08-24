@@ -243,6 +243,8 @@ const QUICK_LINKS = [
 // most during a shop visit — a live vehicle search & fitment lookup, plus
 // one-click shortcuts into the tire calculator/comparison/option/plus-size
 // pages, so none of them are more than a click away from the dashboard.
+// Replace your entire QuickAccessPanel function with this
+// Replace your existing QuickAccessPanel with this updated version
 function QuickAccessPanel() {
   const navigate = useNavigate();
   const [year, setYear] = useState("");
@@ -266,7 +268,8 @@ function QuickAccessPanel() {
         </div>
       </div>
 
-      <div className="tire-input-grid mb-16">
+      {/* Replaced old grid classes with inline-search-grid */}
+      <div className="inline-search-grid mb-16">
         <div className="field">
           <label>Year</label>
           <select
@@ -292,8 +295,10 @@ function QuickAccessPanel() {
             {(models || []).map((m) => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
-        <div className="field" style={{ display: "flex", alignItems: "flex-end" }}>
-          <button type="button" className="btn btn-accent" disabled={!year || !make || !model} onClick={goToFitment}>
+
+        {/* Added button-field class for targeting in CSS */}
+        <div className="field button-field">
+          <button type="button" className="btn btn-accent w-full" disabled={!year || !make || !model} onClick={goToFitment}>
             <Search size={15} /> Look up fitment
           </button>
         </div>
@@ -314,7 +319,6 @@ function QuickAccessPanel() {
     </div>
   );
 }
-
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -361,7 +365,7 @@ export default function Dashboard() {
 
       {(user.role === "staff" || user.role === "admin") && <QuickAccessPanel />}
 
-      <ClickableCard to="/tire-calculator" className="card dash-panel threed-height mb-20">
+      <ClickableCard to="/tire-calculator" className="card threed-height dash-panel mb-20">
         <div className="panel-head">
           <div>
             <h3>Tire showroom</h3>

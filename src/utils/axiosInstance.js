@@ -11,7 +11,10 @@ export const axios = Axios.create({
   timeout: 15000,
 });
 
-let interceptorsBound = false;
+// FIX: Track interceptor IDs so we can eject them. 
+// Using a boolean flag blocked re-binding in React StrictMode, causing stale closures.
+let reqInterceptorId = null;
+let resInterceptorId = null;
 
 /**
  * Binds request/response interceptors to the shared axios instance.
@@ -19,14 +22,13 @@ let interceptorsBound = false;
  * - Picks up rolling token renewals from the `x-refresh-token` response header.
  * - Reports 401s upward so the app can force a clean logout instead of
  *   silently failing requests.
- * Safe to call once; subsequent calls are ignored so React StrictMode's
- * double-invoke in dev doesn't register duplicate handlers.
  */
 export const setupAxiosInterceptors = (onTokenRenewed, onSessionExpired) => {
-  if (interceptorsBound) return;
-  interceptorsBound = true;
+  // Eject previous interceptors to prevent duplicate stacking or stale closures
+  if (reqInterceptorId !== null) axios.interceptors.request.eject(reqInterceptorId);
+  if (resInterceptorId !== null) axios.interceptors.response.eject(resInterceptorId);
 
-  axios.interceptors.request.use(
+  reqInterceptorId = axios.interceptors.request.use(
     (config) => {
       const token = useAuthStore.getState().token;
       if (token) {
@@ -37,7 +39,7 @@ export const setupAxiosInterceptors = (onTokenRenewed, onSessionExpired) => {
     (error) => Promise.reject(error)
   );
 
-  axios.interceptors.response.use(
+  resInterceptorId = axios.interceptors.response.use(
     (response) => {
       const renewedToken = response.headers["x-refresh-token"];
       if (renewedToken) {
@@ -49,11 +51,9 @@ export const setupAxiosInterceptors = (onTokenRenewed, onSessionExpired) => {
       if (error.response && error.response.status === 401) {
         onSessionExpired();
       } else {
-        // --- NEW ADDITION START ---
         // For any error that ISN'T a 401, extract the Express message and trigger the global modal
         const errorMessage = error.response?.data?.message || "An unexpected error occurred. Please try again.";
         window.dispatchEvent(new CustomEvent("api-error", { detail: errorMessage }));
-        // --- NEW ADDITION END ---
       }
       return Promise.reject(error);
     }

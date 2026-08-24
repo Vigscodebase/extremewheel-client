@@ -144,21 +144,23 @@ export default function TireSizeCalculator() {
           <Tire3DVisualizer tire={tire} label={`${tire.width}/${tire.aspect}R${tire.rim}`} accent="#FF6F91" height={240} variant="calculator" />
         </div>
 
-        <table className="compare-table">
-          <thead>
-            <tr>
-              <th>Spec</th>
-              <th>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td className="compare-table-label">Diameter</td><td className="compare-table-value">{fmt(spec.diameter)}</td></tr>
-            <tr><td className="compare-table-label">Width</td><td className="compare-table-value">{fmt(spec.width)}</td></tr>
-            <tr><td className="compare-table-label">Sidewall</td><td className="compare-table-value">{fmt(spec.sidewall)}</td></tr>
-            <tr><td className="compare-table-label">Circumference</td><td className="compare-table-value">{fmt(spec.circumference)}</td></tr>
-            <tr><td className="compare-table-label">Revs / mile</td><td className="compare-table-value">{spec.revsPerMile.toFixed(0)}</td></tr>
-          </tbody>
-        </table>
+        <div className="table-responsive">
+          <table className="compare-table">
+            <thead>
+              <tr>
+                <th>Spec</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td className="compare-table-label">Diameter</td><td className="compare-table-value">{fmt(spec.diameter)}</td></tr>
+              <tr><td className="compare-table-label">Width</td><td className="compare-table-value">{fmt(spec.width)}</td></tr>
+              <tr><td className="compare-table-label">Sidewall</td><td className="compare-table-value">{fmt(spec.sidewall)}</td></tr>
+              <tr><td className="compare-table-label">Circumference</td><td className="compare-table-value">{fmt(spec.circumference)}</td></tr>
+              <tr><td className="compare-table-label">Revs / mile</td><td className="compare-table-value">{spec.revsPerMile.toFixed(0)}</td></tr>
+            </tbody>
+          </table>
+        </div>
 
         <TireSuggestions tire={tire} />
       </div>
@@ -200,34 +202,39 @@ export default function TireSizeCalculator() {
                 : " within the typical ±3% safe range for speedometer accuracy."}
             </div>
 
-            <table className="compare-table">
-              <thead>
-                <tr><th>Spec</th><th>Current</th><th>New</th></tr>
-              </thead>
-              <tbody>
-                <tr><td className="compare-table-label">Diameter</td><td className="compare-table-value">{fmt(spec.diameter)}</td><td className="compare-table-value">{fmt(convertedSpec.diameter)}</td></tr>
-                <tr><td className="compare-table-label">Width</td><td className="compare-table-value">{fmt(spec.width)}</td><td className="compare-table-value">{fmt(convertedSpec.width)}</td></tr>
-                <tr><td className="compare-table-label">Sidewall</td><td className="compare-table-value">{fmt(spec.sidewall)}</td><td className="compare-table-value">{fmt(convertedSpec.sidewall)}</td></tr>
-                <tr><td className="compare-table-label">Circumference</td><td className="compare-table-value">{fmt(spec.circumference)}</td><td className="compare-table-value">{fmt(convertedSpec.circumference)}</td></tr>
-                <tr><td className="compare-table-label">Revs / mile</td><td className="compare-table-value">{spec.revsPerMile.toFixed(0)}</td><td className="compare-table-value">{convertedSpec.revsPerMile.toFixed(0)}</td></tr>
-              </tbody>
-            </table>
+            <div className="table-responsive">
+              <table className="compare-table">
+                <thead>
+                  <tr><th>Spec</th><th>Current</th><th>New</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td className="compare-table-label">Diameter</td><td className="compare-table-value">{fmt(spec.diameter)}</td><td className="compare-table-value">{fmt(convertedSpec.diameter)}</td></tr>
+                  <tr><td className="compare-table-label">Width</td><td className="compare-table-value">{fmt(spec.width)}</td><td className="compare-table-value">{fmt(convertedSpec.width)}</td></tr>
+                  <tr><td className="compare-table-label">Sidewall</td><td className="compare-table-value">{fmt(spec.sidewall)}</td><td className="compare-table-value">{fmt(convertedSpec.sidewall)}</td></tr>
+                  <tr><td className="compare-table-label">Circumference</td><td className="compare-table-value">{fmt(spec.circumference)}</td><td className="compare-table-value">{fmt(convertedSpec.circumference)}</td></tr>
+                  <tr><td className="compare-table-label">Revs / mile</td><td className="compare-table-value">{spec.revsPerMile.toFixed(0)}</td><td className="compare-table-value">{convertedSpec.revsPerMile.toFixed(0)}</td></tr>
+                </tbody>
+              </table>
+            </div>
 
             <h4 className="subheading-spaced">
               <Gauge size={14} className="icon-inline-sm" />
               Speedometer error
             </h4>
-            <table className="compare-table">
-              <thead>
-                <tr><th>Reading (mph)</th>{speedoTable.map((r) => <th key={r.reading}>{r.reading}</th>)}</tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="compare-table-label">Actual speed</td>
-                  {speedoTable.map((r) => <td key={r.reading} className="compare-table-value">{r.actual}</td>)}
-                </tr>
-              </tbody>
-            </table>
+
+            <div className="table-responsive">
+              <table className="compare-table">
+                <thead>
+                  <tr><th>Reading (mph)</th>{speedoTable.map((r) => <th key={r.reading}>{r.reading}</th>)}</tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="compare-table-label">Actual speed</td>
+                    {speedoTable.map((r) => <td key={r.reading} className="compare-table-value">{r.actual}</td>)}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
             <TireSuggestions tire={convertedTire} label="new wheel size" />
           </>

@@ -643,6 +643,14 @@ ul {
     margin-bottom: 6px;
 }
 
+.spec-section-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-ink);
+}
+
 .spec-compare-col.upgraded .spec-compare-col-title {
     color: var(--color-pink);
 }
@@ -749,12 +757,6 @@ ul {
     touch-action: none;
 }
 
-/* Per-page sizing/layout — the visualizer is the same component everywhere,
-   but each page embeds it in a different context, so it should not look
-   "global"/identical on every screen. Comparison & plus-size show two
-   side-by-side, narrower columns; the calculator gets a wide single
-   showcase; the option-preview sits inside a compact modal; the dashboard
-   fills its panel (handled by the .threed-height override below). */
 .tire3d-canvas-box--compare,
 .tire3d-canvas-box--plus-size {
     max-width: 420px;
@@ -838,7 +840,6 @@ ul {
 
 .tire3d-grid {
     display: grid;
-    /* grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); */
     gap: 12px;
     align-items: start;
 }
@@ -859,6 +860,7 @@ ul {
     cursor: pointer;
     padding: 0;
     margin-top: 8px;
+    white-space: nowrap;
 }
 
 @media only screen and (min-width:320px) and (max-width:767px) {
@@ -1100,9 +1102,6 @@ ul {
     transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
 }
 
-/* Any dashboard card wrapped in the ClickableCard helper — whole surface
-   navigates to its page, with a deliberately larger lift on hover/focus
-   than a plain static card gets. */
 .dash-card-clickable {
     cursor: pointer;
 }
@@ -1798,12 +1797,21 @@ ul {
 }
 
 /* =====================================================================
+   Table Responsive Utility Container
+   ===================================================================== */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* =====================================================================
    Tire Comparison Component CSS (Fluid Desktop Widths)
    ===================================================================== */
 
 .compare-grid {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     gap: 16px;
     align-items: center;
 }
@@ -1855,9 +1863,14 @@ ul {
 
 .tire-input-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
     max-width: 800px;
+}
+
+.tire-input-grid.cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    max-width: 1000px;
 }
 
 .tire-input-grid.narrow {
@@ -1972,7 +1985,7 @@ ul {
 /* --- Tire Preset Component CSS --- */
 .preset-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 16px;
     margin-top: 16px;
 }
@@ -1988,13 +2001,26 @@ ul {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 10px;
+    gap: 12px;
+}
+
+/* New wrapper to prevent flexbox blow-outs */
+.preset-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .preset-label {
     font-weight: 700;
     font-size: 14.5px;
     margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
 }
 
 .preset-size {
@@ -2003,11 +2029,13 @@ ul {
     font-weight: 800;
     color: var(--color-pink);
     margin-bottom: 2px;
+    white-space: nowrap;
 }
 
 .preset-diameter {
     font-size: 12.5px;
     color: var(--color-muted);
+    white-space: nowrap;
 }
 
 .preset-actions {
@@ -2155,7 +2183,6 @@ ul {
 .vehicle-card {
     padding: 16px;
     margin-bottom: 0;
-    /* Overrides default .card bottom margin */
     position: relative;
     display: flex;
     flex-direction: column;
@@ -2165,7 +2192,6 @@ ul {
     height: 145px;
     background: var(--color-border);
     border-radius: var(--radius-md);
-    /* Gives the image its own rounded corners inside the card */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2185,7 +2211,6 @@ ul {
     align-items: flex-start;
     padding: 0;
     flex: 1;
-    /* Pushes the gallery link to the bottom if names wrap to 2 lines */
 }
 
 .vehicle-name {
@@ -2199,7 +2224,6 @@ ul {
 .vehicle-tags {
     display: flex;
     flex-direction: column;
-    /* Stacks tags vertically like the screenshot */
     gap: 10px;
     align-items: flex-start;
     margin-bottom: 16px;
@@ -2343,6 +2367,7 @@ ul {
     display: flex;
     gap: 14px;
     margin-bottom: 22px;
+    align-items: center
 }
 
 .confirm-dialog-icon {
@@ -2517,6 +2542,7 @@ ul {
     background-color: var(--color-sidebar);
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     padding: 30px 0;
     z-index: 1000;
     transition: width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -2535,6 +2561,7 @@ ul {
     height: 48px;
     width: 100%;
     position: relative;
+    flex-shrink: 0;
 }
 
 .sidebar-logo {
@@ -2590,6 +2617,22 @@ ul {
     gap: 16px;
     width: 100%;
     position: relative;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    margin-top: -12px;
+    margin-bottom: -12px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
 }
 
 .sidebar-item {
@@ -2614,8 +2657,8 @@ ul {
 .sidebar:not(.expanded) .sidebar-item.active {
     background-color: var(--color-bg);
     margin-left: 12px;
-    width: calc(100% - 12px);
     border-radius: 24px 0 0 24px;
+    width: calc(100% - 9px);
     z-index: 10;
 }
 
@@ -2623,26 +2666,28 @@ ul {
     content: "";
     position: absolute;
     top: -24px;
-    right: 0;
-    width: 24px;
-    height: 24px;
+    right: -1px;
+    width: 25px;
+    height: 25px;
     background-image: radial-gradient(circle at top left, transparent 24px, var(--color-bg) 24.5px);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
+    box-shadow: none;
 }
 
 .sidebar:not(.expanded) .sidebar-item::after {
     content: "";
     position: absolute;
     bottom: -24px;
-    right: 0;
-    width: 24px;
-    height: 24px;
+    right: -1px;
+    width: 28px;
+    height: 25px;
     background-image: radial-gradient(circle at bottom left, transparent 24px, var(--color-bg) 24.5px);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
+    box-shadow: none;
 }
 
 .sidebar:not(.expanded) .sidebar-item:hover::before,
@@ -2652,15 +2697,21 @@ ul {
     opacity: 1;
 }
 
-.hamburger-item {
-    background-color: transparent !important;
-    margin-left: 0 !important;
-    width: 100% !important;
+.sidebar:not(.expanded) .sidebar-item.hamburger-item,
+.sidebar:not(.expanded) .sidebar-item.hamburger-item:hover,
+.sidebar:not(.expanded) .sidebar-item.hamburger-item.active,
+.sidebar-nav .hamburger-item {
+    background-color: transparent;
+    margin-left: 0;
+    width: 100%;
+    border-radius: 0;
 }
 
-.hamburger-item::before,
-.hamburger-item::after {
-    display: none !important;
+.sidebar:not(.expanded) .sidebar-item.hamburger-item::before,
+.sidebar:not(.expanded) .sidebar-item.hamburger-item::after,
+.sidebar-nav .hamburger-item::before,
+.sidebar-nav .hamburger-item::after {
+    display: none;
 }
 
 /* ICON & LABEL POSITIONING */
@@ -2681,11 +2732,11 @@ ul {
 
 .sidebar:not(.expanded) .sidebar-item:hover .icon-wrapper,
 .sidebar:not(.expanded) .sidebar-item.active .icon-wrapper {
-    left: 14px;
+    left: 50%;
     background-color: var(--color-pink);
     color: var(--color-pink-soft);
-    transform: scale(1.05);
-    box-shadow: 0 10px 30px #1f181566;
+    transform: translateX(-50%) scale(0.85);
+    box-shadow: none;
 }
 
 .sidebar-label {
@@ -2715,7 +2766,7 @@ ul {
 
 .sidebar.expanded .sidebar-item::before,
 .sidebar.expanded .sidebar-item::after {
-    display: none !important;
+    display: none;
 }
 
 .sidebar.expanded .icon-wrapper {
@@ -2727,9 +2778,9 @@ ul {
     margin-left: 64px;
 }
 
-.sidebar.expanded .sidebar-item:hover,
-.sidebar.expanded .sidebar-item.active {
-    background-color: var(--color-pink-soft) !important;
+.dashboard-layout .sidebar.expanded .sidebar-item:hover,
+.dashboard-layout .sidebar.expanded .sidebar-item.active {
+    background-color: var(--color-pink-soft);
 }
 
 .sidebar.expanded .sidebar-item:hover .icon-wrapper,
@@ -2740,8 +2791,8 @@ ul {
     background-color: transparent;
 }
 
-.sidebar.expanded .logout-btn:hover {
-    background-color: var(--color-danger-soft) !important;
+.dashboard-layout .sidebar.expanded .logout-btn:hover {
+    background-color: var(--color-danger-soft);
 }
 
 .sidebar.expanded .logout-btn:hover .icon-wrapper,
@@ -2751,12 +2802,13 @@ ul {
 
 /* 3. SIDEBAR FOOTER & LOGOUT */
 .sidebar-footer {
-    margin-top: auto;
+    margin-top: 25px;
     display: flex;
     align-items: center;
     padding: 0;
     width: 100%;
     position: relative;
+    flex-shrink: 0;
 }
 
 .sidebar-avatar {
@@ -2824,9 +2876,7 @@ ul {
     display: none;
 }
 
-/* Hamburger -> X morph: the middle line fades out while the top/bottom
-   lines rotate and translate into an X, all on one shared transition so it
-   reads as a single continuous motion rather than a swap. */
+/* Hamburger -> X morph */
 .hamburger-btn {
     display: flex;
     flex-direction: column;
@@ -2886,10 +2936,10 @@ ul {
     min-height: 0;
 }
 
-.dash-panel.threed-height .tire3d-canvas-box {
+.dashboard-layout .dash-panel.threed-height .tire3d-canvas-box {
     flex: 1;
     min-height: 0;
-    height: auto !important;
+    height: auto;
 }
 
 .alternate-tire-size h3 {
@@ -3143,10 +3193,6 @@ ul {
     font-weight: 600;
 }
 
-.sidebar-footer {
-    margin-top: 25px;
-}
-
 /* =====================================================================
    RESPONSIVE LAYOUT adjustments
    ===================================================================== */
@@ -3161,6 +3207,19 @@ ul {
 
     button.sidebar-item.active {
         padding: 20px 0px 20px 0px;
+    }
+
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item:hover,
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item.active {
+        margin-left: 8.5px;
+    }
+
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item::before {
+        width: 22px;
+    }
+
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item::after {
+        width: 25px;
     }
 }
 
@@ -3185,6 +3244,24 @@ ul {
     button.sidebar-item.active {
         padding: 20px 0px 20px 0px;
     }
+
+    .threed-height {
+        height: 35vh;
+    }
+
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item:hover,
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item.active {
+        margin-left: 8.5px;
+    }
+
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item::before {
+        width: 22px;
+    }
+
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item::after {
+        width: 25px;
+    }
+
 }
 
 @media only screen and (min-width:1180px) and (max-width:1279px) {
@@ -3216,6 +3293,23 @@ ul {
 
     .sidebar-avatar {
         left: 17px;
+    }
+
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item:hover,
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item.active {
+        margin-left: 8.5px;
+    }
+
+    .sidebar-item {
+        margin-left: -2px;
+    }
+
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item::before {
+        width: 22px;
+    }
+
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item::after {
+        width: 25px;
     }
 }
 
@@ -3250,6 +3344,11 @@ ul {
     .sidebar-avatar {
         left: 15px;
     }
+
+    .threed-height {
+        height: 35vh;
+    }
+
 }
 
 @media only screen and (min-width:768px) and (max-width:1023px) {
@@ -3286,7 +3385,8 @@ ul {
     }
 
     .preset-grid {
-        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        /* Fix iPad overlapping */
     }
 
     .compare-grid {
@@ -3302,16 +3402,76 @@ ul {
     }
 }
 
+/* =====================================================================
+   Modern Inline Search Bar Layout (Replaces the blocky 4-column grid)
+   ===================================================================== */
+
+.inline-search-grid {
+    display: grid;
+    /* Proportional widths: Year is smaller, Make/Model are wider, Button sizes to fit */
+    grid-template-columns: 0.8fr 1.2fr 1.2fr auto;
+    gap: 12px;
+    align-items: flex-end;
+    /* This aligns the button perfectly with the bottom of the select boxes */
+    max-width: 1000px;
+}
+
+/* Tablet: 3 inputs in a row, with a full-width Call-To-Action button underneath */
+@media only screen and (min-width: 768px) and (max-width: 1179px) {
+    .inline-search-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .inline-search-grid .button-field {
+        grid-column: 1 / -1;
+        /* Forces the button to span the entire bottom row */
+        margin-top: 4px;
+    }
+}
+
+/* Mobile: Stack everything vertically */
+@media only screen and (max-width: 767px) {
+    .inline-search-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .inline-search-grid .button-field {
+        margin-top: 4px;
+    }
+}
+
+@media only screen and (min-width:767px) and (max-width:1022px) {
+
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item:hover,
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item.active {
+        margin-left: 8.5px;
+    }
+
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item::before {
+        width: 22px;
+    }
+
+    .dashboard-layout .sidebar:not(.expanded) .sidebar-item::after {
+        width: 25px;
+    }
+
+    .threed-height {
+        height: 35vh;
+    }
+
+    .sidebar-item {
+        margin-left: -5px;
+    }
+}
+
 /* --- MOBILE SPECIFIC: hamburger top bar + off-canvas drawer nav --- */
-@media only screen and (min-width:320px) and (max-width:767px) {
+@media only screen and (min-width:320px) and (max-width:766px) {
     .dashboard-layout {
         flex-direction: column;
     }
 
-    /* The desktop hover-pill nav is fully replaced by the hamburger top
-       bar + off-canvas drawer on mobile. */
-    .sidebar {
-        display: none !important;
+    body .dashboard-layout .sidebar {
+        display: none;
     }
 
     .mobile-topbar {
@@ -3332,10 +3492,6 @@ ul {
 
     .mobile-topbar-logo {
         height: 32px;
-        /* width: 30px;
-        object-fit: contain;
-        border-radius: 50%;
-        background: var(--color-pink); */
     }
 
     .mobile-topbar-avatar {
@@ -3346,7 +3502,6 @@ ul {
         left: auto;
     }
 
-    /* Backdrop fades in behind the drawer and closes it on tap. */
     .mobile-drawer-backdrop {
         display: block;
         position: fixed;
@@ -3363,8 +3518,6 @@ ul {
         pointer-events: auto;
     }
 
-    /* Off-canvas panel slides in from the left; nav items inside stagger in
-       right after, each with its own transition-delay set inline. */
     .mobile-drawer {
         display: flex;
         flex-direction: column;
@@ -3401,10 +3554,10 @@ ul {
         background: var(--color-pink);
     }
 
-    .mobile-drawer-close {
+    .mobile-drawer-header .mobile-drawer-close {
         position: static;
-        opacity: 1 !important;
-        transform: none !important;
+        opacity: 1;
+        transform: none;
         color: var(--color-bg);
         width: 36px;
         height: 36px;
@@ -3431,9 +3584,6 @@ ul {
         font-weight: 600;
         cursor: pointer;
         text-align: left;
-        /* Staggered slide/fade entrance, driven by the .open class on the
-           parent drawer; each item's transition-delay is set inline by
-           sidebar.jsx so they cascade in one after another. */
         opacity: 0;
         transform: translateX(-16px);
         transition: opacity 0.3s ease, transform 0.3s ease, background 0.15s ease;
@@ -3566,7 +3716,8 @@ ul {
     }
 
     .preset-form-grid,
-    .tire-input-grid {
+    .tire-input-grid,
+    .tire-input-grid.cols-4 {
         grid-template-columns: 1fr;
     }
 
@@ -3611,6 +3762,14 @@ ul {
         padding-left: 18px;
         padding-right: 18px;
     }
+
+    .modal-backdrop {
+        z-index: 1300;
+    }
+
+    .lightbox-overlay {
+        z-index: 1300;
+    }
 }
 
 /* ==========================================
@@ -3640,190 +3799,6 @@ ul {
     margin-top: 24px;
     display: flex;
     justify-content: flex-end;
-}
-
-/* =====================================================================
-   1. SIDEBAR SCROLLING FIX (Fixed Logo & Footer)
-   ===================================================================== */
-.sidebar {
-    /* Ensure the main sidebar constraints handle child scrolling */
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.sidebar-header {
-    flex-shrink: 0;
-    /* Keeps the logo permanently fixed at the top */
-}
-
-.sidebar-footer {
-    flex-shrink: 0;
-    /* Keeps the profile/logout permanently fixed at the bottom */
-    margin-top: 0;
-}
-
-.sidebar-nav {
-    flex: 1;
-    /* Takes up the remaining middle space */
-    overflow-y: auto;
-    /* Enables vertical scrolling */
-    overflow-x: hidden;
-    /* Prevents horizontal overflow from breaking the pill */
-
-    /* Padding buffer to prevent the gooey cutout effect from being 
-       clipped at the very top and bottom edges while scrolling */
-    padding-top: 12px;
-    padding-bottom: 12px;
-    margin-top: -12px;
-    margin-bottom: -12px;
-}
-
-/* Custom Scrollbar Styling (Thin & unobtrusive for the floating pill) */
-.sidebar-nav::-webkit-scrollbar {
-    width: 4px;
-}
-
-.sidebar-nav::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.sidebar-nav::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-}
-
-.sidebar.expanded .sidebar-nav::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    /* Slightly brighter when expanded */
-}
-
-
-/* =====================================================================
-   1. SIDEBAR SCROLLING FIX (Completely Invisible Scrollbar)
-   ===================================================================== */
-.sidebar {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.sidebar-header {
-    flex-shrink: 0;
-}
-
-.sidebar-footer {
-    flex-shrink: 0;
-    margin-top: 0;
-}
-
-.sidebar-nav {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-top: 12px;
-    padding-bottom: 12px;
-    margin-top: -12px;
-    margin-bottom: -12px;
-
-    /* Hides scrollbar in Firefox */
-    scrollbar-width: none;
-    /* Hides scrollbar in IE/Edge */
-    -ms-overflow-style: none;
-}
-
-/* Hides scrollbar in Chrome/Safari/Webkit completely */
-.sidebar-nav::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-    background: transparent;
-}
-
-
-/* =====================================================================
-   FIX: Restore Missing Shapes & Apply Flawless Cutout
-   ===================================================================== */
-/* 1. RESTORE the pill shape and margin, while applying the 1px width fix */
-.sidebar:not(.expanded) .sidebar-item:hover,
-.sidebar:not(.expanded) .sidebar-item.active {
-    background-color: var(--color-bg) !important;
-    margin-left: 12px !important;
-    /* Restores the left gap */
-    border-radius: 24px 0 0 24px !important;
-    /* Restores the curved left corners */
-    width: calc(100% - 11px) !important;
-    /* Seals the right gap */
-    z-index: 10 !important;
-}
-
-/* 2. Remove the drop shadow from the active/hovered pink icon */
-.sidebar:not(.expanded) .sidebar-item:hover .icon-wrapper,
-.sidebar:not(.expanded) .sidebar-item.active .icon-wrapper {
-    box-shadow: none !important;
-}
-
-/* 3. Stretch the top curve 1px down & 1px right to overlap and seal edges */
-.sidebar:not(.expanded) .sidebar-item::before {
-    top: -24px !important;
-    height: 25px !important;
-    right: -1px !important;
-    width: 25px !important;
-    box-shadow: none !important;
-}
-
-/* 4. Stretch the bottom curve 1px up & 1px right to overlap and seal edges */
-.sidebar:not(.expanded) .sidebar-item::after {
-    bottom: -24px !important;
-    height: 25px !important;
-    right: -1px !important;
-    width: 25px !important;
-    box-shadow: none !important;
-}
-
-/* =====================================================================
-   FIX: Flawless Cutout & Perfect Icon Centering
-   ===================================================================== */
-/* 1. Pill shape, margin, and 1px width stretch to seal right gap */
-.sidebar:not(.expanded) .sidebar-item:hover,
-.sidebar:not(.expanded) .sidebar-item.active {
-    background-color: var(--color-bg) !important;
-    margin-left: 12px !important;
-    border-radius: 24px 0 0 24px !important;
-    width: calc(100% - 9px) !important;
-    z-index: 10 !important;
-}
-
-/* 2. Stretch the top curve 1px down & 1px right to overlap and seal edges */
-.sidebar:not(.expanded) .sidebar-item::before {
-    top: -24px !important;
-    height: 25px !important;
-    right: -1px !important;
-    width: 25px !important;
-    box-shadow: none !important;
-}
-
-/* 3. Stretch the bottom curve 1px up & 1px right to overlap and seal edges */
-.sidebar:not(.expanded) .sidebar-item::after {
-    bottom: -24px !important;
-    height: 25px !important;
-    right: -1px !important;
-    width: 28px !important;
-    box-shadow: none !important;
-}
-
-/* 4. PERFECT ICON CENTERING & GAP */
-.sidebar:not(.expanded) .sidebar-item:hover .icon-wrapper,
-.sidebar:not(.expanded) .sidebar-item.active .icon-wrapper {
-    /* Remove the heavy shadow */
-    box-shadow: none !important;
-
-    /* Pin to the exact horizontal center of the white background */
-    left: 50% !important;
-
-    /* Shift back by 50% of its own width to center it flawlessly, 
-       and shrink it to 0.85 to create a clean, even white gap */
-    transform: translateX(-50%) scale(0.85) !important;
 }
 
 /* =====================================================================
@@ -3896,12 +3871,10 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    /* Forces the icon and text to align neatly to the left */
     text-align: left;
     gap: 10px;
     width: 100%;
     padding: 12px 16px;
-    /* Adjusted padding for perfectly even side spacing */
     border: none;
     background: transparent;
     color: var(--color-danger);

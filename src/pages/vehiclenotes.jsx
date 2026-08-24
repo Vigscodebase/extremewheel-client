@@ -30,6 +30,7 @@ const emptyForm = {
   beforeImage: "",
   afterImage: "",
   gallery: [],
+  staffNotes: [],
   eventDate: "",
   existingSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
   upgradedSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
@@ -44,8 +45,6 @@ function fileToDataUrl(file) {
   });
 }
 
-// Formats an ISO date string (or Date) down to the yyyy-mm-dd value an
-// <input type="date"> expects.
 function toDateInputValue(value) {
   if (!value) return "";
   const d = new Date(value);
@@ -73,18 +72,14 @@ export default function VehicleNotes() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [newNoteText, setNewNoteText] = useState("");
 
-  // Gallery viewer: which vehicle's gallery is open + which photo index is
-  // showing in the lightbox (null = lightbox closed).
   const [galleryVehicle, setGalleryVehicle] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(null);
 
   const saving = createMutation.isPending || updateMutation.isPending;
   const deleting = deleteMutation.isPending;
-  // Looks up the freshest copy of the vehicle being edited from the query
-  // cache (rather than the snapshot captured when the modal opened), so
-  // newly added/removed staff notes show up immediately without closing
-  // and reopening the modal.
   const currentEditingVehicle = editing ? vehicles.find((v) => v._id === editing._id) || editing : null;
+
+  const notesToRender = editing ? (currentEditingVehicle?.staffNotes || []) : (form.staffNotes || []);
 
   const openAdd = () => {
     setEditing(null);
@@ -103,6 +98,7 @@ export default function VehicleNotes() {
       beforeImage: v.beforeImage || "",
       afterImage: v.afterImage || "",
       gallery: v.gallery || [],
+      staffNotes: v.staffNotes || [],
       eventDate: toDateInputValue(v.eventDate),
       existingSpec: {
         engine: v.existingSpec?.engine || "",
@@ -125,8 +121,6 @@ export default function VehicleNotes() {
     setFormOpen(true);
   };
 
-  // Updates a single field within existingSpec/upgradedSpec (engine text, or
-  // one of the tyre width/aspect/rim numbers) without clobbering the rest.
   const updateSpec = (which) => (patch) => {
     setForm((f) => ({
       ...f,
@@ -142,8 +136,6 @@ export default function VehicleNotes() {
     const file = e.target.files?.[0];
     if (!file) return;
     const dataUrl = await fileToDataUrl(file);
-    // Use the "before" photo as the card thumbnail when no explicit
-    // thumbnail has been set yet — keeps existing card layout working.
     setForm((f) => ({ ...f, [field]: dataUrl, ...(field === "beforeImage" && !f.image ? { image: dataUrl } : {}) }));
   };
 
@@ -216,7 +208,7 @@ export default function VehicleNotes() {
   return (
     <div>
       <PageHeader
-        eyebrow="Ectremewheel records"
+        eyebrow="Extremewheel records"
         title="Vehicle Notes"
         subtitle="Keep a visual reference of every vehicle in the extremewheel - including before/after photos and a full image gallery."
         action={
@@ -242,12 +234,8 @@ export default function VehicleNotes() {
               <div className="vehicle-body">
                 <p className="vehicle-name">{v.name}</p>
                 <div className="vehicle-tags">
-                  <span className="badge badge-live">
-                    {v.type}
-                  </span>
-                  <span className="badge badge-model">
-                    {v.model}
-                  </span>
+                  <span className="badge badge-live">{v.type}</span>
+                  <span className="badge badge-model">{v.model}</span>
                 </div>
                 <p className="text-muted fs-11 mt-4">
                   {v.eventDate ? `Event date: ${new Date(v.eventDate).toLocaleDateString()}` : "No event date set"}
@@ -293,7 +281,7 @@ export default function VehicleNotes() {
         </div>
       )}
 
-      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Edit vehicle" : "Add vehicle"} width={520}>
+      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Edit vehicle" : "Add vehicle"} width={560}>
         <form onSubmit={submitForm}>
           {formError && (
             <div className="alert-error">
@@ -345,146 +333,164 @@ export default function VehicleNotes() {
             </div>
           </div>
 
-          <div className="field field-mb-lg">
-            <label>Existing &amp; upgraded engine / tyre specification</label>
-            <div className="spec-compare-grid">
-              <div className="spec-compare-col">
-                <p className="spec-compare-col-title">Existing (before)</p>
-                <div className="field field-mb">
-                  <label>Engine spec</label>
+          <div className="field-mb-lg">
+            <div className="spec-section">
+              <h4 className="spec-section-title mb-10">Existing (before)</h4>
+              <div className="field field-mb">
+                <label>Engine spec</label>
+                <input
+                  value={form.existingSpec.engine}
+                  onChange={(e) => updateSpec("existingSpec")({ engine: e.target.value })}
+                  placeholder="e.g. 2.2L Duratorq TDCi Diesel"
+                />
+              </div>
+              <div className="tire-input-grid">
+                <div className="field">
+                  <label>Width</label>
                   <input
-                    value={form.existingSpec.engine}
-                    onChange={(e) => updateSpec("existingSpec")({ engine: e.target.value })}
-                    placeholder="e.g. 2.2L Duratorq TDCi Diesel"
+                    type="number"
+                    value={form.existingSpec.tyre.width}
+                    onChange={(e) => updateSpec("existingSpec")({ tyre: { width: e.target.value } })}
                   />
                 </div>
-                <div className="tire-input-grid">
-                  <div className="field">
-                    <label>Width</label>
-                    <input
-                      type="number"
-                      value={form.existingSpec.tyre.width}
-                      onChange={(e) => updateSpec("existingSpec")({ tyre: { width: e.target.value } })}
-                    />
-                  </div>
-                  <div className="field">
-                    <label>Aspect</label>
-                    <input
-                      type="number"
-                      value={form.existingSpec.tyre.aspect}
-                      onChange={(e) => updateSpec("existingSpec")({ tyre: { aspect: e.target.value } })}
-                    />
-                  </div>
-                  <div className="field">
-                    <label>Rim</label>
-                    <input
-                      type="number"
-                      value={form.existingSpec.tyre.rim}
-                      onChange={(e) => updateSpec("existingSpec")({ tyre: { rim: e.target.value } })}
-                    />
-                  </div>
+                <div className="field">
+                  <label>Aspect</label>
+                  <input
+                    type="number"
+                    value={form.existingSpec.tyre.aspect}
+                    onChange={(e) => updateSpec("existingSpec")({ tyre: { aspect: e.target.value } })}
+                  />
+                </div>
+                <div className="field">
+                  <label>Rim</label>
+                  <input
+                    type="number"
+                    value={form.existingSpec.tyre.rim}
+                    onChange={(e) => updateSpec("existingSpec")({ tyre: { rim: e.target.value } })}
+                  />
                 </div>
               </div>
+            </div>
 
-              <div className="spec-compare-col upgraded">
-                <p className="spec-compare-col-title">Upgraded (after)</p>
-                <div className="field field-mb">
-                  <label>Engine spec</label>
+            <hr style={{ border: "none", borderTop: "1px solid var(--color-border)", margin: "24px 0" }} />
+
+            <div className="spec-section">
+              <h4 className="spec-section-title mb-10" style={{ color: "var(--color-pink)" }}>Upgraded (after)</h4>
+              <div className="field field-mb">
+                <label>Engine spec</label>
+                <input
+                  value={form.upgradedSpec.engine}
+                  onChange={(e) => updateSpec("upgradedSpec")({ engine: e.target.value })}
+                  placeholder="e.g. 2.0L EcoBlue Bi-Turbo Diesel"
+                />
+              </div>
+              <div className="tire-input-grid">
+                <div className="field">
+                  <label>Width</label>
                   <input
-                    value={form.upgradedSpec.engine}
-                    onChange={(e) => updateSpec("upgradedSpec")({ engine: e.target.value })}
-                    placeholder="e.g. 2.0L EcoBlue Bi-Turbo Diesel"
+                    type="number"
+                    value={form.upgradedSpec.tyre.width}
+                    onChange={(e) => updateSpec("upgradedSpec")({ tyre: { width: e.target.value } })}
                   />
                 </div>
-                <div className="tire-input-grid">
-                  <div className="field">
-                    <label>Width</label>
-                    <input
-                      type="number"
-                      value={form.upgradedSpec.tyre.width}
-                      onChange={(e) => updateSpec("upgradedSpec")({ tyre: { width: e.target.value } })}
-                    />
-                  </div>
-                  <div className="field">
-                    <label>Aspect</label>
-                    <input
-                      type="number"
-                      value={form.upgradedSpec.tyre.aspect}
-                      onChange={(e) => updateSpec("upgradedSpec")({ tyre: { aspect: e.target.value } })}
-                    />
-                  </div>
-                  <div className="field">
-                    <label>Rim</label>
-                    <input
-                      type="number"
-                      value={form.upgradedSpec.tyre.rim}
-                      onChange={(e) => updateSpec("upgradedSpec")({ tyre: { rim: e.target.value } })}
-                    />
-                  </div>
+                <div className="field">
+                  <label>Aspect</label>
+                  <input
+                    type="number"
+                    value={form.upgradedSpec.tyre.aspect}
+                    onChange={(e) => updateSpec("upgradedSpec")({ tyre: { aspect: e.target.value } })}
+                  />
+                </div>
+                <div className="field">
+                  <label>Rim</label>
+                  <input
+                    type="number"
+                    value={form.upgradedSpec.tyre.rim}
+                    onChange={(e) => updateSpec("upgradedSpec")({ tyre: { rim: e.target.value } })}
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-          {editing && (
-            <div className="field field-mb-lg">
-              <label>
-                <MessageSquare size={13} style={{ verticalAlign: "-2px", marginRight: 4 }} />
-                Internal staff notes &amp; comments
-              </label>
-              {!isStaffOrAdmin ? (
-                <p className="text-muted fs-11">Only staff and admin accounts can view or add internal notes.</p>
-              ) : (
-                <>
-                  <div className="staff-notes-list">
-                    {(currentEditingVehicle?.staffNotes || []).length === 0 ? (
-                      <p className="text-muted fs-11">No internal notes yet.</p>
-                    ) : (
-                      currentEditingVehicle.staffNotes
-                        .slice()
-                        .reverse()
-                        .map((n) => (
-                          <div key={n._id} className="staff-note-row">
-                            <div>
-                              <p className="staff-note-text">{n.text}</p>
-                              <p className="staff-note-meta">
-                                {n.authorName || "Staff"} · {new Date(n.createdAt).toLocaleString()}
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              className="icon-btn danger"
-                              title="Delete note"
-                              onClick={() => removeStaffNote.mutateAsync({ id: editing._id, noteId: n._id })}
-                            >
-                              <Trash2 size={12} />
-                            </button>
+          <div className="field field-mb-lg">
+            <label>
+              <MessageSquare size={13} style={{ verticalAlign: "-2px", marginRight: 4 }} />
+              Internal staff notes &amp; comments
+            </label>
+            {!isStaffOrAdmin ? (
+              <p className="text-muted fs-11">Only staff and admin accounts can view or add internal notes.</p>
+            ) : (
+              <>
+                <div className="staff-notes-list">
+                  {notesToRender.length === 0 ? (
+                    <p className="text-muted fs-11">No internal notes yet.</p>
+                  ) : (
+                    notesToRender
+                      .slice()
+                      .reverse()
+                      .map((n, i) => (
+                        <div key={n._id || i} className="staff-note-row">
+                          <div>
+                            <p className="staff-note-text">{n.text}</p>
+                            <p className="staff-note-meta">
+                              {n.authorName || "Staff"} · {n.createdAt ? new Date(n.createdAt).toLocaleString() : "Just now"}
+                            </p>
                           </div>
-                        ))
-                    )}
-                  </div>
-                  <div className="staff-note-add-row">
-                    <input
-                      value={newNoteText}
-                      onChange={(e) => setNewNoteText(e.target.value)}
-                      placeholder="Add an internal note or comment…"
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      disabled={!newNoteText.trim() || addStaffNote.isPending}
-                      onClick={async () => {
+                          <button
+                            type="button"
+                            className="icon-btn danger"
+                            title="Delete note"
+                            onClick={() => {
+                              if (editing && n._id) {
+                                removeStaffNote.mutateAsync({ id: editing._id, noteId: n._id });
+                              } else {
+                                setForm((f) => ({ ...f, staffNotes: f.staffNotes.filter((sn) => sn._id !== n._id) }));
+                              }
+                            }}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))
+                  )}
+                </div>
+                <div className="staff-note-add-row">
+                  <input
+                    value={newNoteText}
+                    onChange={(e) => setNewNoteText(e.target.value)}
+                    placeholder="Add an internal note or comment…"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    disabled={!newNoteText.trim() || addStaffNote.isPending}
+                    onClick={async () => {
+                      if (editing) {
                         await addStaffNote.mutateAsync({ id: editing._id, text: newNoteText.trim() });
-                        setNewNoteText("");
-                      }}
-                    >
-                      {addStaffNote.isPending ? "Adding…" : "Add note"}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+                      } else {
+                        setForm((f) => ({
+                          ...f,
+                          staffNotes: [
+                            ...(f.staffNotes || []),
+                            {
+                              _id: Date.now().toString(),
+                              text: newNoteText.trim(),
+                              authorName: user?.name || "You",
+                              createdAt: new Date().toISOString(),
+                            },
+                          ],
+                        }));
+                      }
+                      setNewNoteText("");
+                    }}
+                  >
+                    {addStaffNote.isPending ? "Adding…" : "Add note"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
 
           <div className="field field-mb-lg">
             <label>Image gallery</label>
@@ -534,7 +540,7 @@ export default function VehicleNotes() {
               </div>
             )}
 
-            {(galleryVehicle.existingSpec?.engine || galleryVehicle.existingSpec?.tyre?.width || galleryVehicle.upgradedSpec?.engine || galleryVehicle.upgradedSpec?.tyre?.width) && (
+            {/* {(galleryVehicle.existingSpec?.engine || galleryVehicle.existingSpec?.tyre?.width || galleryVehicle.upgradedSpec?.engine || galleryVehicle.upgradedSpec?.tyre?.width) && (
               <div className="field field-mb-lg">
                 <label>Existing vs. upgraded specification</label>
                 <div className="spec-compare-grid">
@@ -560,7 +566,28 @@ export default function VehicleNotes() {
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
+
+            {/* {isStaffOrAdmin && galleryVehicle.staffNotes?.length > 0 && (
+              <div className="field field-mb-lg">
+                <label>
+                  <MessageSquare size={13} style={{ verticalAlign: "-2px", marginRight: 4 }} />
+                  Internal staff notes
+                </label>
+                <div className="staff-notes-list">
+                  {galleryVehicle.staffNotes.slice().reverse().map((n) => (
+                    <div key={n._id} className="staff-note-row">
+                      <div>
+                        <p className="staff-note-text">{n.text}</p>
+                        <p className="staff-note-meta">
+                          {n.authorName || "Staff"} · {new Date(n.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )} */}
 
             <div className="field">
               <label>Gallery ({galleryVehicle.gallery?.length || 0})</label>
