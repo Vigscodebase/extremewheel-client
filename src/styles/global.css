@@ -1863,7 +1863,7 @@ ul {
 
 .tire-input-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
     max-width: 800px;
 }
@@ -2276,6 +2276,54 @@ ul {
 
 .vehicle-gallery-btn:hover {
     filter: brightness(0.85);
+}
+
+/* --- Vehicle Notes: database card, filter bar --- */
+
+.vehicle-db-card p {
+    margin: 0;
+}
+
+.vehicle-filter-bar {
+    padding: 16px 20px;
+}
+
+.vehicle-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr) auto;
+    gap: 14px;
+    align-items: end;
+}
+
+.vehicle-filter-clear {
+    white-space: nowrap;
+    height: 44px;
+}
+
+/* --- 2-column variant of the shared tire-input-grid --- */
+
+.tire-input-grid.cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* --- Plus Size Options: vehicle-specific upgrade sizes box --- */
+
+.vehicle-upgrade-box {
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    background: #FBFBFE;
+}
+
+.vehicle-upgrade-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.vehicle-upgrade-grid .compare-table {
+    width: 100%;
 }
 
 .image-upload {
@@ -3349,6 +3397,15 @@ ul {
         height: 35vh;
     }
 
+    .vehicle-filter-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .vehicle-filter-clear {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+
 }
 
 @media only screen and (min-width:768px) and (max-width:1023px) {
@@ -3382,6 +3439,20 @@ ul {
 
     .vehicle-grid {
         grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    }
+
+    .vehicle-filter-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .vehicle-filter-clear {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+
+    .vehicle-upgrade-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
 
     .preset-grid {
@@ -3717,8 +3788,28 @@ ul {
 
     .preset-form-grid,
     .tire-input-grid,
-    .tire-input-grid.cols-4 {
+    .tire-input-grid.cols-4,
+    .tire-input-grid.cols-2 {
         grid-template-columns: 1fr;
+    }
+
+    .vehicle-filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .vehicle-filter-clear {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .vehicle-upgrade-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .vehicle-db-card .modal-actions {
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .compare-grid {

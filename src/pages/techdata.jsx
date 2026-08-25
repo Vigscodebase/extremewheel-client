@@ -68,7 +68,7 @@ function WheelOffsetChart({ record, show3D = true }) {
 }
 
 export default function TechData() {
-  const [tab, setTab] = useState("lookup"); // "lookup" | "manual" | "csv"
+  const [tab, setTab] = useState("lookup"); // "lookup" | "manual" | "csv" | "guide"
 
   return (
     <div>
@@ -82,22 +82,28 @@ export default function TechData() {
         <button type="button" className={tab === "lookup" ? "active" : ""} onClick={() => setTab("lookup")}>Vehicle lookup</button>
         <button type="button" className={tab === "manual" ? "active" : ""} onClick={() => setTab("manual")}>Manual reference</button>
         <button type="button" className={tab === "csv" ? "active" : ""} onClick={() => setTab("csv")}>CSV import / export</button>
+        <button type="button" className={tab === "guide" ? "active" : ""} onClick={() => setTab("guide")}>Guide</button>
       </div>
 
-      <div className="card mb-20">
-        <h3 className="mb-10">
-          <Info size={16} className="icon-inline" />
-          Wheel & offset glossary
-        </h3>
-        <div className="preset-grid">
-          {GLOSSARY.map((g) => (
-            <div key={g.term} className="card p-14">
-              <p className="preset-label">{g.term}</p>
-              <p className="text-muted fs-13 leading-relaxed">{g.def}</p>
-            </div>
-          ))}
+      {/* The glossary only renders on the Guide tab now — on every other tab it
+          was pushing results below the fold, so results on those tabs now fit
+          in one screen without a vertical scrollbar. */}
+      {tab === "guide" && (
+        <div className="card mb-20">
+          <h3 className="mb-10">
+            <Info size={16} className="icon-inline" />
+            Wheel & offset glossary
+          </h3>
+          <div className="preset-grid">
+            {GLOSSARY.map((g) => (
+              <div key={g.term} className="card p-14">
+                <p className="preset-label">{g.term}</p>
+                <p className="text-muted fs-13 leading-relaxed">{g.def}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {tab === "lookup" && <VehicleLookupTab />}
       {tab === "manual" && <ManualReferenceTab />}
@@ -254,7 +260,7 @@ function ManualReferenceTab() {
         <select value={selectedId} onChange={onSelectVehicle} disabled={isLoading}>
           <option value="">{isLoading ? "Loading…" : "Select a vehicle"}</option>
           {(vehicles || []).map((v) => (
-            <option key={v._id} value={v._id}>{v.name} — {v.type} / {v.model}</option>
+            <option key={v._id} value={v._id}>{v.name} — {v.make} {v.model} ({v.type})</option>
           ))}
         </select>
       </div>
@@ -262,8 +268,9 @@ function ManualReferenceTab() {
       {vehicle && (
         <>
           <div className="vehicle-tags mb-14">
-            <span className="badge badge-live">{vehicle.type}</span>
+            <span className="badge badge-live">{vehicle.make}</span>
             <span className="badge badge-model">{vehicle.model}</span>
+            <span className="badge badge-model">{vehicle.type}</span>
           </div>
 
           <div className="field field-mb">

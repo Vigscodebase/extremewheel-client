@@ -1,4 +1,4 @@
-import { Eye, Save, Search, TrendingUp } from "lucide-react";
+import { Eye, Layers, Save, Search, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import PageHeader from "../components/pageheader";
@@ -6,6 +6,13 @@ import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import { usePlusSizeSearch, useSavePlusSizeMatch } from "../hooks/queries/usePlusSize";
+import {
+  useAppGuideFitment,
+  useAppGuideMakes,
+  useAppGuideModels,
+  useAppGuideTypes,
+  useAppGuideYears,
+} from "../hooks/queries/useAppGuide";
 import { PLUS_SIZE_HEIGHT_TOLERANCE_PCT, PLUS_SIZE_TREAD_TOLERANCE_PCT } from "../utils/constants";
 
 const emptyOe = { width: 225, aspect: 65, rim: 17, targetRim: "" };
@@ -15,6 +22,181 @@ const SORT_OPTIONS = [
   { value: "height", label: "Closest overall height" },
   { value: "tread", label: "Closest tread width" },
 ];
+
+// Wheel diameters covered by the Application Guide's F17..F30 upgrade-size
+// columns (F17 = 15", ... F30 = 28" — see server/models/AppGuide.js).
+const UPGRADE_DIAMETERS = Array.from({ length: 14 }, (_, i) => String(15 + i));
+
+const STAG_OPTIONS = [
+  { key: "", label: "Base" },
+  { key: "1", label: "Option 1" },
+  { key: "2", label: "Option 2" },
+  { key: "3", label: "Option 3" },
+  { key: "4", label: "Option 4" },
+];
+
+// Parses tire size strings like "265/70R17", "225 65 17" into {width, aspect, rim}.
+function parseTireSizeString(str) {
+  if (!str) return null;
+  const match = String(str).match(/(\d{3})\s*[\/\s]\s*(\d{2,3})\s*R?\s*(\d{2})/i);
+  if (!match) return null;
+  return { width: Number(match[1]), aspect: Number(match[2]), rim: Number(match[3]) };
+}
+
+function VehicleUpgradeSizesCard({ onUseAsOe }) {
+  const [year, setYear] = useState("");
+  const [make, setMake] = useState("");
+  const [model, setModel] = useState("");
+  const [typeOption, setTypeOption] = useState("");
+
+  const { data: years, isLoading: loadingYears } = useAppGuideYears();
+  const { data: makes, isLoading: loadingMakes } = useAppGuideMakes(year);
+  const { data: models, isLoading: loadingModels } = useAppGuideModels(year, make);
+  const { data: types, isLoading: loadingTypes } = useAppGuideTypes(year, make, model);
+
+  const [selType, selOption] = typeOption ? typeOption.split("|") : [null, null];
+  const { data: fitment, isLoading: loadingFitment } = useAppGuideFitment(year, make, model, selType, selOption);
+
+  const onYearChange = (e) => { setYear(e.target.value); setMake(""); setModel(""); setTypeOption(""); };
+  const onMakeChange = (e) => { setMake(e.target.value); setModel(""); setTypeOption(""); };
+  const onModelChange = (e) => { setModel(e.target.value); setTypeOption(""); };
+
+  const step = !year ? 1 : !make ? 2 : !model ? 3 : !typeOption ? 4 : 5;
+
+  return (
+    <div className="card mt-20">
+      <h3 className="mb-4">
+        <Layers size={16} className="icon-inline" />
+        Vehicle-specific upgrade sizes
+      </h3>
+      <p className="text-muted mb-16">
+        Look up the manufacturer-approved upgrade tire sizes for a specific vehicle from the Application Guide — by wheel
+        diameter, and any staggered front/rear fitment options — separate from the tolerance search above.
+      </p>
+
+      <div className="tire-input-grid field-mb">
+        <div className="field">
+          <label>Year</label>
+          <select value={year} onChange={onYearChange} disabled={loadingYears}>
+            <option value="">{loadingYears ? "Loading…" : "Select year"}</option>
+            {(years || []).map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label>Make</label>
+          <select value={make} onChange={onMakeChange} disabled={!year || loadingMakes}>
+            <option value="">{!year ? "Select year first" : loadingMakes ? "Loading…" : "Select make"}</option>
+            {(makes || []).map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label>Model</label>
+          <select value={model} onChange={onModelChange} disabled={!make || loadingModels}>
+            <option value="">{!make ? "Select make first" : loadingModels ? "Loading…" : "Select model"}</option>
+            {(models || []).map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label>Type / Option</label>
+          <select value={typeOption} onChange={(e) => setTypeOption(e.target.value)} disabled={!model || loadingTypes}>
+            <option value="">{!model ? "Select model first" : loadingTypes ? "Loading…" : "Select type"}</option>
+            {(types || []).map((t) => (
+              <option key={`${t.type}|${t.option}`} value={`${t.type}|${t.option || ""}`}>
+                {t.type}{t.option ? ` — ${t.option}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {step < 5 ? (
+        <div className="empty-state-card">
+          {step === 1 && "Start by selecting a year."}
+          {step === 2 && "Now select a make."}
+          {step === 3 && "Now select a model."}
+          {step === 4 && "Now select a type to see its upgrade sizes."}
+        </div>
+      ) : loadingFitment ? (
+        <p className="text-muted">Loading upgrade sizes…</p>
+      ) : !fitment || fitment.length === 0 ? (
+        <div className="empty-state-card">No Application Guide data on file for this fitment.</div>
+      ) : (
+        fitment.map((record) => {
+          const diameterRows = UPGRADE_DIAMETERS
+            .map((d) => ({ diameter: d, size: record.upgradeSizeByDiameter?.[d] }))
+            .filter((row) => row.size);
+          const stagRows = STAG_OPTIONS
+            .map((opt) => ({
+              label: opt.label,
+              front: opt.key ? record[`stag${opt.key}Front`] : record.stagFront,
+              rear: opt.key ? record[`stag${opt.key}Rear`] : record.stagRear,
+            }))
+            .filter((row) => row.front || row.rear);
+          const baseParsed = parseTireSizeString(record.txtTireSize);
+
+          return (
+            <div key={record._id} className="vehicle-upgrade-box mt-16">
+              <div className="modal-actions modal-actions-start mb-10">
+                <p className="preset-label mb-0">
+                  {record.txtTireSize ? `Base size: ${record.txtTireSize}` : "Base size on file"}
+                </p>
+                {baseParsed && (
+                  <button type="button" className="btn btn-ghost" onClick={() => onUseAsOe(baseParsed)}>
+                    <Search size={13} /> Use as OE size above
+                  </button>
+                )}
+              </div>
+
+              <div className="vehicle-upgrade-grid">
+                <div>
+                  <p className="fs-11 text-muted mb-6" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.02em" }}>
+                    Upgrade size by wheel diameter
+                  </p>
+                  {diameterRows.length === 0 ? (
+                    <p className="text-muted fs-13">No diameter-specific upgrade sizes on file for this fitment.</p>
+                  ) : (
+                    <table className="compare-table">
+                      <thead><tr><th>Diameter</th><th>Upgrade size</th></tr></thead>
+                      <tbody>
+                        {diameterRows.map((row) => (
+                          <tr key={row.diameter}>
+                            <td className="compare-table-label">{row.diameter}"</td>
+                            <td className="compare-table-value">{row.size}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+                <div>
+                  <p className="fs-11 text-muted mb-6" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.02em" }}>
+                    Staggered fitment options (front / rear)
+                  </p>
+                  {stagRows.length === 0 ? (
+                    <p className="text-muted fs-13">No staggered fitment options on file for this fitment.</p>
+                  ) : (
+                    <table className="compare-table">
+                      <thead><tr><th>Option</th><th>Front</th><th>Rear</th></tr></thead>
+                      <tbody>
+                        {stagRows.map((row) => (
+                          <tr key={row.label}>
+                            <td className="compare-table-label">{row.label}</td>
+                            <td className="compare-table-value">{row.front || "—"}</td>
+                            <td className="compare-table-value">{row.rear || "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
 
 export default function PlusSizeOptions() {
   const location = useLocation();
@@ -78,6 +260,11 @@ export default function PlusSizeOptions() {
       summary: `${oe.width}/${oe.aspect}R${oe.rim} → ${r.label} (${r.width}/${r.aspect}R${r.rim})`,
     });
     setSavedIds((prev) => new Set(prev).add(r._id));
+  };
+
+  const useAsOe = (parsed) => {
+    setOe((f) => ({ ...f, width: parsed.width, aspect: parsed.aspect, rim: parsed.rim }));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -282,6 +469,8 @@ export default function PlusSizeOptions() {
           Enter an OE size above and search your saved tire library for the closest plus-size matches.
         </div>
       )}
+
+      <VehicleUpgradeSizesCard onUseAsOe={useAsOe} />
     </div>
   );
 }

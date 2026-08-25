@@ -1,5 +1,5 @@
-import { Camera, Car, ImagePlus, Images, MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { Camera, Car, Download, FileSpreadsheet, FilterX, ImagePlus, Images, MessageSquare, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ConfirmDialog from "../components/confirmdialog";
 import Lightbox from "../components/lightbox";
 import Modal from "../components/modal";
@@ -15,17 +15,26 @@ import {
   useUpdateVehicleNote,
   useVehicleNotesQuery,
 } from "../hooks/queries/useVehicleNotes";
+import {
+  useDownloadVehicleLookupXlsx,
+  useImportVehicleLookupXlsx,
+  useVehicleLookupMakes,
+  useVehicleLookupModels,
+  useVehicleLookupTypes,
+} from "../hooks/queries/useVehicleLookup";
 
 const MOCK_VEHICLES = [
-  { _id: "v1", name: "Ford Transit 350", type: "Cargo Van", model: "2023", image: "", beforeImage: "", afterImage: "", gallery: [] },
-  { _id: "v2", name: "Toyota Hilux", type: "Pickup Truck", model: "2022", image: "", beforeImage: "", afterImage: "", gallery: [] },
-  { _id: "v3", name: "Tata Ace", type: "Mini Truck", model: "2021", image: "", beforeImage: "", afterImage: "", gallery: [] },
+  { _id: "v1", name: "Ford Transit 350", make: "Ford", type: "Van / Mini Van", model: "Transit 350", year: "2023", image: "", beforeImage: "", afterImage: "", gallery: [] },
+  { _id: "v2", name: "Toyota Hilux", make: "Toyota", type: "Trucks / SUV", model: "Hilux", year: "2022", image: "", beforeImage: "", afterImage: "", gallery: [] },
+  { _id: "v3", name: "Tata Ace", make: "Tata", type: "Trucks / SUV", model: "Ace", year: "2021", image: "", beforeImage: "", afterImage: "", gallery: [] },
 ];
 
 const emptyForm = {
   name: "",
+  make: "",
   type: "",
   model: "",
+  year: "",
   image: "",
   beforeImage: "",
   afterImage: "",
@@ -35,6 +44,8 @@ const emptyForm = {
   existingSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
   upgradedSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
 };
+
+const emptyFilters = { make: "", model: "", yearFrom: "", yearTo: "" };
 
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -75,11 +86,85 @@ export default function VehicleNotes() {
   const [galleryVehicle, setGalleryVehicle] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(null);
 
+  // Predefined Make/Model/Type dropdown data (cascading) — sourced from the
+  // "Vehicle Notes database" (see database card below). Model options
+  // depend on the selected Make, Type options depend on Make + Model.
+  const { data: lookupMakes, isLoading: loadingLookupMakes } = useVehicleLookupMakes();
+  const { data: lookupModels, isLoading: loadingLookupModels } = useVehicleLookupModels(form.make);
+  const { data: lookupTypes, isLoading: loadingLookupTypes } = useVehicleLookupTypes(form.make, form.model);
+
+  // Vehicle Notes database (Make/Model/Type master list) upload/download —
+  // same round-trip pattern as the Tech Data CSV tab, just for .xlsx.
+  const downloadLookup = useDownloadVehicleLookupXlsx();
+  const importLookup = useImportVehicleLookupXlsx();
+  const [dbImportResult, setDbImportResult] = useState(null);
+  const [dbImportError, setDbImportError] = useState("");
+  const dbFileInputRef = useRef(null);
+
+  // Grid filters — Make, Model (cascades from Make) and a yearly Date Range.
+  // Year options are derived from the vehicles actually on file, so a newly
+  // added vehicle's year automatically becomes selectable without any
+  // extra bookkeeping.
+  const [filters, setFilters] = useState(emptyFilters);
+
   const saving = createMutation.isPending || updateMutation.isPending;
   const deleting = deleteMutation.isPending;
   const currentEditingVehicle = editing ? vehicles.find((v) => v._id === editing._id) || editing : null;
 
   const notesToRender = editing ? (currentEditingVehicle?.staffNotes || []) : (form.staffNotes || []);
+
+  // --- Filter option lists, derived from the vehicles actually on file ---
+  const filterMakeOptions = useMemo(
+    () => Array.from(new Set(vehicles.map((v) => v.make).filter(Boolean))).sort(),
+    [vehicles]
+  );
+  const filterModelOptions = useMemo(() => {
+    const pool = filters.make ? vehicles.filter((v) => v.make === filters.make) : vehicles;
+    return Array.from(new Set(pool.map((v) => v.model).filter(Boolean))).sort();
+  }, [vehicles, filters.make]);
+  const filterYearOptions = useMemo(
+    () =>
+      Array.from(new Set(vehicles.map((v) => v.year).filter(Boolean)))
+        .map(Number)
+        .filter((y) => Number.isFinite(y))
+        .sort((a, b) => a - b),
+    [vehicles]
+  );
+
+  const filtersActive = Boolean(filters.make || filters.model || filters.yearFrom || filters.yearTo);
+
+  const clearFilters = () => setFilters(emptyFilters);
+
+  const onFilterMakeChange = (e) => setFilters((f) => ({ ...f, make: e.target.value, model: "" }));
+
+  // Filtering preserves the API's existing sort order (newest first) —
+  // only narrows which cards show, same grid + edit button as always.
+  const filteredVehicles = useMemo(() => {
+    return vehicles.filter((v) => {
+      if (filters.make && v.make !== filters.make) return false;
+      if (filters.model && v.model !== filters.model) return false;
+      const y = Number(v.year);
+      if (filters.yearFrom && (!Number.isFinite(y) || y < Number(filters.yearFrom))) return false;
+      if (filters.yearTo && (!Number.isFinite(y) || y > Number(filters.yearTo))) return false;
+      return true;
+    });
+  }, [vehicles, filters]);
+
+  // --- Vehicle Notes database (Make/Model/Type master list) upload ---
+  const onDbFileChosen = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setDbImportError("");
+    setDbImportResult(null);
+    try {
+      const result = await importLookup.mutateAsync(file);
+      setDbImportResult(result);
+    } catch (err) {
+      setDbImportError(err?.response?.data?.message || "Import failed. Check the file format and try again.");
+    } finally {
+      e.target.value = "";
+    }
+  };
 
   const openAdd = () => {
     setEditing(null);
@@ -92,8 +177,10 @@ export default function VehicleNotes() {
     setEditing(v);
     setForm({
       name: v.name,
+      make: v.make || "",
       type: v.type,
       model: v.model,
+      year: v.year || "",
       image: v.image || "",
       beforeImage: v.beforeImage || "",
       afterImage: v.afterImage || "",
@@ -132,6 +219,22 @@ export default function VehicleNotes() {
     }));
   };
 
+  // Make -> Model -> Type is a cascading, dynamic dropdown chain sourced
+  // from the Vehicle Notes database — changing an upstream field clears the
+  // downstream selections so an invalid combination can never be submitted.
+  const onFormMakeChange = (e) => setForm((f) => ({ ...f, make: e.target.value, model: "", type: "" }));
+  const onFormModelChange = (e) => setForm((f) => ({ ...f, model: e.target.value, type: "" }));
+
+  // Most Make/Model combinations map to exactly one Type in the database
+  // (e.g. only one row for BMW X3) — auto-fill it as a convenience once
+  // it's the only option, without blocking manual re-selection if there's
+  // more than one.
+  useEffect(() => {
+    if (lookupTypes && lookupTypes.length === 1 && !form.type) {
+      setForm((f) => (f.make && f.model && !f.type ? { ...f, type: lookupTypes[0] } : f));
+    }
+  }, [lookupTypes]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const onSingleFileChange = (field) => async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -154,8 +257,8 @@ export default function VehicleNotes() {
   const submitForm = async (e) => {
     e.preventDefault();
     setFormError("");
-    if (!form.name || !form.type || !form.model) {
-      setFormError("Vehicle name, type and model are required.");
+    if (!form.name || !form.make || !form.model || !form.type) {
+      setFormError("Vehicle name, make, model and type are required.");
       return;
     }
     try {
@@ -218,15 +321,95 @@ export default function VehicleNotes() {
         }
       />
 
+      {isStaffOrAdmin && (
+        <div className="card vehicle-db-card mb-20">
+          <h3 className="mb-4">
+            <FileSpreadsheet size={16} className="icon-inline" />
+            Vehicle Notes database
+          </h3>
+          <p className="text-muted mb-16">
+            Download the current Make / Model / Type reference table as .xlsx, edit it, and re-upload — the Add / Edit vehicle
+            dropdowns above stay in sync automatically.
+          </p>
+          <div className="modal-actions modal-actions-start gap-12">
+            <button
+              type="button"
+              className="btn btn-accent"
+              onClick={() => downloadLookup.mutate()}
+              disabled={downloadLookup.isPending}
+            >
+              <Download size={16} /> {downloadLookup.isPending ? "Preparing…" : "Download database"}
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => dbFileInputRef.current?.click()} disabled={importLookup.isPending}>
+              <Upload size={16} /> {importLookup.isPending ? "Uploading…" : "Upload database"}
+            </button>
+            <input
+              ref={dbFileInputRef}
+              type="file"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              hidden
+              onChange={onDbFileChosen}
+            />
+          </div>
+          {dbImportError && <div className="alert-error mt-16">{dbImportError}</div>}
+          {dbImportResult && (
+            <div className="card empty-state-card mt-16 text-left">
+              Imported {dbImportResult.processed} row(s), skipped {dbImportResult.skipped} incomplete row(s), out of{" "}
+              {dbImportResult.total} total.
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="card vehicle-filter-bar mb-20">
+        <div className="vehicle-filter-grid">
+          <div className="field">
+            <label>Make</label>
+            <select value={filters.make} onChange={onFilterMakeChange}>
+              <option value="">All makes</option>
+              {filterMakeOptions.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Model</label>
+            <select value={filters.model} onChange={(e) => setFilters((f) => ({ ...f, model: e.target.value }))}>
+              <option value="">All models</option>
+              {filterModelOptions.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Year from</label>
+            <select value={filters.yearFrom} onChange={(e) => setFilters((f) => ({ ...f, yearFrom: e.target.value }))}>
+              <option value="">Any</option>
+              {filterYearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Year to</label>
+            <select value={filters.yearTo} onChange={(e) => setFilters((f) => ({ ...f, yearTo: e.target.value }))}>
+              <option value="">Any</option>
+              {filterYearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <button type="button" className="btn btn-ghost vehicle-filter-clear" onClick={clearFilters} disabled={!filtersActive}>
+            <FilterX size={14} /> Clear filter
+          </button>
+        </div>
+      </div>
+
       {loading ? (
         <p className="text-muted">Loading vehicles…</p>
       ) : vehicles.length === 0 ? (
         <div className="card empty-state-card text-muted">
           No vehicles yet — add your first one.
         </div>
+      ) : filteredVehicles.length === 0 ? (
+        <div className="card empty-state-card text-muted">
+          No vehicles match the current filters.
+        </div>
       ) : (
         <div className="vehicle-grid">
-          {vehicles.map((v) => (
+          {filteredVehicles.map((v) => (
             <div key={v._id} className="card vehicle-card">
               <div className="vehicle-image">
                 {v.image || v.beforeImage ? <img src={v.image || v.beforeImage} alt={v.name} /> : <Car size={30} color="#C6C9D6" />}
@@ -234,10 +417,13 @@ export default function VehicleNotes() {
               <div className="vehicle-body">
                 <p className="vehicle-name">{v.name}</p>
                 <div className="vehicle-tags">
-                  <span className="badge badge-live">{v.type}</span>
+                  <span className="badge badge-live">{v.make}</span>
                   <span className="badge badge-model">{v.model}</span>
+                  <span className="badge badge-model">{v.type}</span>
                 </div>
                 <p className="text-muted fs-11 mt-4">
+                  {v.year ? `Year: ${v.year}` : "No year set"}
+                  {" · "}
                   {v.eventDate ? `Event date: ${new Date(v.eventDate).toLocaleDateString()}` : "No event date set"}
                   {" · "}Added {new Date(v.createdAt).toLocaleDateString()}
                 </p>
@@ -294,14 +480,36 @@ export default function VehicleNotes() {
             <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Ford Transit 350" />
           </div>
 
+          {/* Make -> Model -> Type: cascading, predefined dropdowns sourced from
+              the Vehicle Notes database (see the database card above the grid). */}
           <div className="tire-input-grid field-mb">
             <div className="field">
-              <label>Type</label>
-              <input value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} placeholder="Cargo Van" />
+              <label>Make</label>
+              <select value={form.make} onChange={onFormMakeChange} disabled={loadingLookupMakes}>
+                <option value="">{loadingLookupMakes ? "Loading…" : "Select make"}</option>
+                {(lookupMakes || []).map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
             </div>
             <div className="field">
-              <label>Model / year</label>
-              <input value={form.model} onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))} placeholder="2023" />
+              <label>Model</label>
+              <select value={form.model} onChange={onFormModelChange} disabled={!form.make || loadingLookupModels}>
+                <option value="">{!form.make ? "Select make first" : loadingLookupModels ? "Loading…" : "Select model"}</option>
+                {(lookupModels || []).map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Type</label>
+              <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} disabled={!form.model || loadingLookupTypes}>
+                <option value="">{!form.model ? "Select model first" : loadingLookupTypes ? "Loading…" : "Select type"}</option>
+                {(lookupTypes || []).map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="tire-input-grid cols-2 field-mb">
+            <div className="field">
+              <label>Year</label>
+              <input value={form.year} onChange={(e) => setForm((f) => ({ ...f, year: e.target.value }))} placeholder="2023" inputMode="numeric" maxLength={4} />
             </div>
             <div className="field">
               <label>Event date</label>
