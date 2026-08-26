@@ -1,6 +1,7 @@
 import { Camera, Car, Download, FileSpreadsheet, FilterX, ImagePlus, Images, MessageSquare, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ConfirmDialog from "../components/confirmdialog";
+import EditableSelect from "../components/EditableSelect";
 import Lightbox from "../components/lightbox";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
@@ -18,9 +19,12 @@ import {
 import {
   useDownloadVehicleLookupXlsx,
   useImportVehicleLookupXlsx,
+  useQuickAddVehicleLookup,
+  useQuickAddVehicleLookupYear,
   useVehicleLookupMakes,
   useVehicleLookupModels,
   useVehicleLookupTypes,
+  useVehicleLookupYears,
 } from "../hooks/queries/useVehicleLookup";
 
 const MOCK_VEHICLES = [
@@ -85,13 +89,20 @@ export default function VehicleNotes() {
 
   const [galleryVehicle, setGalleryVehicle] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [filters, setFilters] = useState(emptyFilters);
 
   // Predefined Make/Model/Type dropdown data (cascading) — sourced from the
   // "Vehicle Notes database" (see database card below). Model options
-  // depend on the selected Make, Type options depend on Make + Model.
+  // depend on the selected Make, Type options depend on Make + Model. Year
+  // is independent (see models/VehicleLookupYear.js). All four support
+  // typing a brand new value via EditableSelect's "+ Add new…" option.
   const { data: lookupMakes, isLoading: loadingLookupMakes } = useVehicleLookupMakes();
   const { data: lookupModels, isLoading: loadingLookupModels } = useVehicleLookupModels(form.make);
+  const { data: filterModels } = useVehicleLookupModels(filters.make);
   const { data: lookupTypes, isLoading: loadingLookupTypes } = useVehicleLookupTypes(form.make, form.model);
+  const { data: lookupYears, isLoading: loadingLookupYears } = useVehicleLookupYears();
+  const quickAddLookup = useQuickAddVehicleLookup();
+  const quickAddLookupYear = useQuickAddVehicleLookupYear();
 
   // Vehicle Notes database (Make/Model/Type master list) upload/download —
   // same round-trip pattern as the Tech Data CSV tab, just for .xlsx.
@@ -105,7 +116,6 @@ export default function VehicleNotes() {
   // Year options are derived from the vehicles actually on file, so a newly
   // added vehicle's year automatically becomes selectable without any
   // extra bookkeeping.
-  const [filters, setFilters] = useState(emptyFilters);
 
   const saving = createMutation.isPending || updateMutation.isPending;
   const deleting = deleteMutation.isPending;
@@ -113,22 +123,18 @@ export default function VehicleNotes() {
 
   const notesToRender = editing ? (currentEditingVehicle?.staffNotes || []) : (form.staffNotes || []);
 
-  // --- Filter option lists, derived from the vehicles actually on file ---
-  const filterMakeOptions = useMemo(
-    () => Array.from(new Set(vehicles.map((v) => v.make).filter(Boolean))).sort(),
-    [vehicles]
-  );
-  const filterModelOptions = useMemo(() => {
-    const pool = filters.make ? vehicles.filter((v) => v.make === filters.make) : vehicles;
-    return Array.from(new Set(pool.map((v) => v.model).filter(Boolean))).sort();
-  }, [vehicles, filters.make]);
+
+  // --- Filter option lists, derived from the predefined Excel database ---
+  const filterMakeOptions = lookupMakes || [];
+  const filterModelOptions = filterModels || [];
+
   const filterYearOptions = useMemo(
     () =>
-      Array.from(new Set(vehicles.map((v) => v.year).filter(Boolean)))
+      (lookupYears || [])
         .map(Number)
         .filter((y) => Number.isFinite(y))
         .sort((a, b) => a - b),
-    [vehicles]
+    [lookupYears]
   );
 
   const filtersActive = Boolean(filters.make || filters.model || filters.yearFrom || filters.yearTo);
@@ -222,8 +228,10 @@ export default function VehicleNotes() {
   // Make -> Model -> Type is a cascading, dynamic dropdown chain sourced
   // from the Vehicle Notes database — changing an upstream field clears the
   // downstream selections so an invalid combination can never be submitted.
-  const onFormMakeChange = (e) => setForm((f) => ({ ...f, make: e.target.value, model: "", type: "" }));
-  const onFormModelChange = (e) => setForm((f) => ({ ...f, model: e.target.value, type: "" }));
+  // Takes a plain value (not an event) since EditableSelect calls onChange
+  // directly with the selected/typed string.
+  const onFormMakeChange = (value) => setForm((f) => ({ ...f, make: value, model: "", type: "" }));
+  const onFormModelChange = (value) => setForm((f) => ({ ...f, model: value, type: "" }));
 
   // Most Make/Model combinations map to exactly one Type in the database
   // (e.g. only one row for BMW X3) — auto-fill it as a convenience once
@@ -268,6 +276,20 @@ export default function VehicleNotes() {
         await createMutation.mutateAsync(form);
       }
       setFormOpen(false);
+
+      // Best-effort: fold whatever Make/Model/Type/Year was just saved back
+      // into the predefined lists. Upserts server-side, so this is a no-op
+      // when they were picked from the dropdown already — it only matters
+      // when "+ Add new…" was used. Never blocks the save above, and never
+      // surfaces an error to the person — the vehicle note itself already
+      // saved successfully regardless of what happens here.
+      quickAddLookup.mutate(
+        { make: form.make, model: form.model, type: form.type },
+        { onError: () => { } }
+      );
+      if (form.year) {
+        quickAddLookupYear.mutate(form.year, { onError: () => { } });
+      }
     } catch (err) {
       setFormError(err?.response?.data?.message || "Something went wrong. Please try again.");
     }
@@ -477,40 +499,58 @@ export default function VehicleNotes() {
 
           <div className="field field-mb">
             <label>Vehicle name</label>
-            <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Ford Transit 350" />
+            <input className="field-mb" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Ford Transit 350" />
+            <EditableSelect
+              label="Make"
+              value={form.make}
+              onChange={(val) => onFormMakeChange(val)}
+              options={lookupMakes}
+              loading={loadingLookupMakes}
+              placeholder="Select make"
+              addNewLabel="+ Add new make…"
+              customPlaceholder="e.g. Ford"
+            />
           </div>
 
           {/* Make -> Model -> Type: cascading, predefined dropdowns sourced from
-              the Vehicle Notes database (see the database card above the grid). */}
-          <div className="tire-input-grid field-mb">
-            <div className="field">
-              <label>Make</label>
-              <select value={form.make} onChange={onFormMakeChange} disabled={loadingLookupMakes}>
-                <option value="">{loadingLookupMakes ? "Loading…" : "Select make"}</option>
-                {(lookupMakes || []).map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <div className="field">
-              <label>Model</label>
-              <select value={form.model} onChange={onFormModelChange} disabled={!form.make || loadingLookupModels}>
-                <option value="">{!form.make ? "Select make first" : loadingLookupModels ? "Loading…" : "Select model"}</option>
-                {(lookupModels || []).map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <div className="field">
-              <label>Type</label>
-              <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} disabled={!form.model || loadingLookupTypes}>
-                <option value="">{!form.model ? "Select model first" : loadingLookupTypes ? "Loading…" : "Select type"}</option>
-                {(lookupTypes || []).map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
+              the Vehicle Notes database (see the database card above the grid),
+              each with a "+ Add new…" option for values not in the list yet. */}
+          <div className="tire-input-grid cols-2 field-mb">
+            <EditableSelect
+              label="Model"
+              value={form.model}
+              onChange={(val) => onFormModelChange(val)}
+              options={lookupModels}
+              loading={loadingLookupModels}
+              disabled={!form.make}
+              placeholder={!form.make ? "Select make first" : "Select model"}
+              addNewLabel="+ Add new model…"
+              customPlaceholder="e.g. Transit 350"
+            />
+            <EditableSelect
+              label="Type"
+              value={form.type}
+              onChange={(val) => setForm((f) => ({ ...f, type: val }))}
+              options={lookupTypes}
+              loading={loadingLookupTypes}
+              disabled={!form.model}
+              placeholder={!form.model ? "Select model first" : "Select type"}
+              addNewLabel="+ Add new type…"
+              customPlaceholder="e.g. Van / Mini Van"
+            />
           </div>
 
           <div className="tire-input-grid cols-2 field-mb">
-            <div className="field">
-              <label>Year</label>
-              <input value={form.year} onChange={(e) => setForm((f) => ({ ...f, year: e.target.value }))} placeholder="2023" inputMode="numeric" maxLength={4} />
-            </div>
+            <EditableSelect
+              label="Year"
+              value={form.year}
+              onChange={(val) => setForm((f) => ({ ...f, year: val }))}
+              options={lookupYears}
+              loading={loadingLookupYears}
+              placeholder="Select year"
+              addNewLabel="+ Add new year…"
+              customPlaceholder="2023"
+            />
             <div className="field">
               <label>Event date</label>
               <input type="date" value={form.eventDate} onChange={(e) => setForm((f) => ({ ...f, eventDate: e.target.value }))} />

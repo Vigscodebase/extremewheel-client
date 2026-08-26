@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { jwtDecode } from "jwt-decode";
-import { fetchMe, loginRequest, registerRequest } from "../api/authApi";
+import { fetchMe, loginRequest, refreshTokenRequest, registerRequest } from "../api/authApi";
 import useAuthStore from "../store/authStore";
-import { setupAxiosInterceptors } from "../utils/axiosInstance";
+import { SESSION_TIMEOUT_MS } from "../utils/constants";
 
 const AuthContext = createContext(null);
 
@@ -41,69 +41,107 @@ export const AuthProvider = ({ children }) => {
     logout();
   }, [logout, setSessionExpiredState]);
 
-  useEffect(() => {
-    setupAxiosInterceptors(
-      (renewedToken) => {
-        setToken(renewedToken);
-        if (renewedToken) {
-          const { name, email, role } = jwtDecode(renewedToken);
-          updateUser({ name, email, role });
-        }
-      },
-      () => handleSessionExpired()
-    );
-  }, [handleSessionExpired, setToken, updateUser]);
+  // NOTE: axios request/response interceptors (token injection, rolling
+  // x-refresh-token renewal, 401 -> sessionExpired) are registered
+  // synchronously at module load in utils/axiosInstance.js, not here.
+  // They used to be wired up from a `useEffect` in this component, but
+  // that runs *after* descendant components' own mount-time effects (React
+  // fires effects bottom-up), so nested queries — e.g. PermissionProvider's
+  // /permissions fetch, or Vehicle Notes' Make/Model/Type lookups on a hard
+  // refresh — could fire before the interceptor existed and go out with no
+  // Authorization header. See utils/axiosInstance.js for the full writeup.
 
-  // --- REVISED SILENT REFRESH LOGIC ---
+  // --- Rolling session keep-alive ---
+  // The server (middleware/auth.js: requireAuth) already renews a token
+  // whenever ANY authenticated request arrives with less than
+  // JWT_RENEW_THRESHOLD_SECONDS left on it, piggy-backing the fresh token on
+  // the `x-refresh-token` response header — which the shared axios instance
+  // already picks up transparently on every single response (see
+  // utils/axiosInstance.js). That alone keeps an active user's session
+  // alive for free on any real API call they happen to make late in their
+  // token's life.
+  //
+  // The gap: someone can be genuinely using the app — reading a page,
+  // filling out a long form — without triggering any API call for several
+  // minutes. No request means no chance for the server to renew, and the
+  // token quietly expires under them; the next request they DO make (e.g.
+  // navigating away) then hits a flat 401 and force-expires their session
+  // even though they were never idle. (This used to be "handled" by a
+  // single precisely-timed setTimeout that fired one silent /auth/refresh
+  // call ~60s before expiry with no retry — any one network hiccup, or the
+  // browser throttling that timer in a backgrounded tab, meant a guaranteed
+  // expiry 60 seconds later regardless of activity.)
+  //
+  // Fix: a small recurring heartbeat instead of a one-shot timer. While
+  // authenticated and recently active, ping the authenticated /auth/refresh
+  // endpoint through the shared axios instance every HEARTBEAT_MS. This
+  // reuses the exact same rolling-renewal + interceptor logic as every
+  // other request (no separate success/failure handling to get wrong), and
+  // — critically — one missed beat is a non-event: the next beat a minute
+  // later renews it instead of the session being gone for good.
+
+  // --- Activity Tracker ---
+  // Updates the lastActivity timestamp whenever the user interacts with the app
+  useEffect(() => {
+    // Throttle updates so we don't spam localStorage on every single pixel of scrolling
+    let throttleTimer;
+
+    const updateActivity = () => {
+      if (throttleTimer) return;
+
+      localStorage.setItem("lastActivity", Date.now().toString());
+
+      throttleTimer = setTimeout(() => {
+        throttleTimer = null;
+      }, 2000); // Only write to localStorage at most once every 2 seconds
+    };
+
+    // Set initial activity on load
+    updateActivity();
+
+    // Listen for common interaction events
+    const events = ["mousedown", "keydown", "scroll", "touchstart"];
+    events.forEach((event) => window.addEventListener(event, updateActivity));
+
+    return () => {
+      events.forEach((event) => window.removeEventListener(event, updateActivity));
+      if (throttleTimer) clearTimeout(throttleTimer);
+    };
+  }, []);
+
   useEffect(() => {
     if (!token) return;
 
-    try {
-      const decoded = jwtDecode(token);
-      if (!decoded || !decoded.exp) return;
+    const HEARTBEAT_MS = 60 * 1000;
 
-      const expMs = decoded.exp * 1000;
-      const timeUntilExpiry = expMs - Date.now();
-      const refreshThreshold = 60 * 1000; // Trigger refresh 1 minute before expiry
+    const beat = async () => {
+      const { token: currentToken, sessionExpired: expired } = useAuthStore.getState();
+      if (!currentToken || expired) return;
 
-      // We ONLY set a proactive timeout if the expiration is safely in the future.
-      // We no longer forcefully call handleSessionExpired() if timeUntilExpiry <= 0.
-      // If the token is expired (or the client clock is wildly out of sync), 
-      // we just let the backend return a 401 on the next request to trigger the modal safely.
-      if (timeUntilExpiry > refreshThreshold) {
-        const timeoutId = setTimeout(async () => {
-          const lastActivity = parseInt(localStorage.getItem("lastActivity") || "0", 10);
-          const now = Date.now();
-          const isRecentlyActive = (now - lastActivity) < 5 * 60 * 1000;
+      const lastActivity = parseInt(localStorage.getItem("lastActivity") || "0", 10);
+      const isRecentlyActive = Date.now() - lastActivity < SESSION_TIMEOUT_MS;
+      // Not recently active: leave it alone. Either the idle timer has
+      // already (or will shortly) flip sessionExpired itself, or the
+      // person simply isn't in a session that needs keeping alive.
+      if (!isRecentlyActive) return;
 
-          if (isRecentlyActive && !useAuthStore.getState().sessionExpired) {
-            try {
-              const baseUrl = import.meta.env?.VITE_API_BASE_URL || "";
-              const response = await fetch(`${baseUrl}/auth/refresh`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${token}`
-                }
-              });
-
-              if (response.ok) {
-                const data = await response.json();
-                setToken(data.token);
-                const { name, email, role } = jwtDecode(data.token);
-                updateUser({ name, email, role });
-              }
-            } catch (error) {
-              console.error("Silent token refresh network error", error);
-            }
-          }
-        }, timeUntilExpiry - refreshThreshold);
-
-        return () => clearTimeout(timeoutId);
+      try {
+        const data = await refreshTokenRequest();
+        if (data?.token) {
+          setToken(data.token);
+          const { name, email, role } = jwtDecode(data.token);
+          updateUser({ name, email, role });
+        }
+      } catch {
+        // A failed beat isn't fatal — the next one retries in HEARTBEAT_MS.
+        // If the token turns out to be genuinely invalid, axios's own
+        // response interceptor already sets sessionExpired for us from
+        // this very request; nothing extra to do here.
       }
-    } catch (e) {
-      console.error("Token decoding failed", e);
-    }
+    };
+
+    const intervalId = setInterval(beat, HEARTBEAT_MS);
+    return () => clearInterval(intervalId);
   }, [token, setToken, updateUser]);
 
   useEffect(() => {

@@ -25,11 +25,19 @@ const useAuthStore = create(
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
-      // <-- 3. Add sessionExpired to partialize so it persists across refreshes
+      // sessionExpired is intentionally left out of partialize: it's
+      // transient "show the modal right now" UI state, not something that
+      // should survive a reload. Persisting it meant a stale value written
+      // just before a refresh/close (or written in another tab) could sit
+      // in localStorage and drive this tab's modal on the next load, with
+      // no interaction — typing, clicking, scrolling — able to clear it,
+      // since the idle timer that's normally responsible for resetting
+      // activity is itself disabled while sessionExpired is true. On every
+      // fresh load this should always start false and be derived live from
+      // real auth checks (idle timeout / an actual 401), never rehydrated.
       partialize: (state) => ({
         token: state.token,
         user: state.user,
-        sessionExpired: state.sessionExpired
       }),
     }
   )

@@ -178,7 +178,7 @@ export default function TireSizeCalculator() {
 
         {convertOpen && (
           <>
-            <div className="tire-input-grid narrow">
+            <div className="tire-input-grid-tirecalculator narrow">
               <div className="field">
                 <label>New rim (in)</label>
                 <input type="number" value={targetRim} onChange={(e) => setTargetRim(e.target.value)} />

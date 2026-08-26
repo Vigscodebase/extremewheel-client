@@ -165,60 +165,62 @@ export default function UserManagement() {
               </div>
             </div>
 
-            <table className="user-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Joined</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading && (
+            <div className="table-responsive">
+              <table className="user-table">
+                <thead>
                   <tr>
-                    <td colSpan={5} className="text-center p-30 text-muted">
-                      Loading users…
-                    </td>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
                   </tr>
-                )}
-                {!loading && filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="text-center p-30 text-muted">
-                      No users match your search.
-                    </td>
-                  </tr>
-                )}
-                {!loading &&
-                  filtered.map((u) => (
-                    <tr key={u._id}>
-                      <td className="fw-600">{u.name}</td>
-                      <td className="text-muted">{u.email}</td>
-                      <td>
-                        <span className={`badge badge-${u.role}`}>{u.role}</span>
-                      </td>
-                      <td className="text-muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</td>
-                      <td>
-                        <div className="flex-row gap-6">
-                          <button type="button" className="icon-btn" onClick={() => openEdit(u)} title="Edit">
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            className="icon-btn danger"
-                            onClick={() => setDeleteTarget(u)}
-                            title="Delete"
-                            disabled={u._id === currentUser?._id}
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
+                </thead>
+                <tbody>
+                  {loading && (
+                    <tr>
+                      <td colSpan={5} className="text-center p-30 text-muted">
+                        Loading users…
                       </td>
                     </tr>
-                  ))}
-              </tbody>
-            </table>
+                  )}
+                  {!loading && filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="text-center p-30 text-muted">
+                        No users match your search.
+                      </td>
+                    </tr>
+                  )}
+                  {!loading &&
+                    filtered.map((u) => (
+                      <tr key={u._id}>
+                        <td className="fw-600">{u.name}</td>
+                        <td className="text-muted">{u.email}</td>
+                        <td>
+                          <span className={`badge badge-${u.role}`}>{u.role}</span>
+                        </td>
+                        <td className="text-muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</td>
+                        <td>
+                          <div className="flex-row gap-6">
+                            <button type="button" className="icon-btn" onClick={() => openEdit(u)} title="Edit">
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              type="button"
+                              className="icon-btn danger"
+                              onClick={() => setDeleteTarget(u)}
+                              title="Delete"
+                              disabled={u._id === currentUser?._id}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )
       ) : (
@@ -227,36 +229,38 @@ export default function UserManagement() {
             Choose which pages each role can open. Admin always keeps full access.
           </p>
 
-          <table className="access-table">
-            <thead>
-              <tr>
-                <th>Page</th>
-                {ROLES.map((r) => (
-                  <th key={r} className="capitalize">
-                    {r}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {PAGES.map((page) => (
-                <tr key={page.key}>
-                  <td className="fw-600">{page.label}</td>
-                  {ROLES.map((role) => (
-                    <td key={role}>
-                      <input
-                        type="checkbox"
-                        checked={(matrix[role] || []).includes(page.key)}
-                        onChange={() => toggleMatrix(role, page.key)}
-                        disabled={role === "admin"}
-                        aria-label={`${role} access to ${page.label}`}
-                      />
-                    </td>
+          <div className="table-responsive">
+            <table className="access-table">
+              <thead>
+                <tr>
+                  <th>Page</th>
+                  {ROLES.map((r) => (
+                    <th key={r} className="capitalize">
+                      {r}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {PAGES.map((page) => (
+                  <tr key={page.key}>
+                    <td className="fw-600">{page.label}</td>
+                    {ROLES.map((role) => (
+                      <td key={role}>
+                        <input
+                          type="checkbox"
+                          checked={(matrix[role] || []).includes(page.key)}
+                          onChange={() => toggleMatrix(role, page.key)}
+                          disabled={role === "admin"}
+                          aria-label={`${role} access to ${page.label}`}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <div className="flex-end mt-20">
             <button type="button" className="btn btn-primary" onClick={saveMatrix} disabled={!matrixDirty || savingMatrix}>

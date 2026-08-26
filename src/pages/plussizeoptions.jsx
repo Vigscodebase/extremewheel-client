@@ -65,11 +65,11 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
 
   return (
     <div className="card mt-20">
-      <h3 className="mb-4">
+      <h3 className="mb-16">
         <Layers size={16} className="icon-inline" />
         Vehicle-specific upgrade sizes
       </h3>
-      <p className="text-muted mb-16">
+      <p className="text-muted fs-13 mb-16">
         Look up the manufacturer-approved upgrade tire sizes for a specific vehicle from the Application Guide — by wheel
         diameter, and any staggered front/rear fitment options — separate from the tolerance search above.
       </p>
@@ -136,7 +136,7 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
 
           return (
             <div key={record._id} className="vehicle-upgrade-box mt-16">
-              <div className="modal-actions modal-actions-start mb-10">
+              <div className="modal-actions modal-actions-start mb-24">
                 <p className="preset-label mb-0">
                   {record.txtTireSize ? `Base size: ${record.txtTireSize}` : "Base size on file"}
                 </p>
@@ -210,11 +210,11 @@ export default function PlusSizeOptions() {
   const [oe, setOe] = useState(
     navPrefill
       ? {
-          width: navPrefill.width,
-          aspect: navPrefill.aspect,
-          rim: navPrefill.rim,
-          targetRim: location.state?.prefillTargetRim || "",
-        }
+        width: navPrefill.width,
+        aspect: navPrefill.aspect,
+        rim: navPrefill.rim,
+        targetRim: location.state?.prefillTargetRim || "",
+      }
       : emptyOe
   );
   const [searched, setSearched] = useState(false);

@@ -9,6 +9,20 @@ export const fetchVehicleLookupModels = (make) =>
 export const fetchVehicleLookupTypes = (make, model) =>
   axios.get("/vehicle-lookup/types", { params: { make, model } }).then((r) => r.data.types || []);
 
+// Independent of make/model/type — see models/VehicleLookupYear.js.
+export const fetchVehicleLookupYears = () =>
+  axios.get("/vehicle-lookup/years").then((r) => r.data.years || []);
+
+// Adds one Make/Model/Type combo (or one Year) to the predefined lists —
+// upserts, so re-submitting an existing value is a harmless no-op. This is
+// what lets the "+ Add new…" option on the Add/Edit vehicle form actually
+// grow the dropdowns instead of just accepting free text for that one save.
+export const quickAddVehicleLookup = (make, model, type) =>
+  axios.post("/vehicle-lookup/quick-add", { make, model, type }).then((r) => r.data);
+
+export const quickAddVehicleLookupYear = (year) =>
+  axios.post("/vehicle-lookup/quick-add-year", { year }).then((r) => r.data);
+
 // Downloads the current Make/Model/Type reference table as .xlsx via the
 // browser's normal download flow — mirrors downloadTechDataCsv in
 // appGuideApi.js, just with an xlsx blob instead of a csv one.

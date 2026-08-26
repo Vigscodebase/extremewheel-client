@@ -18,6 +18,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authcontext";
 import { usePermissions } from "../context/permissioncontext";
+import axios from "../utils/axiosInstance";
 
 const ICONS_MAP = {
   LayoutDashboard,
@@ -78,14 +79,19 @@ export default function Sidebar() {
   useEffect(() => {
     const fetchNavigation = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("/navigation", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (Array.isArray(data.nav) && data.nav.length > 0) setNavItems(data.nav);
-        }
+        // BUGFIX: this used to be a raw `fetch("/navigation", ...)` reading
+        // `localStorage.getItem("token")` directly — but the token isn't
+        // stored under a plain "token" key; it lives inside zustand's
+        // persisted "auth-storage" blob (state.token), and the raw fetch
+        // also skipped axios's baseURL ("/api"). So this request always
+        // went out as `Authorization: Bearer null` to the wrong path,
+        // silently 401'd/404'd, and every user permanently got FALLBACK_NAV
+        // instead of the server-driven nav — never visible as a "session
+        // expired" error since a bare fetch bypasses axios's interceptors
+        // entirely. Using the shared axios instance fixes both: correct
+        // baseURL, and the real Bearer token attached automatically.
+        const { data } = await axios.get("/navigation");
+        if (Array.isArray(data.nav) && data.nav.length > 0) setNavItems(data.nav);
       } catch {
         console.warn("Using fallback navigation.");
       }

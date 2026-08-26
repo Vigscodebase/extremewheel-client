@@ -1,4 +1,5 @@
 import Axios from "axios";
+import { jwtDecode } from "jwt-decode";
 import useAuthStore from "../store/authStore";
 
 // Base URL comes from env in production; falls back to the LAN address used
@@ -11,53 +12,62 @@ export const axios = Axios.create({
   timeout: 15000,
 });
 
-// FIX: Track interceptor IDs so we can eject them. 
-// Using a boolean flag blocked re-binding in React StrictMode, causing stale closures.
-let reqInterceptorId = null;
-let resInterceptorId = null;
-
-/**
- * Binds request/response interceptors to the shared axios instance.
- * - Injects the Bearer token on every request.
- * - Picks up rolling token renewals from the `x-refresh-token` response header.
- * - Reports 401s upward so the app can force a clean logout instead of
- *   silently failing requests.
- */
-export const setupAxiosInterceptors = (onTokenRenewed, onSessionExpired) => {
-  // Eject previous interceptors to prevent duplicate stacking or stale closures
-  if (reqInterceptorId !== null) axios.interceptors.request.eject(reqInterceptorId);
-  if (resInterceptorId !== null) axios.interceptors.response.eject(resInterceptorId);
-
-  reqInterceptorId = axios.interceptors.request.use(
-    (config) => {
-      const token = useAuthStore.getState().token;
-      if (token) {
-        config.headers["Authorization"] = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
-
-  resInterceptorId = axios.interceptors.response.use(
-    (response) => {
-      const renewedToken = response.headers["x-refresh-token"];
-      if (renewedToken) {
-        onTokenRenewed(renewedToken);
-      }
-      return response;
-    },
-    (error) => {
-      if (error.response && error.response.status === 401) {
-        onSessionExpired();
-      } else {
-        // For any error that ISN'T a 401, extract the Express message and trigger the global modal
-        const errorMessage = error.response?.data?.message || "An unexpected error occurred. Please try again.";
-        window.dispatchEvent(new CustomEvent("api-error", { detail: errorMessage }));
-      }
-      return Promise.reject(error);
+// BUGFIX: interceptors used to be registered from a `useEffect` inside
+// AuthProvider. That effect only runs *after* the whole tree commits, and
+// React fires effects bottom-up (children before parents) — so any
+// descendant that kicks off a request during its own mount (e.g. a
+// React Query hook like `useVehicleLookupMakes` or `usePermissions`,
+// several of which fire on the very first render of a protected route)
+// could — and reliably did, on a hard refresh — dispatch its request
+// before this interceptor existed. Axios snapshots the interceptor list at
+// call time, not at response time, so that first request went out with no
+// Authorization header and came back 401 "Not authorized, no token
+// provided." Because the query client's retry policy skips retries on 4xx
+// responses (see lib/queryClient.js), that failure never self-healed —
+// leaving things like the Vehicle Notes Make/Model/Type dropdowns
+// permanently empty for that page load, and the /permissions call visibly
+// failing in the Network tab.
+//
+// Fix: bind the interceptors here, synchronously, at module load — before
+// any component (and therefore before any query) has a chance to mount —
+// instead of waiting for a React effect. Reading/writing auth state via
+// `useAuthStore.getState()` means this has no dependency on React's
+// lifecycle at all.
+axios.interceptors.request.use(
+  (config) => {
+    const token = useAuthStore.getState().token;
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
-  );
-};
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+axios.interceptors.response.use(
+  (response) => {
+    const renewedToken = response.headers["x-refresh-token"];
+    if (renewedToken) {
+      useAuthStore.getState().setToken(renewedToken);
+      try {
+        const { name, email, role } = jwtDecode(renewedToken);
+        useAuthStore.getState().updateUser({ name, email, role });
+      } catch {
+        // Malformed renewed token: keep the old user info rather than crash.
+      }
+    }
+    return response;
+  },
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      useAuthStore.getState().setSessionExpired(true);
+    } else {
+      // For any error that ISN'T a 401, extract the Express message and trigger the global modal
+      const errorMessage = error.response?.data?.message || "An unexpected error occurred. Please try again.";
+      window.dispatchEvent(new CustomEvent("api-error", { detail: errorMessage }));
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default axios;

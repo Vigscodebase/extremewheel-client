@@ -170,7 +170,8 @@ ul {
 }
 
 .btn-ghost:hover:not(:disabled) {
-    background: #D9CFC4;
+    background: var(--color-pink);
+    color: #fff;
 }
 
 .btn-danger {
@@ -490,6 +491,38 @@ ul {
 
 .field select::-ms-expand {
     display: none;
+}
+
+/* --- EditableSelect: predefined dropdown + "add new" custom input --- */
+
+.editable-select-custom {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.editable-select-custom input {
+    flex: 1;
+    min-width: 0;
+}
+
+.editable-select-back {
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border: 1.5px solid var(--color-border);
+    background: #FFFFFF;
+    border-radius: var(--radius-sm);
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.editable-select-back:hover:not(:disabled) {
+    border-color: var(--color-pink);
+    color: var(--color-pink);
 }
 
 .search-box input {
@@ -1868,12 +1901,19 @@ ul {
     max-width: 800px;
 }
 
+.tire-input-grid-tirecalculator {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    max-width: 800px;
+}
+
 .tire-input-grid.cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     max-width: 1000px;
 }
 
-.tire-input-grid.narrow {
+.tire-input-grid-tirecalculator.narrow {
     max-width: 260px;
     margin-bottom: 16px;
 }
@@ -2176,7 +2216,7 @@ ul {
 
 .vehicle-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(271px, 1fr));
     gap: 20px;
 }
 
@@ -2280,9 +2320,9 @@ ul {
 
 /* --- Vehicle Notes: database card, filter bar --- */
 
-.vehicle-db-card p {
+/* .vehicle-db-card p {
     margin: 0;
-}
+} */
 
 .vehicle-filter-bar {
     padding: 16px 20px;

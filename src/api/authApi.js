@@ -10,6 +10,8 @@ export const registerRequest = (payload) =>
 
 export const fetchMe = () => axios.get("/auth/me").then((r) => r.data.user);
 
+export const refreshTokenRequest = () => axios.post("/auth/refresh").then((r) => r.data);
+
 export const forgotPasswordRequest = (email) =>
   axios.post("/auth/forgot-password", { email }).then((r) => r.data);
 
