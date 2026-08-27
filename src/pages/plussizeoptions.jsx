@@ -141,14 +141,14 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
                   {record.txtTireSize ? `Base size: ${record.txtTireSize}` : "Base size on file"}
                 </p>
                 {baseParsed && (
-                  <button type="button" className="btn btn-ghost" onClick={() => onUseAsOe(baseParsed)}>
+                  <button type="button" className="btn btn-ghost btn-noresponsive" onClick={() => onUseAsOe(baseParsed)}>
                     <Search size={13} /> Use as OE size above
                   </button>
                 )}
               </div>
 
               <div className="vehicle-upgrade-grid">
-                <div>
+                <div className="wheel-diameter-table">
                   <p className="fs-11 text-muted mb-6" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.02em" }}>
                     Upgrade size by wheel diameter
                   </p>
@@ -168,7 +168,7 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
                     </table>
                   )}
                 </div>
-                <div>
+                <div className="wheel-frontrearstag-table">
                   <p className="fs-11 text-muted mb-6" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.02em" }}>
                     Staggered fitment options (front / rear)
                   </p>
@@ -189,6 +189,11 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
                     </table>
                   )}
                 </div>
+                  {baseParsed && (
+                  <button type="button" className="btn btn-ghost btn-responsive" onClick={() => onUseAsOe(baseParsed)}>
+                    <Search size={13} /> Use as OE size above
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -339,7 +344,7 @@ export default function PlusSizeOptions() {
                 onChange={(e) => setTreadTolerancePct(e.target.value)}
               />
             </div>
-            <div className="field">
+            <div className="field sort-results-field">
               <label>Sort results by</label>
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                 {SORT_OPTIONS.map((o) => (

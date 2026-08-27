@@ -20,12 +20,15 @@ export const ROLES = ['admin', 'staff', 'guest'];
 
 export const PAGES = [
   { key: 'dashboard', label: 'Dashboard', path: '/dashboard' },
-  { key: 'user-management', label: 'User Management', path: '/user-management' },
+  { key: 'tire-calculator', label: 'Tire Size Calculator', path: '/tire-calculator' },
   { key: 'tire-comparison', label: 'Tire Size Comparison', path: '/tire-comparison' },
   { key: 'tire-options', label: 'Tire Size Option', path: '/tire-options' },
   { key: 'plus-size', label: 'Plus Size Options', path: '/plus-size' },
-  { key: 'application-guide', label: 'Application Guide', path: '/application-guide' },
+  // { key: 'application-guide', label: 'Application Guide', path: '/application-guide' },
+  { key: 'tech-data', label: 'Tech Data', path: '/tech-data' },
   { key: 'vehicle-notes', label: 'Vehicle Notes', path: '/vehicle-notes' },
+  { key: 'reports', label: 'Reporting & Data Export', path: '/reports' },
+  { key: 'user-management', label: 'User Management', path: '/user-management' },
 ];
 
 // Default access matrix used the very first time the app runs (no backend

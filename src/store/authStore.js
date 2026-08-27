@@ -38,6 +38,7 @@ const useAuthStore = create(
       partialize: (state) => ({
         token: state.token,
         user: state.user,
+        sessionExpired: state.sessionExpired,
       }),
     }
   )

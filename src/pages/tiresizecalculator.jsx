@@ -219,7 +219,7 @@ export default function TireSizeCalculator() {
 
             <h4 className="subheading-spaced">
               <Gauge size={14} className="icon-inline-sm" />
-              Speedometer error
+              Speedometer Error
             </h4>
 
             <div className="table-responsive">

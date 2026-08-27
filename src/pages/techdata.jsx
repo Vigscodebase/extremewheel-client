@@ -14,6 +14,7 @@ import {
 import { useLogVehicleSearch } from "../hooks/queries/useActivity";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import { useUpdateVehicleNote, useVehicleNotesQuery } from "../hooks/queries/useVehicleNotes";
+import { useAuth } from "../context/authcontext";
 
 const GLOSSARY = [
   { term: "Wheel Offset", def: "The distance (in mm) from the wheel's centerline to its mounting hub surface. Positive offset pulls the wheel face inward; negative pushes it outward." },
@@ -69,6 +70,7 @@ function WheelOffsetChart({ record, show3D = true }) {
 
 export default function TechData() {
   const [tab, setTab] = useState("lookup"); // "lookup" | "manual" | "csv" | "guide"
+  const { user } = useAuth();
 
   return (
     <div>
@@ -81,7 +83,7 @@ export default function TechData() {
       <div className="range-toggle mb-20">
         <button type="button" className={tab === "lookup" ? "active" : ""} onClick={() => setTab("lookup")}>Vehicle lookup</button>
         <button type="button" className={tab === "manual" ? "active" : ""} onClick={() => setTab("manual")}>Manual reference</button>
-        <button type="button" className={tab === "csv" ? "active" : ""} onClick={() => setTab("csv")}>CSV import / export</button>
+        {user.role !== "guest" && <button type="button" className={tab === "csv" ? "active" : ""} onClick={() => setTab("csv")}>CSV import / export</button>}
         <button type="button" className={tab === "guide" ? "active" : ""} onClick={() => setTab("guide")}>Guide</button>
       </div>
 
@@ -330,6 +332,7 @@ function CsvImportExportTab() {
   };
 
   return (
+
     <div className="card">
       <h3 className="mb-4">
         <FileSpreadsheet size={16} className="icon-inline" />

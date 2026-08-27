@@ -343,7 +343,7 @@ export default function VehicleNotes() {
         }
       />
 
-      {isStaffOrAdmin && (
+      {isStaffOrAdmin && user.role !== "guest" && (
         <div className="card vehicle-db-card mb-20">
           <h3 className="mb-4">
             <FileSpreadsheet size={16} className="icon-inline" />

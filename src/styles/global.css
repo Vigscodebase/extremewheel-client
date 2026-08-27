@@ -315,6 +315,10 @@ ul {
     font-size: 11px;
 }
 
+.fs-12-5 {
+    font-size: 12.5px;
+}
+
 .fs-13 {
     font-size: 13px;
 }
@@ -896,7 +900,19 @@ ul {
     white-space: nowrap;
 }
 
+.btn-responsive {
+    display: none;
+}
+
 @media only screen and (min-width:320px) and (max-width:767px) {
+    .btn-responsive {
+        display: block;
+    }
+
+    .btn-noresponsive {
+        display: none;
+    }
+
     .tire3d-grid {
         grid-template-columns: 1fr;
     }
@@ -1993,6 +2009,7 @@ ul {
     width: 100%;
     margin: 0 auto;
     border-collapse: collapse;
+    border: 1.5px solid var(--color-border);
 }
 
 .compare-table th {
@@ -3285,6 +3302,14 @@ ul {
    RESPONSIVE LAYOUT adjustments
    ===================================================================== */
 @media only screen and (min-width:1366px) and (max-width:1420px) {
+    .btn-responsive {
+        display: none;
+    }
+
+    .btn-noresponsive {
+        display: block;
+    }
+
     .page-main {
         padding: 28px 34px 40px calc(var(--sidebar-w) + 54px);
     }
@@ -3312,6 +3337,14 @@ ul {
 }
 
 @media only screen and (min-width:1280px) and (max-width:1365px) {
+    .btn-responsive {
+        display: none;
+    }
+
+    .btn-noresponsive {
+        display: block;
+    }
+
     .page-main {
         padding: 26px 30px 38px calc(var(--sidebar-w) + 50px);
     }
@@ -3353,6 +3386,15 @@ ul {
 }
 
 @media only screen and (min-width:1180px) and (max-width:1279px) {
+
+    .btn-responsive {
+        display: none;
+    }
+
+    .btn-noresponsive {
+        display: block;
+    }
+
     :root {
         --sidebar-w: 80px;
     }
@@ -3402,6 +3444,15 @@ ul {
 }
 
 @media only screen and (min-width:1024px) and (max-width:1179px) {
+
+    .btn-responsive {
+        display: none;
+    }
+
+    .btn-noresponsive {
+        display: block;
+    }
+
     :root {
         --sidebar-w: 76px;
     }
@@ -3449,8 +3500,21 @@ ul {
 }
 
 @media only screen and (min-width:768px) and (max-width:1023px) {
+
+    .btn-responsive {
+        display: none;
+    }
+
+    .btn-noresponsive {
+        display: block;
+    }
+
     :root {
         --sidebar-w: 72px;
+    }
+
+    .wheel-diameter-table {
+        margin-bottom: 15px;
     }
 
     .page-main {
@@ -3511,6 +3575,14 @@ ul {
     .sidebar-avatar {
         left: 13px;
     }
+
+    .sort-results-field {
+        grid-column: span 2;
+    }
+
+    .sort-results-field select {
+        margin-top: auto;
+    }
 }
 
 /* =====================================================================
@@ -3529,6 +3601,15 @@ ul {
 
 /* Tablet: 3 inputs in a row, with a full-width Call-To-Action button underneath */
 @media only screen and (min-width: 768px) and (max-width: 1179px) {
+
+    .btn-responsive {
+        display: none;
+    }
+
+    .btn-noresponsive {
+        display: block;
+    }
+
     .inline-search-grid {
         grid-template-columns: repeat(3, 1fr);
     }
@@ -3542,6 +3623,15 @@ ul {
 
 /* Mobile: Stack everything vertically */
 @media only screen and (max-width: 767px) {
+
+    .btn-responsive {
+        display: none;
+    }
+
+    .btn-noresponsive {
+        display: block;
+    }
+
     .inline-search-grid {
         grid-template-columns: 1fr;
     }
@@ -3551,7 +3641,27 @@ ul {
     }
 }
 
+@media (min-width: 1114px) and (max-width: 1114px) {
+
+    .sidebar:not(.expanded) .sidebar-item:hover,
+    .sidebar:not(.expanded) .sidebar-item.active {
+        width: calc(100% - 11px);
+    }
+
+    .sidebar:not(.expanded) .sidebar-item:after {
+        right: -6px;
+    }
+}
+
 @media only screen and (min-width:767px) and (max-width:1022px) {
+
+    .btn-responsive {
+        display: none;
+    }
+
+    .btn-noresponsive {
+        display: block;
+    }
 
     .dashboard-layout .sidebar:not(.expanded) .sidebar-item:hover,
     .dashboard-layout .sidebar:not(.expanded) .sidebar-item.active {
@@ -3577,6 +3687,25 @@ ul {
 
 /* --- MOBILE SPECIFIC: hamburger top bar + off-canvas drawer nav --- */
 @media only screen and (min-width:320px) and (max-width:766px) {
+
+    .panel-head {
+        flex-direction: column;
+    }
+
+    .empty-state-card {
+        padding: 40px;
+        text-align: center;
+        font-size: 12.5px;
+    }
+
+    .btn-responsive {
+        display: block;
+    }
+
+    .btn-noresponsive {
+        display: none;
+    }
+
     .dashboard-layout {
         flex-direction: column;
     }
@@ -3880,7 +4009,7 @@ ul {
     }
 
     .tabbar {
-        width: 100%;
+        width: fit-content;
         overflow-x: auto;
     }
 
