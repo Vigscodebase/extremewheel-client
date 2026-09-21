@@ -9,7 +9,7 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
-        secure: false,
+        secure: true,
         // ADD THIS: Strips '/api' before sending to Express
         rewrite: (path) => path.replace(/^\/api/, '')
       },
@@ -17,7 +17,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false,
     // Maintaining default 500kb limit by omitting chunkSizeWarningLimit
     rollupOptions: {
       output: {
