@@ -149,7 +149,7 @@ export default function TireSuggestions({ tire, label }) {
               icon={Sparkles}
               text={`Saved preset — ${p.label}`}
               to="/tire-options"
-              state={{ prefillPreset: { label: p.label, width: p.width, aspect: p.aspect, rim: p.rim } }}
+              state={{ prefillPreset: { label: p.label, make: p.make, width: p.width, aspect: p.aspect, rim: p.rim } }}
             />
           ))}
           {comparisons.map((c) => (

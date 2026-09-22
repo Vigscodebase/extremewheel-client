@@ -9,9 +9,13 @@ import { createPortal } from "react-dom";
 export default function Modal({ open, onClose, title, children, width = 480 }) {
   useEffect(() => {
     if (!open) return;
+    // Restore whatever was there rather than blanking it: a confirm dialog
+    // opened from inside another modal (e.g. deleting a Make from the preset
+    // popup) must not unlock page scroll for the modal still open beneath it.
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 

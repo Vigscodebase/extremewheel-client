@@ -1155,12 +1155,6 @@ ul {
     cursor: pointer;
 }
 
-.dash-card-clickable:hover,
-.dash-card-clickable:focus-visible {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-pop);
-}
-
 .dash-card-clickable:focus-visible {
     outline: 2px solid var(--color-pink);
     outline-offset: 2px;
@@ -1185,12 +1179,9 @@ ul {
     transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
-.quick-link-card:hover,
 .quick-link-card:focus-visible {
-    background: #fff;
-    box-shadow: var(--shadow-pop);
-    transform: translateY(-3px);
-    outline: none;
+    outline: 2px solid var(--color-pink);
+    outline-offset: 2px;
 }
 
 .quick-link-icon {
@@ -1385,8 +1376,7 @@ ul {
     padding: 11px 8px;
 }
 
-.service-row:hover,
-.recent-row:hover {
+.service-row:hover {
     background: var(--color-pink-soft);
 }
 
@@ -2347,7 +2337,7 @@ ul {
 
 .vehicle-filter-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr) auto;
+    grid-template-columns: repeat(5, 1fr) auto;
     gap: 14px;
     align-items: end;
 }
@@ -3489,7 +3479,7 @@ ul {
     }
 
     .vehicle-filter-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
     }
 
     .vehicle-filter-clear {
@@ -4148,4 +4138,169 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
 .mobile-profile-logout-btn:hover,
 .mobile-profile-logout-btn:active {
     background: var(--color-danger-soft);
+}
+
+/* --- EditableSelect: custom dropdown with a delete button per option ---
+   Rendered instead of the native <select> only when the parent passes
+   onDeleteOption (admin-only — see components/EditableSelect.jsx). The trigger
+   mirrors `.field select`; the menu is portaled to <body> so a modal's scroll
+   container can't clip it, hence the z-index above the modal backdrop. */
+
+.ds-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    border: 1.5px solid var(--color-border);
+    background: #FFFFFF;
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    text-align: left;
+    color: var(--color-ink);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ds-trigger:focus-visible,
+.ds-trigger.is-open {
+    border-color: var(--color-pink);
+    box-shadow: 0 0 0 3px var(--color-pink-soft);
+}
+
+.ds-trigger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.ds-trigger-value,
+.ds-trigger-placeholder {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ds-trigger-placeholder {
+    color: var(--color-muted);
+}
+
+.ds-trigger-chevron {
+    flex: 0 0 auto;
+    color: var(--color-muted);
+    transition: transform 0.15s ease;
+}
+
+.ds-trigger.is-open .ds-trigger-chevron {
+    transform: rotate(180deg);
+}
+
+.ds-menu {
+    position: fixed;
+    z-index: 2500;
+    padding: 4px;
+    overflow-y: auto;
+    background: #FFFFFF;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-pop);
+    animation: fadeIn 0.12s ease;
+}
+
+.ds-option {
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+}
+
+.ds-option:hover,
+.ds-option:focus-within {
+    background: var(--color-bg);
+}
+
+.ds-option.is-selected {
+    background: var(--color-pink-soft);
+}
+
+.ds-option-main {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 13.5px;
+    text-align: left;
+    color: var(--color-ink);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ds-option.is-selected .ds-option-main {
+    color: var(--color-pink);
+    font-weight: 600;
+}
+
+.ds-option-main:focus-visible,
+.ds-add-new:focus-visible,
+.ds-option-delete:focus-visible {
+    outline: 2px solid var(--color-pink);
+    outline-offset: -2px;
+}
+
+.ds-option-delete {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    margin-right: 4px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ds-option-delete:hover,
+.ds-option-delete:focus-visible {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+}
+
+.ds-empty {
+    padding: 10px;
+    font-size: 13px;
+    color: var(--color-muted);
+}
+
+.ds-menu-footer {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--color-border);
+}
+
+.ds-add-new {
+    display: block;
+    width: 100%;
+    padding: 9px 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-align: left;
+    color: var(--color-pink);
+    cursor: pointer;
+}
+
+.ds-add-new:hover {
+    background: var(--color-pink-soft);
 }

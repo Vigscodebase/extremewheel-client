@@ -39,9 +39,11 @@ export function useVehicleLookupYears() {
 
 // "+ Add new…" on the Add/Edit vehicle form calls these on save so a
 // freshly-typed Make/Model/Type/Year becomes a real dropdown option from
-// then on. Invalidates the same ["vehicle-lookup"] cache as the bulk
-// import/export mutations below, so every open dropdown picks up the
-// addition next time it's opened.
+// then on. Both are staff/admin — the form only calls them for those roles,
+// and the server rejects anyone else.
+// Invalidates the same ["vehicle-lookup"] cache as the bulk import/export
+// mutations below, so every open dropdown picks up the addition next time
+// it's opened.
 export function useQuickAddVehicleLookup() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -54,6 +56,52 @@ export function useQuickAddVehicleLookupYear() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (year) => vehicleLookupApi.quickAddVehicleLookupYear(year),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["vehicle-lookup"] }),
+  });
+}
+
+// Staff/admin Make / Model / Type / Year management (the server enforces this
+// too). All of them invalidate the same ["vehicle-lookup"] cache, so every
+// open dropdown — Vehicle Notes form, its filter bar, and the tire preset
+// popup — picks up the change.
+export function useAddVehicleLookupMake() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: vehicleLookupApi.addVehicleLookupMake,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["vehicle-lookup"] }),
+  });
+}
+
+export function useDeleteVehicleLookupMake() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: vehicleLookupApi.deleteVehicleLookupMake,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["vehicle-lookup"] }),
+  });
+}
+
+export function useDeleteVehicleLookupModel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: vehicleLookupApi.deleteVehicleLookupModel,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["vehicle-lookup"] }),
+  });
+}
+
+export function useDeleteVehicleLookupType() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: vehicleLookupApi.deleteVehicleLookupType,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["vehicle-lookup"] }),
+  });
+}
+
+// Years live in their own list, independent of make/model/type — deleting one
+// cascades to nothing (see models/VehicleLookupYear.js).
+export function useDeleteVehicleLookupYear() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: vehicleLookupApi.deleteVehicleLookupYear,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["vehicle-lookup"] }),
   });
 }

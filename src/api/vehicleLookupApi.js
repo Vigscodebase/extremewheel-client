@@ -17,11 +17,34 @@ export const fetchVehicleLookupYears = () =>
 // upserts, so re-submitting an existing value is a harmless no-op. This is
 // what lets the "+ Add new…" option on the Add/Edit vehicle form actually
 // grow the dropdowns instead of just accepting free text for that one save.
+// Both are staff/admin, enforced server-side.
 export const quickAddVehicleLookup = (make, model, type) =>
   axios.post("/vehicle-lookup/quick-add", { make, model, type }).then((r) => r.data);
 
 export const quickAddVehicleLookupYear = (year) =>
   axios.post("/vehicle-lookup/quick-add-year", { year }).then((r) => r.data);
+
+// Staff/admin (enforced server-side too): add a Make on its own — the Tire
+// Size Option preset popup only has a Make, no Model/Type to pair it with.
+// That's the field labelled "Preset name" on that popup.
+export const addVehicleLookupMake = (make) =>
+  axios.post("/vehicle-lookup/make", { make }).then((r) => r.data);
+
+// Staff/admin: delete one entry from the Make / Model / Type / Year dropdown
+// data. Deleting a Make also removes every Model/Type under it; deleting a
+// Model removes its Types; a Year stands alone and cascades to nothing.
+// Vehicle Notes and tire presets already saved with that value are untouched.
+export const deleteVehicleLookupMake = (make) =>
+  axios.delete("/vehicle-lookup/make", { params: { make } }).then((r) => r.data);
+
+export const deleteVehicleLookupModel = ({ make, model }) =>
+  axios.delete("/vehicle-lookup/model", { params: { make, model } }).then((r) => r.data);
+
+export const deleteVehicleLookupType = ({ make, model, type }) =>
+  axios.delete("/vehicle-lookup/type", { params: { make, model, type } }).then((r) => r.data);
+
+export const deleteVehicleLookupYear = (year) =>
+  axios.delete("/vehicle-lookup/year", { params: { year } }).then((r) => r.data);
 
 // Downloads the current Make/Model/Type reference table as .xlsx via the
 // browser's normal download flow — mirrors downloadTechDataCsv in

@@ -17,6 +17,10 @@ import {
   useVehicleNotesQuery,
 } from "../hooks/queries/useVehicleNotes";
 import {
+  useDeleteVehicleLookupMake,
+  useDeleteVehicleLookupModel,
+  useDeleteVehicleLookupType,
+  useDeleteVehicleLookupYear,
   useDownloadVehicleLookupXlsx,
   useImportVehicleLookupXlsx,
   useQuickAddVehicleLookup,
@@ -49,7 +53,7 @@ const emptyForm = {
   upgradedSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
 };
 
-const emptyFilters = { make: "", model: "", yearFrom: "", yearTo: "" };
+const emptyFilters = { make: "", model: "", type: "", yearFrom: "", yearTo: "" };
 
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -69,6 +73,17 @@ function toDateInputValue(value) {
 
 export default function VehicleNotes() {
   const { user } = useAuth();
+  // Who can grow/prune the predefined dropdown lists (the server enforces the
+  // same rule): staff and admin, for all four of Make, Model, Type and Year.
+  // "+ Add new…" and the per-option delete button on every one of those
+  // dropdowns are gated on `isStaffOrAdmin`.
+  //
+  // Keep all four on the same flag. EditableSelect only renders its custom
+  // dropdown when an onDeleteOption handler is passed and falls back to a
+  // native <select> otherwise, so gating one field differently from the rest
+  // doesn't just change what that field can do — it visibly changes what it
+  // looks like, and the form ends up with a browser-styled select sitting
+  // next to three app-styled ones.
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
   const { data: fetchedVehicles, isLoading: loading, isError: vehiclesError } = useVehicleNotesQuery();
   const vehicles = vehiclesError ? MOCK_VEHICLES : fetchedVehicles || [];
@@ -94,15 +109,35 @@ export default function VehicleNotes() {
   // Predefined Make/Model/Type dropdown data (cascading) — sourced from the
   // "Vehicle Notes database" (see database card below). Model options
   // depend on the selected Make, Type options depend on Make + Model. Year
-  // is independent (see models/VehicleLookupYear.js). All four support
-  // typing a brand new value via EditableSelect's "+ Add new…" option.
+  // is independent (see models/VehicleLookupYear.js) but is otherwise the
+  // same kind of list. All four support typing a brand new value via
+  // EditableSelect's "+ Add new…" option, for the roles allowed to (see the
+  // role note at the top of this component).
   const { data: lookupMakes, isLoading: loadingLookupMakes } = useVehicleLookupMakes();
   const { data: lookupModels, isLoading: loadingLookupModels } = useVehicleLookupModels(form.make);
   const { data: filterModels } = useVehicleLookupModels(filters.make);
   const { data: lookupTypes, isLoading: loadingLookupTypes } = useVehicleLookupTypes(form.make, form.model);
+  // Filter bar's Type dropdown — same cascading Make -> Model -> Type chain
+  // as the Add/Edit vehicle form above, just keyed off the filter state
+  // instead of the form state, and sourced from the same Vehicle Notes
+  // database so it's always dynamic and up to date.
+  const { data: filterTypes } = useVehicleLookupTypes(filters.make, filters.model);
   const { data: lookupYears, isLoading: loadingLookupYears } = useVehicleLookupYears();
   const quickAddLookup = useQuickAddVehicleLookup();
   const quickAddLookupYear = useQuickAddVehicleLookupYear();
+
+  // Deleting an entry from the Make / Model / Type / Year dropdowns.
+  // `lookupDelete` is the pending confirmation: { kind, make, model, type, value }.
+  const deleteLookupMake = useDeleteVehicleLookupMake();
+  const deleteLookupModel = useDeleteVehicleLookupModel();
+  const deleteLookupType = useDeleteVehicleLookupType();
+  const deleteLookupYear = useDeleteVehicleLookupYear();
+  const [lookupDelete, setLookupDelete] = useState(null);
+  const lookupDeleting =
+    deleteLookupMake.isPending ||
+    deleteLookupModel.isPending ||
+    deleteLookupType.isPending ||
+    deleteLookupYear.isPending;
 
   // Vehicle Notes database (Make/Model/Type master list) upload/download —
   // same round-trip pattern as the Tech Data CSV tab, just for .xlsx.
@@ -127,6 +162,7 @@ export default function VehicleNotes() {
   // --- Filter option lists, derived from the predefined Excel database ---
   const filterMakeOptions = lookupMakes || [];
   const filterModelOptions = filterModels || [];
+  const filterTypeOptions = filterTypes || [];
 
   const filterYearOptions = useMemo(
     () =>
@@ -137,11 +173,15 @@ export default function VehicleNotes() {
     [lookupYears]
   );
 
-  const filtersActive = Boolean(filters.make || filters.model || filters.yearFrom || filters.yearTo);
+  const filtersActive = Boolean(filters.make || filters.model || filters.type || filters.yearFrom || filters.yearTo);
 
   const clearFilters = () => setFilters(emptyFilters);
 
-  const onFilterMakeChange = (e) => setFilters((f) => ({ ...f, make: e.target.value, model: "" }));
+  // Make -> Model -> Type cascades here exactly like it does on the
+  // Add/Edit vehicle form: changing an upstream filter clears whatever
+  // downstream filter would no longer be a valid combination.
+  const onFilterMakeChange = (e) => setFilters((f) => ({ ...f, make: e.target.value, model: "", type: "" }));
+  const onFilterModelChange = (e) => setFilters((f) => ({ ...f, model: e.target.value, type: "" }));
 
   // Filtering preserves the API's existing sort order (newest first) —
   // only narrows which cards show, same grid + edit button as always.
@@ -149,6 +189,7 @@ export default function VehicleNotes() {
     return vehicles.filter((v) => {
       if (filters.make && v.make !== filters.make) return false;
       if (filters.model && v.model !== filters.model) return false;
+      if (filters.type && v.type !== filters.type) return false;
       const y = Number(v.year);
       if (filters.yearFrom && (!Number.isFinite(y) || y < Number(filters.yearFrom))) return false;
       if (filters.yearTo && (!Number.isFinite(y) || y > Number(filters.yearTo))) return false;
@@ -283,11 +324,22 @@ export default function VehicleNotes() {
       // when "+ Add new…" was used. Never blocks the save above, and never
       // surfaces an error to the person — the vehicle note itself already
       // saved successfully regardless of what happens here.
-      quickAddLookup.mutate(
-        { make: form.make, model: form.model, type: form.type },
-        { onError: () => { } }
-      );
-      if (form.year) {
+      // Additions are staff/admin, and skipped when editing a vehicle without
+      // changing the value — otherwise saving an older vehicle would quietly
+      // bring back a Make/Model/Type/Year someone has since deleted.
+      const lookupUnchanged =
+        editing &&
+        form.make === (editing.make || "") &&
+        form.model === (editing.model || "") &&
+        form.type === (editing.type || "");
+      const yearUnchanged = editing && form.year === (editing.year || "");
+      if (isStaffOrAdmin && !lookupUnchanged) {
+        quickAddLookup.mutate(
+          { make: form.make, model: form.model, type: form.type },
+          { onError: () => { } }
+        );
+      }
+      if (isStaffOrAdmin && form.year && !yearUnchanged) {
         quickAddLookupYear.mutate(form.year, { onError: () => { } });
       }
     } catch (err) {
@@ -303,6 +355,73 @@ export default function VehicleNotes() {
       setDeleteTarget(null);
     }
   };
+
+  // Delete one entry from the Make / Model / Type / Year dropdown data.
+  // Vehicle notes already saved keep the values they were saved with.
+  // Anything on the form that's about to disappear is cleared first — before
+  // the lists refetch without it, which the dropdown would otherwise misread
+  // as a hand-typed value — and put back if the delete fails.
+  const confirmDeleteLookup = async () => {
+    if (!lookupDelete) return;
+    const { kind, make, model, type, value } = lookupDelete;
+    const previous = { make: form.make, model: form.model, type: form.type, year: form.year };
+    const clearsForm =
+      (kind === "make" && form.make === value) ||
+      (kind === "model" && form.make === make && form.model === value) ||
+      (kind === "type" && form.make === make && form.model === model && form.type === value) ||
+      (kind === "year" && form.year === value);
+
+    setFormError("");
+    if (clearsForm) {
+      if (kind === "make") onFormMakeChange("");
+      else if (kind === "model") onFormModelChange("");
+      else if (kind === "year") setForm((f) => ({ ...f, year: "" }));
+      else setForm((f) => ({ ...f, type: "" }));
+    }
+
+    try {
+      if (kind === "make") await deleteLookupMake.mutateAsync(value);
+      else if (kind === "model") await deleteLookupModel.mutateAsync({ make, model: value });
+      else if (kind === "year") await deleteLookupYear.mutateAsync(value);
+      else await deleteLookupType.mutateAsync({ make, model, type: value });
+
+      // The filter bar draws from the same lists — drop a filter whose value
+      // no longer exists so it can't keep silently narrowing the grid. Year
+      // feeds both ends of the date range, so check them separately.
+      setFilters((f) => {
+        if (kind === "make" && f.make === value) return { ...f, make: "", model: "", type: "" };
+        if (kind === "model" && f.make === make && f.model === value) return { ...f, model: "", type: "" };
+        if (kind === "type" && f.make === make && f.model === model && f.type === value) return { ...f, type: "" };
+        if (kind === "year") {
+          const next = { ...f };
+          if (String(f.yearFrom) === String(value)) next.yearFrom = "";
+          if (String(f.yearTo) === String(value)) next.yearTo = "";
+          return next;
+        }
+        return f;
+      });
+    } catch (err) {
+      if (clearsForm) setForm((f) => ({ ...f, ...previous }));
+      setFormError(err?.response?.data?.message || `Couldn't delete that ${kind}. Please try again.`);
+    } finally {
+      setLookupDelete(null);
+    }
+  };
+
+  const lookupDeleteMessage = (() => {
+    if (!lookupDelete) return "";
+    const { kind, make, model, value } = lookupDelete;
+    if (kind === "make") {
+      return `Delete "${value}" from the make list? Its models and types are removed from the Vehicle Notes database too. Existing vehicle notes keep their make.`;
+    }
+    if (kind === "model") {
+      return `Delete "${value}" from ${make}? Its types are removed too. Existing vehicle notes keep their model.`;
+    }
+    if (kind === "year") {
+      return `Delete "${value}" from the year list? It's removed from the Vehicle Notes database and from the year filters. Existing vehicle notes keep their year.`;
+    }
+    return `Delete the type "${value}" from ${make} ${model}? If it's the only type for this model, the model is removed too. Existing vehicle notes keep their type.`;
+  })();
 
   const openGallery = (v) => {
     setGalleryVehicle(v);
@@ -394,9 +513,16 @@ export default function VehicleNotes() {
           </div>
           <div className="field">
             <label>Model</label>
-            <select value={filters.model} onChange={(e) => setFilters((f) => ({ ...f, model: e.target.value }))}>
+            <select value={filters.model} onChange={onFilterModelChange}>
               <option value="">All models</option>
               {filterModelOptions.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Type</label>
+            <select value={filters.type} onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value }))}>
+              <option value="">All types</option>
+              {filterTypeOptions.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div className="field">
@@ -509,12 +635,16 @@ export default function VehicleNotes() {
               placeholder="Select make"
               addNewLabel="+ Add new make…"
               customPlaceholder="e.g. Ford"
+              canAddNew={isStaffOrAdmin}
+              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "make", value }) : undefined}
             />
           </div>
 
           {/* Make -> Model -> Type: cascading, predefined dropdowns sourced from
-              the Vehicle Notes database (see the database card above the grid),
-              each with a "+ Add new…" option for values not in the list yet. */}
+              the Vehicle Notes database (see the database card above the grid).
+              Staff and admin get a "+ Add new…" option for values not in the
+              list yet and a delete button on every option; everyone else picks
+              from the list only. */}
           <div className="tire-input-grid cols-2 field-mb">
             <EditableSelect
               label="Model"
@@ -526,6 +656,8 @@ export default function VehicleNotes() {
               placeholder={!form.make ? "Select make first" : "Select model"}
               addNewLabel="+ Add new model…"
               customPlaceholder="e.g. Transit 350"
+              canAddNew={isStaffOrAdmin}
+              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "model", make: form.make, value }) : undefined}
             />
             <EditableSelect
               label="Type"
@@ -537,9 +669,15 @@ export default function VehicleNotes() {
               placeholder={!form.model ? "Select model first" : "Select type"}
               addNewLabel="+ Add new type…"
               customPlaceholder="e.g. Van / Mini Van"
+              canAddNew={isStaffOrAdmin}
+              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "type", make: form.make, model: form.model, value }) : undefined}
             />
           </div>
 
+          {/* Year is the same kind of predefined, dynamic dropdown as
+              Make/Model/Type above — same EditableSelect, same "+ Add new…"
+              and per-option delete for staff and admin — it just doesn't
+              cascade off anything, so it's always enabled. */}
           <div className="tire-input-grid cols-2 field-mb">
             <EditableSelect
               label="Year"
@@ -550,6 +688,8 @@ export default function VehicleNotes() {
               placeholder="Select year"
               addNewLabel="+ Add new year…"
               customPlaceholder="2023"
+              canAddNew={isStaffOrAdmin}
+              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "year", value }) : undefined}
             />
             <div className="field">
               <label>Event date</label>
@@ -879,6 +1019,17 @@ export default function VehicleNotes() {
         message={`Remove ${deleteTarget?.name || "this vehicle"} from your records? This can't be undone.`}
         busy={deleting}
       />
+
+      {isStaffOrAdmin && (
+        <ConfirmDialog
+          open={!!lookupDelete}
+          onClose={() => setLookupDelete(null)}
+          onConfirm={confirmDeleteLookup}
+          busy={lookupDeleting}
+          title={`Delete ${lookupDelete?.kind || "entry"}`}
+          message={lookupDeleteMessage}
+        />
+      )}
     </div>
   );
 }
