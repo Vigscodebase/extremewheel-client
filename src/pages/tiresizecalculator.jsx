@@ -100,42 +100,78 @@ export default function TireSizeCalculator() {
       />
 
       <div className="card tire-calculator-form">
-        <h3>
-          <Calculator size={16} className="icon-inline" />
-          Tire Size
-        </h3>
-        <div className="field field-mb">
-          <label>Load a saved preset</label>
-          <select onChange={(e) => e.target.value && applyPreset(e.target.value)} defaultValue="">
-            <option value="">Custom size…</option>
-            {presets.map((p) => (
-              <option key={p._id} value={p._id}>
-                {p.label} — {p.width}/{p.aspect} R{p.rim}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="tire-input-grid">
-          <div className="field">
-            <label>Width (mm)</label>
-            <input type="number" value={tire.width} onChange={(e) => { setTire((t) => ({ ...t, width: Number(e.target.value) })); setLogged(false); }} />
+        <div className="calculator-form-item">
+          <h3>
+            <Calculator size={16} className="icon-inline" />
+            Tire Size
+          </h3>
+          <div className="field field-mb">
+            <label>Load a saved preset</label>
+            <select onChange={(e) => e.target.value && applyPreset(e.target.value)} defaultValue="">
+              <option value="">Custom size…</option>
+              {presets.map((p) => (
+                <option key={p._id} value={p._id}>
+                  {p.label} — {p.width}/{p.aspect} R{p.rim}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="field">
-            <label>Aspect (%)</label>
-            <input type="number" value={tire.aspect} onChange={(e) => { setTire((t) => ({ ...t, aspect: Number(e.target.value) })); setLogged(false); }} />
+          <div className="tire-input-grid">
+            <div className="field">
+              <label>Width (mm)</label>
+              <input type="number" value={tire.width} onChange={(e) => { setTire((t) => ({ ...t, width: Number(e.target.value) })); setLogged(false); }} />
+            </div>
+            <div className="field">
+              <label>Aspect (%)</label>
+              <input type="number" value={tire.aspect} onChange={(e) => { setTire((t) => ({ ...t, aspect: Number(e.target.value) })); setLogged(false); }} />
+            </div>
+            <div className="field">
+              <label>Rim (in)</label>
+              <input type="number" value={tire.rim} onChange={(e) => { setTire((t) => ({ ...t, rim: Number(e.target.value) })); setLogged(false); }} />
+            </div>
           </div>
-          <div className="field">
-            <label>Rim (in)</label>
-            <input type="number" value={tire.rim} onChange={(e) => { setTire((t) => ({ ...t, rim: Number(e.target.value) })); setLogged(false); }} />
-          </div>
-        </div>
-        <p className="tire-size-string">
-          {tire.width}/{tire.aspect} R{tire.rim} · equivalent inch size ≈ {equivalentInchSize(tire)}
-        </p>
+          <p className="tire-size-string">
+            {tire.width}/{tire.aspect} R{tire.rim} · equivalent inch size ≈ {equivalentInchSize(tire)}
+          </p>
 
-        <div className="range-toggle mt-10">
-          <button type="button" className={unit === "in" ? "active" : ""} onClick={() => setUnit("in")}>inches</button>
-          <button type="button" className={unit === "mm" ? "active" : ""} onClick={() => setUnit("mm")}>mm</button>
+          <div className="range-toggle mt-10">
+            <button type="button" className={unit === "in" ? "active" : ""} onClick={() => setUnit("in")}>inches</button>
+            <button type="button" className={unit === "mm" ? "active" : ""} onClick={() => setUnit("mm")}>mm</button>
+          </div>
+        </div>
+        <div className="calculator-form-item formula-table-container">
+          <div class="table-responsive">
+            <table class="compare-table formula-table">
+              <thead>
+                <tr>
+                  <th>Spec</th>
+                  <th>Formula</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="compare-table-label">Diameter</td>
+                  <td class="compare-table-value">rim + 2 × sidewall height</td>
+                </tr>
+                <tr>
+                  <td class="compare-table-label">Width</td>
+                  <td class="compare-table-value">width (mm) ÷ 25.4</td>
+                </tr>
+                <tr>
+                  <td class="compare-table-label">Sidewall</td>
+                  <td class="compare-table-value">(width × aspect ÷ 100) ÷ 25.4</td>
+                </tr>
+                <tr>
+                  <td class="compare-table-label">Circumference</td>
+                  <td class="compare-table-value">π × diameter</td>
+                </tr>
+                <tr>
+                  <td class="compare-table-label">Revs / mile</td>
+                  <td class="compare-table-value">1 ÷ (circumference in miles)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -162,7 +198,7 @@ export default function TireSizeCalculator() {
           </table>
         </div>
 
-        <TireSuggestions tire={tire} />
+        {/* <TireSuggestions tire={tire} /> */}
       </div>
 
       <div className="card">
@@ -236,7 +272,7 @@ export default function TireSizeCalculator() {
               </table>
             </div>
 
-            <TireSuggestions tire={convertedTire} label="new wheel size" />
+            {/* <TireSuggestions tire={convertedTire} label="new wheel size" />    */}
           </>
         )}
       </div>

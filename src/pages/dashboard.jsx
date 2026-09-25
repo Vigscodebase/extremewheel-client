@@ -269,7 +269,7 @@ function QuickAccessPanel() {
       </div>
 
       {/* Replaced old grid classes with inline-search-grid */}
-      <div className="inline-search-grid mb-16">
+      {/* <div className="inline-search-grid mb-16">
         <div className="field">
           <label>Year</label>
           <select
@@ -297,12 +297,12 @@ function QuickAccessPanel() {
         </div>
 
         {/* Added button-field class for targeting in CSS */}
-        <div className="field button-field">
+      {/*}  <div className="field button-field">
           <button type="button" className="btn btn-accent w-full" disabled={!year || !make || !model} onClick={goToFitment}>
             <Search size={15} /> Look up fitment
           </button>
         </div>
-      </div>
+      </div> */}
 
       <div className="quick-links-grid">
         {QUICK_LINKS.map((q) => (

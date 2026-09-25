@@ -47,25 +47,40 @@ axios.interceptors.request.use(
 axios.interceptors.response.use(
   (response) => {
     const renewedToken = response.headers["x-refresh-token"];
+
     if (renewedToken) {
       useAuthStore.getState().setToken(renewedToken);
+
       try {
         const { name, email, role } = jwtDecode(renewedToken);
-        useAuthStore.getState().updateUser({ name, email, role });
+
+        useAuthStore.getState().updateUser({
+          name,
+          email,
+          role,
+        });
       } catch {
         // Malformed renewed token: keep the old user info rather than crash.
       }
     }
+
     return response;
   },
   (error) => {
     if (error.response && error.response.status === 401) {
       useAuthStore.getState().setSessionExpired(true);
     } else {
-      // For any error that ISN'T a 401, extract the Express message and trigger the global modal
-      const errorMessage = error.response?.data?.message || "An unexpected error occurred. Please try again.";
-      window.dispatchEvent(new CustomEvent("api-error", { detail: errorMessage }));
+      const errorMessage =
+        error.response?.data?.message ||
+        "An unexpected error occurred. Please try again.";
+
+      window.dispatchEvent(
+        new CustomEvent("api-error", {
+          detail: errorMessage,
+        })
+      );
     }
+
     return Promise.reject(error);
   }
 );

@@ -147,8 +147,8 @@ export default function TireSizeComparison() {
           </tbody>
         </table>
 
-        <TireSuggestions tire={tireA} label="Tire A" />
-        <TireSuggestions tire={tireB} label="Tire B" />
+        {/* <TireSuggestions tire={tireA} label="Tire A" />
+        <TireSuggestions tire={tireB} label="Tire B" /> */}
       </div>
     </div>
   );

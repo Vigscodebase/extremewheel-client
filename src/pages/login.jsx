@@ -57,7 +57,7 @@ export default function Login() {
 
           <div className="auth-heading">
             <h1>Welcome Back</h1>
-            <p>Welcome Back, Please enter Your details</p>
+            <p>Please enter Your details</p>
           </div>
 
           {error && <div className="auth-error-banner">{error}</div>}
@@ -112,11 +112,11 @@ export default function Login() {
               </button>
             </div>
 
-            <p className="mb-8" style={{ textAlign: "right" }}>
+            {/* <p className="mb-8" style={{ textAlign: "right" }}>
               <Link to="/forgot-password" className="see-all-link" style={{ display: "inline-flex" }}>
                 Forgot password?
               </Link>
-            </p>
+            </p> */}
 
             <button type="submit" className="smart-btn-primary" disabled={loading}>
               {loading ? "Signing in…" : "Continue"}

@@ -189,7 +189,7 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
                     </table>
                   )}
                 </div>
-                  {baseParsed && (
+                {baseParsed && (
                   <button type="button" className="btn btn-ghost btn-responsive" onClick={() => onUseAsOe(baseParsed)}>
                     <Search size={13} /> Use as OE size above
                   </button>
@@ -463,8 +463,8 @@ export default function PlusSizeOptions() {
             </div>
           )}
 
-          <TireSuggestions tire={{ width: Number(oe.width), aspect: Number(oe.aspect), rim: Number(oe.rim) }} label="OE size" />
-          {previewResult && <TireSuggestions tire={previewResult} label={previewResult.label} />}
+          {/* <TireSuggestions tire={{ width: Number(oe.width), aspect: Number(oe.aspect), rim: Number(oe.rim) }} label="OE size" />
+          {previewResult && <TireSuggestions tire={previewResult} label={previewResult.label} />} */}
         </div>
       )}
 

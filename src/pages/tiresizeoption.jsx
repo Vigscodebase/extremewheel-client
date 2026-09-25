@@ -231,7 +231,7 @@ export default function TireSizeOption() {
               zoomable
               variant="option-preview"
             />
-            <TireSuggestions tire={previewPreset} />
+            {/* <TireSuggestions tire={previewPreset} /> */}
           </>
         )}
       </Modal>
