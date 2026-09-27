@@ -44,6 +44,22 @@ axios.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+/*
+ * ============================================================
+ * AUTOMATIC TOKEN REFRESH / SESSION EXPIRY - TEMPORARILY DISABLED
+ * ============================================================
+ *
+ * Keeping the original interceptor logic here for future use.
+ *
+ * This used to:
+ *  1. Pick up a silently-renewed token from the x-refresh-token
+ *     response header (sent by the server's sliding-session logic)
+ *     and update the store + decoded user info.
+ *  2. Flip sessionExpired to true on a 401 so the app could show the
+ *     session-expired modal and log the user out.
+ */
+
+/*
 axios.interceptors.response.use(
   (response) => {
     const renewedToken = response.headers["x-refresh-token"];
@@ -80,6 +96,32 @@ axios.interceptors.response.use(
         })
       );
     }
+
+    return Promise.reject(error);
+  }
+);
+*/
+
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // NOTE: this fires the same generic event for every non-2xx response,
+    // including the expected 401 "Not authorized, no token provided." a
+    // permissions fetch gets on a fresh/incognito session before the router
+    // has redirected to /login — see the timing note above
+    // PermissionProvider's useQuery in context/permissioncontext.jsx for the
+    // full sequence. That's a benign, expected case, not a real error; it's
+    // just not distinguished from one here right now (the commented-out
+    // interceptor above used to split 401s into setSessionExpired instead).
+    const errorMessage =
+      error.response?.data?.message ||
+      "An unexpected error occurred. Please try again.";
+
+    window.dispatchEvent(
+      new CustomEvent("api-error", {
+        detail: errorMessage,
+      })
+    );
 
     return Promise.reject(error);
   }

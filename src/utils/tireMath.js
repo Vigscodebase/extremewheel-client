@@ -70,3 +70,21 @@ export function speedometerErrorTable(oeTire, newTire, readings = [20, 30, 40, 5
 // Convert millimeters <-> inches for the metric/inch results toggle.
 export const mmToInches = (mm) => mm / 25.4;
 export const inchesToMm = (inches) => inches * 25.4;
+
+// Mirrors server/utils/tireMath.js's tireToleranceLimits exactly (same
+// formulas, same defaults) — used client-side to preview an OE size's
+// height/tread tolerance window before a search round-trips to the server.
+export function tireToleranceLimits({ width, aspect, rim }, { heightTolerance = 0.03, treadTolerance = 0.15 } = {}) {
+  const overallHeightIn = tireDiameterInches({ width, aspect, rim });
+  const treadWidthIn = tireWidthInches({ width });
+  const heightDelta = overallHeightIn * heightTolerance;
+  const treadDelta = treadWidthIn * treadTolerance;
+  return {
+    overallHeightIn,
+    treadWidthIn,
+    heightUpperLimitIn: overallHeightIn + heightDelta,
+    heightLowerLimitIn: overallHeightIn - heightDelta,
+    treadUpperLimitIn: treadWidthIn + treadDelta,
+    treadLowerLimitIn: treadWidthIn - treadDelta,
+  };
+}

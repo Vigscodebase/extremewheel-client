@@ -18,6 +18,42 @@ export const PermissionProvider = ({ children }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  /*
+   * ============================================================
+   * KNOWN BENIGN 401 ON FRESH/INCOGNITO SESSIONS — NOT A BUG, NOT
+   * BEING FIXED HERE. Documenting the timing so it isn't
+   * mistaken for a real outage later.
+   * ============================================================
+   *
+   * This query has no `enabled: !!token` guard, so it fires the
+   * instant PermissionLayout mounts for ANY visit to a private
+   * route path — authenticated or not. React fires effects
+   * bottom-up (children before parents — see the interceptor
+   * bugfix note in utils/axiosInstance.js for the same ordering
+   * rule), and PermissionProvider sits *below* AuthProvider in the
+   * tree, so this fires before AuthProvider's bootstrap effect has
+   * run and before ProtectedRoute (a sibling further down, which
+   * depends on that bootstrap finishing) gets a chance to redirect
+   * an unauthenticated visitor to /login.
+   *
+   * On a genuinely fresh/incognito session there's no stored token
+   * at all yet, so this request legitimately goes out with no
+   * Authorization header and the server correctly answers
+   * 401 "Not authorized, no token provided." (middleware/auth.js).
+   * The active axios response interceptor doesn't distinguish that
+   * from a real failure, so it surfaces as the same generic
+   * "Something went wrong" modal (GlobalErrorListener) you'd see
+   * for any other error — right before the redirect to /login lands
+   * a beat later. The modal is a global overlay outside <Routes>,
+   * so it stays up across that navigation.
+   *
+   * Net effect: opening the app cold (no session yet, or a token
+   * that's expired) can flash this modal on the way to /login. It's
+   * timing, not data loss — nothing failed to load, there was
+   * simply nothing to authenticate yet. Left as-is intentionally,
+   * consistent with the other TEMPORARILY DISABLED session/refresh
+   * blocks in axiosInstance.js and authcontext.jsx.
+   */
   const { data, isLoading } = useQuery({
     queryKey: permissionsQueryKey,
     queryFn: fetchPermissions,

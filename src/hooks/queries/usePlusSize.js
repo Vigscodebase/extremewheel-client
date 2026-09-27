@@ -19,3 +19,18 @@ export function useSavePlusSizeMatch() {
     },
   });
 }
+
+// Appends new width/aspect/rim rows to the oe_tiresize library — a size
+// already on file is left untouched, so this never needs to invalidate an
+// existing search's results, only whatever the person runs next.
+export function useImportOeTireSizeXlsx() {
+  return useMutation({
+    mutationFn: plusSizeApi.importOeTireSizeXlsx,
+  });
+}
+
+export function useDownloadOeTireSizeXlsx() {
+  return useMutation({
+    mutationFn: plusSizeApi.downloadOeTireSizeXlsx,
+  });
+}

@@ -1,11 +1,17 @@
-import { Eye, Layers, Save, Search, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { Download, Eye, Layers, Save, Search, TrendingUp, Upload } from "lucide-react";
+import { useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PageHeader from "../components/pageheader";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
+import { useAuth } from "../context/authcontext";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
-import { usePlusSizeSearch, useSavePlusSizeMatch } from "../hooks/queries/usePlusSize";
+import {
+  useDownloadOeTireSizeXlsx,
+  useImportOeTireSizeXlsx,
+  usePlusSizeSearch,
+  useSavePlusSizeMatch,
+} from "../hooks/queries/usePlusSize";
 import {
   useAppGuideFitment,
   useAppGuideMakes,
@@ -205,9 +211,14 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
 
 export default function PlusSizeOptions() {
   const location = useLocation();
+  const { user } = useAuth();
+  const canManageOeLibrary = user?.role === "staff" || user?.role === "admin";
   const { data: presets } = useTireOptionsQuery();
   const searchMutation = usePlusSizeSearch();
   const saveMutation = useSavePlusSizeMatch();
+  const importOeMutation = useImportOeTireSizeXlsx();
+  const downloadOeMutation = useDownloadOeTireSizeXlsx();
+  const oeFileInputRef = useRef(null);
 
   // Arrived here via a "Saved plus-size match" suggestion chip elsewhere in
   // the app — load that OE size (and target rim) straight into the form.
@@ -262,7 +273,7 @@ export default function PlusSizeOptions() {
       oe: { width: Number(oe.width), aspect: Number(oe.aspect), rim: Number(oe.rim) },
       match: { label: r.label, width: r.width, aspect: r.aspect, rim: r.rim },
       tolerances: data?.tolerances,
-      summary: `${oe.width}/${oe.aspect}R${oe.rim} → ${r.label} (${r.width}/${r.aspect}R${r.rim})`,
+      summary: `${oe.width}/${oe.aspect}R${oe.rim} → ${r.width}/${r.aspect}R${r.rim}${r.label ? ` (${r.label})` : ""}`,
     });
     setSavedIds((prev) => new Set(prev).add(r._id));
   };
@@ -270,6 +281,13 @@ export default function PlusSizeOptions() {
   const useAsOe = (parsed) => {
     setOe((f) => ({ ...f, width: parsed.width, aspect: parsed.aspect, rim: parsed.rim }));
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const onOeFileSelected = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file next time
+    if (!file) return;
+    await importOeMutation.mutateAsync(file);
   };
 
   return (
@@ -281,7 +299,53 @@ export default function PlusSizeOptions() {
       />
 
       <form className="card tire-plus-form" onSubmit={runSearch}>
-        <h3>OE (original equipment) size</h3>
+        <div className="modal-actions modal-actions-start mb-16">
+          <h3 className="mb-0">OE (original equipment) size</h3>
+          <div className="modal-actions" style={{ marginLeft: "auto" }}>
+            <button
+              type="button"
+              className="btn btn-ghost btn-noresponsive"
+              disabled={downloadOeMutation.isPending}
+              onClick={() => downloadOeMutation.mutate()}
+              title="Download the OE tire size library as .xlsx"
+            >
+              <Download size={14} /> {downloadOeMutation.isPending ? "Downloading…" : "Download OE library"}
+            </button>
+            {canManageOeLibrary && (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-noresponsive"
+                  disabled={importOeMutation.isPending}
+                  onClick={() => oeFileInputRef.current?.click()}
+                  title="Upload a Width / Aspect / Rim .xlsx to append to the OE tire size library"
+                >
+                  <Upload size={14} /> {importOeMutation.isPending ? "Uploading…" : "Upload OE sizes"}
+                </button>
+                <input
+                  ref={oeFileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  style={{ display: "none" }}
+                  onChange={onOeFileSelected}
+                />
+              </>
+            )}
+          </div>
+        </div>
+
+        {importOeMutation.isSuccess && (
+          <div className="speedo-banner ok">
+            Added {importOeMutation.data.inserted} new size{importOeMutation.data.inserted === 1 ? "" : "s"} to the OE library
+            {importOeMutation.data.duplicates ? ` (${importOeMutation.data.duplicates} already on file, skipped)` : ""}
+            {importOeMutation.data.skipped ? `, ${importOeMutation.data.skipped} row${importOeMutation.data.skipped === 1 ? "" : "s"} couldn't be read` : ""}.
+          </div>
+        )}
+        {importOeMutation.isError && (
+          <div className="alert-error mb-16">
+            {importOeMutation.error?.response?.data?.message || "Upload failed. Please check the file and try again."}
+          </div>
+        )}
 
         <div className="field field-mb">
           <label>Load a saved preset</label>
@@ -405,7 +469,7 @@ export default function PlusSizeOptions() {
                       <span className={`badge ${r.rank === 1 ? "badge-live" : "badge-model"}`}>#{r.rank}</span>
                     </td>
                     <td className="compare-table-value">
-                      {r.label} — {r.width}/{r.aspect} R{r.rim}
+                      {r.label ? `${r.label} — ` : ""}{r.width}/{r.aspect} R{r.rim}
                     </td>
                     <td>{r.overallHeightIn}"</td>
                     <td>{r.treadWidthIn}"</td>
@@ -454,7 +518,7 @@ export default function PlusSizeOptions() {
               <div className="wheel-col">
                 <Tire3DVisualizer
                   tire={{ width: previewResult.width, aspect: previewResult.aspect, rim: previewResult.rim }}
-                  label={`${previewResult.label} · ${previewResult.width}/${previewResult.aspect}R${previewResult.rim}`}
+                  label={`${previewResult.label ? `${previewResult.label} · ` : ""}${previewResult.width}/${previewResult.aspect}R${previewResult.rim}`}
                   accent="#8B7CF6"
                   height={230}
                   variant="plus-size"

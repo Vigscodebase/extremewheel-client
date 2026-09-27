@@ -791,6 +791,11 @@ ul {
     position: relative;
     border-radius: var(--radius-sm, 10px);
     overflow: hidden;
+    /* Belt-and-suspenders alongside overflow:hidden above — guarantees the
+       WebGL canvas (and its drawing buffer) can never be read as larger
+       than this box by anything outside it, regardless of what size three.js
+       or the browser briefly renders internally. */
+    contain: layout paint;
     touch-action: none;
 }
 
@@ -798,6 +803,19 @@ ul {
 .tire3d-canvas-box--plus-size {
     max-width: 420px;
     margin: 0 auto;
+    /* Locks the box to a fixed 3:2 ratio driven purely by width, instead of
+       the plain fixed-height rule above (`height: var(--tire3d-height)`).
+       A height that depends on a JS-supplied CSS variable can, for one
+       frame, be measured by the <Canvas> element's ResizeObserver before
+       that variable/its layout has actually settled — particularly the
+       first of two side-by-side previews (see .wheel-viz below), which is
+       what let the tire mesh render zoomed in/cropped, spilling past its
+       rounded corners instead of sitting centered inside them. aspect-ratio
+       is resolved by the layout engine at first paint, before any script
+       runs, so both previews always get a correct, final box size on their
+       very first measurement — at every breakpoint, not just today's. */
+    height: auto;
+    aspect-ratio: 3 / 2;
 }
 
 .tire3d-canvas-box--calculator {
@@ -1954,18 +1972,24 @@ input[type="password"]::-ms-clear {
 }
 
 .wheel-viz {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    flex-wrap: wrap;
+    display: grid;
+    /* Equal-width columns, always — replaces the previous flex-wrap layout
+       (flex: 1 1 240px on .wheel-col), which could let the OE and match
+       previews land at two different computed widths depending on exactly
+       how much free space the flex algorithm had to distribute (see the
+       aspect-ratio note on .tire3d-canvas-box--plus-size above for how that
+       showed up visually). Grid tracks are always equal here, so both
+       previews are always pixel-identical in size, at every breakpoint. */
+    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+    justify-items: center;
+    align-items: start;
     gap: 40px;
     padding: 20px 0 30px;
 }
 
 .wheel-col {
+    width: 100%;
     text-align: center;
-    flex: 1 1 240px;
-    min-width: 220px;
     max-width: 340px;
 }
 
