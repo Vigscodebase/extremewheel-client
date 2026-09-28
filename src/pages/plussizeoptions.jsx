@@ -2,6 +2,7 @@ import { Download, Eye, Layers, Save, Search, TrendingUp, Upload } from "lucide-
 import { useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PageHeader from "../components/pageheader";
+import Modal from "../components/modal";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { useAuth } from "../context/authcontext";
@@ -19,7 +20,10 @@ import {
   useAppGuideTypes,
   useAppGuideYears,
 } from "../hooks/queries/useAppGuide";
-import { PLUS_SIZE_HEIGHT_TOLERANCE_PCT, PLUS_SIZE_TREAD_TOLERANCE_PCT } from "../utils/constants";
+// TEMPORARILY DISABLED — only used by the Height/Tread tolerance state
+// below, which is itself commented out for now (see the note further
+// down). Re-enable alongside that.
+// import { PLUS_SIZE_HEIGHT_TOLERANCE_PCT, PLUS_SIZE_TREAD_TOLERANCE_PCT } from "../utils/constants";
 
 const emptyOe = { width: 225, aspect: 65, rim: 17, targetRim: "" };
 
@@ -237,12 +241,25 @@ export default function PlusSizeOptions() {
   const [previewResult, setPreviewResult] = useState(null);
   const [savedIds, setSavedIds] = useState(new Set());
 
-  // Configurable height / tread-width tolerance — defaults to the server's
-  // configured values, but can be widened/narrowed per search without
-  // touching the server.
-  const [heightTolerancePct, setHeightTolerancePct] = useState(PLUS_SIZE_HEIGHT_TOLERANCE_PCT * 100);
-  const [treadTolerancePct, setTreadTolerancePct] = useState(PLUS_SIZE_TREAD_TOLERANCE_PCT * 100);
-  const [sortBy, setSortBy] = useState("combined");
+  // TEMPORARILY DISABLED — Target rim / Height tolerance / Tread width
+  // tolerance / Sort results by overrides. Reason: clearing (or never
+  // filling in) the Height/Tread tolerance fields left them as an empty
+  // string in state, and `Number("")` is `0` in JS — not NaN, not
+  // "unset" — so the search silently ran at a 0% tolerance (effectively
+  // "match to the exact float only") and always came back with zero
+  // results ("No saved tire sizes fall within tolerance"), no matter what
+  // OE size was entered. Disabling these three controls (in step with the
+  // matching override-handling in server.js's /plus-size/search, also
+  // commented out there) falls back to width/aspect/rim only, letting the
+  // server's own defaults (3% height / 15% tread / no rim filter /
+  // combined sort) run every time, matching the original spec. Re-enable
+  // by uncommenting this block, the matching JSX below, and the payload
+  // fields in runSearch — once the input onChange handlers are fixed to
+  // store `undefined` (not `""`) for an empty field, e.g.
+  // `onChange={(e) => setHeightTolerancePct(e.target.value === "" ? undefined : e.target.value)}`.
+  // const [heightTolerancePct, setHeightTolerancePct] = useState(PLUS_SIZE_HEIGHT_TOLERANCE_PCT * 100);
+  // const [treadTolerancePct, setTreadTolerancePct] = useState(PLUS_SIZE_TREAD_TOLERANCE_PCT * 100);
+  // const [sortBy, setSortBy] = useState("combined");
 
   const applyPreset = (id) => {
     const preset = (presets || []).find((p) => p._id === id);
@@ -258,10 +275,15 @@ export default function PlusSizeOptions() {
       width: Number(oe.width),
       aspect: Number(oe.aspect),
       rim: Number(oe.rim),
-      targetRim: oe.targetRim ? Number(oe.targetRim) : undefined,
-      heightTolerancePct: Number(heightTolerancePct),
-      treadTolerancePct: Number(treadTolerancePct),
-      sortBy,
+      // TEMPORARILY DISABLED — see the note by the (also commented-out)
+      // heightTolerancePct/treadTolerancePct/sortBy state above. Omitting
+      // these from the payload entirely lets the server always fall back
+      // to its own defaults (3% height / 15% tread / no rim filter /
+      // combined sort), matching the original spec.
+      // targetRim: oe.targetRim ? Number(oe.targetRim) : undefined,
+      // heightTolerancePct: Number(heightTolerancePct),
+      // treadTolerancePct: Number(treadTolerancePct),
+      // sortBy,
     });
   };
 
@@ -372,6 +394,16 @@ export default function PlusSizeOptions() {
             <label>Rim</label>
             <input type="number" value={oe.rim} onChange={(e) => setOe((f) => ({ ...f, rim: e.target.value }))} />
           </div>
+          {/*
+            TEMPORARILY DISABLED — Target rim (optional). See the note by
+            the commented-out heightTolerancePct/treadTolerancePct/sortBy
+            state near the top of this component for why: an empty-field
+            round-trip bug in its two sibling tolerance fields was making
+            every search return zero matches, so all three (plus Sort
+            results by below) are disabled together for now, and the
+            search always runs OE width/aspect/rim only, against every
+            rim in oe_tiresize. Re-enable by restoring this block, the
+            state above, and the payload fields in runSearch.
           <div className="field">
             <label>Target rim (optional)</label>
             <input
@@ -381,8 +413,26 @@ export default function PlusSizeOptions() {
               onChange={(e) => setOe((f) => ({ ...f, targetRim: e.target.value }))}
             />
           </div>
+          */}
         </div>
 
+        {/*
+          TEMPORARILY DISABLED — Height tolerance / Tread width tolerance /
+          Sort results by. Root cause: clearing (or never filling in)
+          Height/Tread tolerance left them as "" in state, and
+          Number("") === 0 in JS — not NaN, not "no override" — so the
+          search silently ran at a 0% tolerance and always came back with
+          "No saved tire sizes fall within tolerance", regardless of the OE
+          size entered. Disabled here in step with the matching
+          override-handling in server.js's /plus-size/search (also
+          commented out there), so every search now falls back to the
+          server's own defaults (3% height / 15% tread / combined sort)
+          every time. Re-enable by restoring this block, the state near
+          the top of this component, and the payload fields in runSearch —
+          once the onChange handlers below are fixed to store `undefined`
+          (not `""`) for an empty field, e.g.
+          `onChange={(e) => setHeightTolerancePct(e.target.value === "" ? undefined : e.target.value)}`,
+          and runSearch only sends a tolerance field when it's actually set.
         <div className="field-mb-lg mt-16">
           <label className="fs-11 text-muted" style={{ display: "block", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.02em" }}>
             Configurable height &amp; tread width tolerance
@@ -418,6 +468,7 @@ export default function PlusSizeOptions() {
             </div>
           </div>
         </div>
+        */}
 
         <div className="modal-actions modal-actions-start mt-8">
           <button type="submit" className="btn btn-accent" disabled={searchMutation.isPending}>
@@ -459,20 +510,20 @@ export default function PlusSizeOptions() {
                   <th>Height diff</th>
                   <th>Tread diff</th>
                   <th>3D</th>
-                  <th>Save</th>
+                  {/* <th>Save</th> */}
                 </tr>
               </thead>
               <tbody>
                 {results.map((r) => (
                   <tr key={r._id}>
                     <td>
-                      <span className={`badge ${r.rank === 1 ? "badge-live" : "badge-model"}`}>#{r.rank}</span>
+                      <span className={`badge ${r.rank === 1 ? "badge-live" : "badge-model"}`}>{r.rank}</span>
                     </td>
                     <td className="compare-table-value">
-                      {r.label ? `${r.label} — ` : ""}{r.width}/{r.aspect} R{r.rim}
+                      {r.label ? `${r.label} — ` : ""}{r.width} {r.aspect} {r.rim}
                     </td>
-                    <td>{r.overallHeightIn}"</td>
-                    <td>{r.treadWidthIn}"</td>
+                    <td>{r.overallHeightIn}</td>
+                    <td>{r.treadWidthIn}</td>
                     <td className={Math.abs(r.heightDiffPct) < 0.01 ? "text-mint" : undefined}>
                       {r.heightDiffPct >= 0 ? "+" : ""}{r.heightDiffPct}%
                     </td>
@@ -487,7 +538,7 @@ export default function PlusSizeOptions() {
                         <Eye size={14} />
                       </button>
                     </td>
-                    <td>
+                    {/* <td>
                       <button
                         type="button"
                         className="icon-btn"
@@ -497,40 +548,50 @@ export default function PlusSizeOptions() {
                       >
                         <Save size={14} className={savedIds.has(r._id) ? "text-mint" : undefined} />
                       </button>
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
 
-          {previewResult && (
-            <div className="wheel-viz mt-20">
-              <div className="wheel-col">
-                <Tire3DVisualizer
-                  tire={{ width: oe.width, aspect: oe.aspect, rim: oe.rim }}
-                  label={`OE · ${oe.width}/${oe.aspect}R${oe.rim}`}
-                  accent="#FF6F91"
-                  height={230}
-                  variant="plus-size"
-                />
-              </div>
-              <div className="wheel-col">
-                <Tire3DVisualizer
-                  tire={{ width: previewResult.width, aspect: previewResult.aspect, rim: previewResult.rim }}
-                  label={`${previewResult.label ? `${previewResult.label} · ` : ""}${previewResult.width}/${previewResult.aspect}R${previewResult.rim}`}
-                  accent="#8B7CF6"
-                  height={230}
-                  variant="plus-size"
-                />
-              </div>
-            </div>
-          )}
-
           {/* <TireSuggestions tire={{ width: Number(oe.width), aspect: Number(oe.aspect), rim: Number(oe.rim) }} label="OE size" />
           {previewResult && <TireSuggestions tire={previewResult} label={previewResult.label} />} */}
         </div>
       )}
+
+      <Modal
+        open={!!previewResult}
+        onClose={() => setPreviewResult(null)}
+        title={previewResult ? `OE ${oe.width}/${oe.aspect}R${oe.rim} vs ${previewResult.width}/${previewResult.aspect}R${previewResult.rim}` : "3D preview"}
+        width={760}
+      >
+        {previewResult && (
+          <div className="wheel-viz">
+            <div className="wheel-col">
+              <Tire3DVisualizer
+                tire={{ width: oe.width, aspect: oe.aspect, rim: oe.rim }}
+                label={`OE · ${oe.width}/${oe.aspect}R${oe.rim}`}
+                accent="#FF6F91"
+                height={280}
+                zoomable
+                variant="plus-size"
+              />
+            </div>
+            <div className="wheel-col">
+              <Tire3DVisualizer
+                tire={{ width: previewResult.width, aspect: previewResult.aspect, rim: previewResult.rim }}
+                label={`${previewResult.label ? `${previewResult.label} · ` : ""}${previewResult.width}/${previewResult.aspect}R${previewResult.rim}`}
+                accent="#8B7CF6"
+                height={280}
+                zoomable
+                variant="plus-size"
+              />
+            </div>
+          </div>
+        )}
+      </Modal>
+
 
       {!searched && (
         <div className="card empty-state-card inline mt-20">
