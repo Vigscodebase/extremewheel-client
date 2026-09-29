@@ -2060,6 +2060,85 @@ input[type="password"]::-ms-clear {
     font-weight: 600;
 }
 
+/* --- Plus Size Options: OE header row (library download / upload) --- */
+
+.oe-library-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+}
+
+.oe-library-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* --- Plus Size Options: OE overall height / tread width + tolerance limits
+       (sits directly below the green .speedo-banner.ok summary) --- */
+
+.tolerance-window {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.tolerance-card {
+    min-width: 0;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    background: #FBFBFE;
+}
+
+.tolerance-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.tolerance-card-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--color-muted);
+}
+
+.tolerance-card-value {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--color-ink);
+}
+
+.tolerance-limits {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+}
+
+.tolerance-limit dt {
+    margin-bottom: 2px;
+    font-size: 11.5px;
+    color: var(--color-muted);
+}
+
+.tolerance-limit dd {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-ink);
+}
+
 /* --- Tire Preset Component CSS --- */
 .preset-grid {
     display: grid;
@@ -3619,6 +3698,10 @@ input[type="password"]::-ms-clear {
         gap: 16px;
     }
 
+    .vehicle-select-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .preset-grid {
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
         /* Fix iPad overlapping */
@@ -4048,6 +4131,52 @@ input[type="password"]::-ms-clear {
     .vehicle-db-card .modal-actions {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    /* Plus Size Options */
+    .oe-library-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .oe-library-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .oe-library-actions .btn {
+        width: 100%;
+    }
+
+    .tolerance-window {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .tolerance-card {
+        padding: 14px;
+    }
+
+    .tolerance-card-value {
+        font-size: 20px;
+    }
+
+    /* Results table scrolls inside .table-responsive instead of being clipped */
+    .plus-results-table {
+        min-width: 560px;
+    }
+
+    .plus-results-table .plus-size-col {
+        white-space: nowrap;
+    }
+
+    /* Keep the 3D preview button reachable while the other columns scroll */
+    .plus-results-table th:last-child,
+    .plus-results-table td:last-child {
+        position: sticky;
+        right: 0;
+        background: #fff;
+        box-shadow: -6px 0 6px -6px rgba(42, 33, 24, 0.18);
     }
 
     .compare-grid {

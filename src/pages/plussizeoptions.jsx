@@ -84,7 +84,7 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
         diameter, and any staggered front/rear fitment options — separate from the tolerance search above.
       </p>
 
-      <div className="tire-input-grid field-mb">
+      <div className="tire-input-grid vehicle-select-grid field-mb">
         <div className="field">
           <label>Year</label>
           <select value={year} onChange={onYearChange} disabled={loadingYears}>
@@ -213,6 +213,78 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
   );
 }
 
+// Same 4-decimal format the green summary banner (and the server's
+// oe_tiresize rounding) uses, so the numbers below the banner read identically.
+const formatInches = (n) => (n == null || !Number.isFinite(Number(n)) ? "—" : Number(n).toFixed(4));
+
+// The OE size's overall height / tread width plus the lower & upper limit of
+// each. Only the overall-height window decides which sizes appear in the
+// table; the tread-width window is displayed for reference (a size is never
+// hidden for its tread width — see /plus-size/search in server.js).
+//
+// The limits are taken from the search response when the server sends them
+// (heightLowerLimitIn, heightUpperLimitIn, treadLowerLimitIn, treadUpperLimitIn
+// — precomputed onto every oe_tiresize document). If they're absent they're
+// derived from the tolerance that was actually applied to this search, using
+// the same formula as tireToleranceLimits() in utils/tireMath.js:
+// limit = value ± (value × pct).
+function buildToleranceWindow(oe, tolerances) {
+  const sent = (v) => (v != null && Number.isFinite(Number(v)) ? Number(v) : null);
+  const height = Number(oe?.overallHeightIn);
+  const tread = Number(oe?.treadWidthIn);
+  const heightPct = Number(tolerances?.heightPct);
+  const treadPct = Number(tolerances?.treadPct);
+  const derive = (value, pct, direction) =>
+    Number.isFinite(value) && Number.isFinite(pct) ? value + direction * value * (pct / 100) : null;
+
+  return {
+    height: {
+      value: height,
+      pct: tolerances?.heightPct,
+      lower: sent(oe?.heightLowerLimitIn) ?? derive(height, heightPct, -1),
+      upper: sent(oe?.heightUpperLimitIn) ?? derive(height, heightPct, 1),
+    },
+    tread: {
+      value: tread,
+      pct: tolerances?.treadPct,
+      lower: sent(oe?.treadLowerLimitIn) ?? derive(tread, treadPct, -1),
+      upper: sent(oe?.treadUpperLimitIn) ?? derive(tread, treadPct, 1),
+    },
+  };
+}
+
+function ToleranceCard({ title, value, pct, lower, upper }) {
+  return (
+    <div className="tolerance-card">
+      <div className="tolerance-card-head">
+        <span className="tolerance-card-title">{title}</span>
+        {pct != null && <span className="badge badge-model">±{pct}%</span>}
+      </div>
+      <p className="tolerance-card-value">{formatInches(value)}</p>
+      <dl className="tolerance-limits">
+        <div className="tolerance-limit">
+          <dt>Lower limit</dt>
+          <dd>{formatInches(lower)}</dd>
+        </div>
+        <div className="tolerance-limit">
+          <dt>Upper limit</dt>
+          <dd>{formatInches(upper)}</dd>
+        </div>
+      </dl>
+    </div>
+  );
+}
+
+function OeToleranceWindow({ oe, tolerances }) {
+  const win = buildToleranceWindow(oe, tolerances);
+  return (
+    <div className="tolerance-window">
+      <ToleranceCard title="Overall height" {...win.height} />
+      <ToleranceCard title="Tread width (reference)" {...win.tread} />
+    </div>
+  );
+}
+
 export default function PlusSizeOptions() {
   const location = useLocation();
   const { user } = useAuth();
@@ -321,12 +393,12 @@ export default function PlusSizeOptions() {
       />
 
       <form className="card tire-plus-form" onSubmit={runSearch}>
-        <div className="modal-actions modal-actions-start mb-16">
+        <div className="oe-library-header mb-16">
           <h3 className="mb-0">OE (original equipment) size</h3>
-          <div className="modal-actions" style={{ marginLeft: "auto" }}>
+          <div className="oe-library-actions">
             <button
               type="button"
-              className="btn btn-ghost btn-noresponsive"
+              className="btn btn-ghost"
               disabled={downloadOeMutation.isPending}
               onClick={() => downloadOeMutation.mutate()}
               title="Download the OE tire size library as .xlsx"
@@ -337,7 +409,7 @@ export default function PlusSizeOptions() {
               <>
                 <button
                   type="button"
-                  className="btn btn-ghost btn-noresponsive"
+                  className="btn btn-ghost"
                   disabled={importOeMutation.isPending}
                   onClick={() => oeFileInputRef.current?.click()}
                   title="Upload a Width / Aspect / Rim .xlsx to append to the OE tire size library"
@@ -488,11 +560,13 @@ export default function PlusSizeOptions() {
           <div className="speedo-banner ok">
             OE size <strong>{oe.width}/{oe.aspect} R{oe.rim}</strong> — overall height{" "}
             <strong>{data.oe.overallHeightIn}"</strong>, tread width <strong>{data.oe.treadWidthIn}"</strong>. Showing matches
-            within ±{data.tolerances.heightPct}% height and ±{data.tolerances.treadPct}% tread width, ranked by{" "}
+            within ±{data.tolerances.heightPct}% overall height (tread width is shown for reference, not used to filter), ranked by{" "}
             {SORT_OPTIONS.find((o) => o.value === data.sortBy || (data.sortBy || "").startsWith(o.value))?.label.toLowerCase() ||
               "closeness to OE"}
             .
           </div>
+
+          <OeToleranceWindow oe={data.oe} tolerances={data.tolerances} />
 
           {results.length === 0 ? (
             <div className="empty-state-card">
@@ -500,11 +574,12 @@ export default function PlusSizeOptions() {
               tolerances above.
             </div>
           ) : (
-            <table className="compare-table">
+            <div className="table-responsive">
+            <table className="compare-table plus-results-table">
               <thead>
                 <tr>
                   <th>Rank</th>
-                  <th>Size</th>
+                  <th className="plus-size-col">Size</th>
                   <th>Overall height</th>
                   <th>Tread width</th>
                   <th>Height diff</th>
@@ -519,7 +594,7 @@ export default function PlusSizeOptions() {
                     <td>
                       <span className={`badge ${r.rank === 1 ? "badge-live" : "badge-model"}`}>{r.rank}</span>
                     </td>
-                    <td className="compare-table-value">
+                    <td className="compare-table-value plus-size-col">
                       {r.label ? `${r.label} — ` : ""}{r.width} {r.aspect} {r.rim}
                     </td>
                     <td>{r.overallHeightIn}</td>
@@ -553,6 +628,7 @@ export default function PlusSizeOptions() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
 
           {/* <TireSuggestions tire={{ width: Number(oe.width), aspect: Number(oe.aspect), rim: Number(oe.rim) }} label="OE size" />
