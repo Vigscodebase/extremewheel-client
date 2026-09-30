@@ -72,19 +72,26 @@ export const mmToInches = (mm) => mm / 25.4;
 export const inchesToMm = (inches) => inches * 25.4;
 
 // Mirrors server/utils/tireMath.js's tireToleranceLimits exactly (same
-// formulas, same defaults) — used client-side to preview an OE size's
-// height/tread tolerance window before a search round-trips to the server.
+// formulas, same defaults, same worksheet-rounded window) — used client-side
+// to preview an OE size's height/tread tolerance window before a search
+// round-trips to the server.
 export function tireToleranceLimits({ width, aspect, rim }, { heightTolerance = 0.03, treadTolerance = 0.15 } = {}) {
   const overallHeightIn = tireDiameterInches({ width, aspect, rim });
   const treadWidthIn = tireWidthInches({ width });
-  const heightDelta = overallHeightIn * heightTolerance;
-  const treadDelta = treadWidthIn * treadTolerance;
+  // Worksheet rounds to 2dp before applying the tolerance % (e.g.
+  // "26.63 x 0.03", not "26.6299... x 0.03") — matches the server exactly.
+  // overallHeightIn/treadWidthIn above stay full precision; only the window
+  // uses the rounded base.
+  const heightForWindow = Math.round(overallHeightIn * 100) / 100;
+  const treadForWindow = Math.round(treadWidthIn * 100) / 100;
+  const heightDelta = heightForWindow * heightTolerance;
+  const treadDelta = treadForWindow * treadTolerance;
   return {
     overallHeightIn,
     treadWidthIn,
-    heightUpperLimitIn: overallHeightIn + heightDelta,
-    heightLowerLimitIn: overallHeightIn - heightDelta,
-    treadUpperLimitIn: treadWidthIn + treadDelta,
-    treadLowerLimitIn: treadWidthIn - treadDelta,
+    heightUpperLimitIn: heightForWindow + heightDelta,
+    heightLowerLimitIn: heightForWindow - heightDelta,
+    treadUpperLimitIn: treadForWindow + treadDelta,
+    treadLowerLimitIn: treadForWindow - treadDelta,
   };
 }

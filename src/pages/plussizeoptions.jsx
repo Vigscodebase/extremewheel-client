@@ -213,9 +213,20 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
   );
 }
 
-// Same 4-decimal format the green summary banner (and the server's
-// oe_tiresize rounding) uses, so the numbers below the banner read identically.
-const formatInches = (n) => (n == null || !Number.isFinite(Number(n)) ? "—" : Number(n).toFixed(4));
+// Every OE/tire inch value on this page (the banner, the tolerance cards,
+// the results table) goes through this one formatter — 2 decimals, not 4.
+// Why: the underlying formula (see tireToleranceLimits() in
+// utils/tireMath.js) already rounds to 2dp before applying the ±% window,
+// matching the worksheet's own "26.63 x 0.03" arithmetic — so 2dp is what
+// the spec actually verifies against, and it's also as far as a manual
+// calculator check reliably agrees with the code: rounding an intermediate
+// step (e.g. tread width) to 4dp before the next multiplication, which is
+// the natural way to check by hand, drifts from the code's full-precision
+// result by a few ten-thousandths by the 3rd/4th decimal — not a bug in
+// either one, just two different (and both valid) rounding paths arriving
+// at very slightly different tails. Showing only the 2 decimals both paths
+// agree on avoids that entirely.
+const formatInches = (n) => (n == null || !Number.isFinite(Number(n)) ? "—" : Number(n).toFixed(2));
 
 // The OE size's overall height / tread width plus the lower & upper limit of
 // each. Only the overall-height window decides which sizes appear in the
@@ -559,7 +570,7 @@ export default function PlusSizeOptions() {
         <div className="card compare-result-card mt-20">
           <div className="speedo-banner ok">
             OE size <strong>{oe.width}/{oe.aspect} R{oe.rim}</strong> — overall height{" "}
-            <strong>{data.oe.overallHeightIn}"</strong>, tread width <strong>{data.oe.treadWidthIn}"</strong>. Showing matches
+            <strong>{formatInches(data.oe.overallHeightIn)}"</strong>, tread width <strong>{formatInches(data.oe.treadWidthIn)}"</strong>. Showing matches
             within ±{data.tolerances.heightPct}% overall height (tread width is shown for reference, not used to filter), ranked by{" "}
             {SORT_OPTIONS.find((o) => o.value === data.sortBy || (data.sortBy || "").startsWith(o.value))?.label.toLowerCase() ||
               "closeness to OE"}
@@ -597,8 +608,8 @@ export default function PlusSizeOptions() {
                     <td className="compare-table-value plus-size-col">
                       {r.label ? `${r.label} — ` : ""}{r.width} {r.aspect} {r.rim}
                     </td>
-                    <td>{r.overallHeightIn}</td>
-                    <td>{r.treadWidthIn}</td>
+                    <td>{formatInches(r.overallHeightIn)}</td>
+                    <td>{formatInches(r.treadWidthIn)}</td>
                     <td className={Math.abs(r.heightDiffPct) < 0.01 ? "text-mint" : undefined}>
                       {r.heightDiffPct >= 0 ? "+" : ""}{r.heightDiffPct}%
                     </td>
