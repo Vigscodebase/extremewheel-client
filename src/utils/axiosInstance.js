@@ -105,23 +105,27 @@ axios.interceptors.response.use(
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    // NOTE: this fires the same generic event for every non-2xx response,
-    // including the expected 401 "Not authorized, no token provided." a
-    // permissions fetch gets on a fresh/incognito session before the router
-    // has redirected to /login — see the timing note above
-    // PermissionProvider's useQuery in context/permissioncontext.jsx for the
-    // full sequence. That's a benign, expected case, not a real error; it's
-    // just not distinguished from one here right now (the commented-out
-    // interceptor above used to split 401s into setSessionExpired instead).
-    const errorMessage =
-      error.response?.data?.message ||
-      "An unexpected error occurred. Please try again.";
+    // A 401 on a request that was sent with no Authorization header just
+    // means "there is no session yet" (e.g. a cold visit before the router
+    // redirects to /login). That is not a failure worth a modal, so stay
+    // quiet and let the auth flow redirect. /auth/* is excluded so the
+    // login/register calls keep reporting their own errors.
+    const isTokenlessUnauthorized =
+      error.response?.status === 401 &&
+      !error.config?.headers?.Authorization &&
+      !error.config?.url?.startsWith("/auth/");
 
-    window.dispatchEvent(
-      new CustomEvent("api-error", {
-        detail: errorMessage,
-      })
-    );
+    if (!isTokenlessUnauthorized) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "An unexpected error occurred. Please try again.";
+
+      window.dispatchEvent(
+        new CustomEvent("api-error", {
+          detail: errorMessage,
+        })
+      );
+    }
 
     return Promise.reject(error);
   }

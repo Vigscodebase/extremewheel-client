@@ -2446,10 +2446,36 @@ input[type="password"]::-ms-clear {
 }
 
 .vehicle-filter-grid {
+    /* 5 filters normally, 6 when the Customer filter is shown (staff/admin).
+       Only the variable changes, so the responsive overrides below still win. */
+    --filter-cols: 5;
     display: grid;
-    grid-template-columns: repeat(5, 1fr) auto;
+    grid-template-columns: repeat(var(--filter-cols), 1fr) auto;
     gap: 14px;
     align-items: end;
+}
+
+.vehicle-filter-grid.with-customer {
+    --filter-cols: 6;
+}
+
+/* Search box above the filters on the Vehicle Notes page */
+.search-box.vehicle-search {
+    max-width: none;
+    margin-bottom: 14px;
+    background: var(--color-bg);
+}
+
+.search-box.vehicle-search input {
+    background: transparent;
+    padding: 2px 0;
+}
+
+.vehicle-customer {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    word-break: break-word;
 }
 
 .vehicle-filter-clear {
@@ -4514,6 +4540,49 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
     color: var(--color-danger);
 }
 
+.ds-option-edit {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ds-option-edit:hover,
+.ds-option-edit:focus-visible {
+    background: var(--color-pink-soft);
+    color: var(--color-pink);
+    outline: none;
+}
+
+.ds-search {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 4px;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    background: #FFFFFF;
+}
+
+.ds-search:focus {
+    border-color: var(--color-pink);
+}
+
+.ds-option-none {
+    color: var(--color-muted);
+    font-style: italic;
+}
+
 .ds-empty {
     padding: 10px;
     font-size: 13px;
@@ -4607,5 +4676,486 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
     .dashboard-layout .sidebar:not(.expanded) .sidebar-item:hover .icon-wrapper,
     .dashboard-layout .sidebar:not(.expanded) .sidebar-item.active .icon-wrapper {
         transform: translateX(-50%) scale(0.9);
+    }
+}
+
+/* =====================================================================
+   VEHICLE NOTE DETAIL PAGE  (/vehicle-notes/:id)
+
+   Merged in from vehicle-note-detail.css. Uses the same design tokens
+   (--color-*, --radius-*, --shadow-*) and shared classes (.card, .badge,
+   .btn, .page-header, .staff-note-*) defined above. Every class added
+   for this page is prefixed `vnd-` so it cannot collide with anything else.
+   ===================================================================== */
+
+/* ---------- Layout: a stack of cards ---------- */
+.vnd-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* .card ships with margin-bottom: 24px; the stack's gap does the spacing here.
+      (.card.vnd-card out-ranks .card, so stylesheet order can't matter.) */
+.card.vnd-card {
+    margin-bottom: 0;
+    min-width: 0;
+}
+
+.vnd-card-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    font-size: 16px;
+}
+.vnd-card-title svg {
+    flex-shrink: 0; /* .icon-inline supplies the 6px gap */
+}
+
+.vnd-page .page-title {
+    overflow-wrap: anywhere; /* .page-main clips overflow, so long names must wrap */
+}
+
+.vnd-prewrap {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* ---------- Loading / error state ---------- */
+.card.vnd-state {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0;
+    color: var(--color-muted);
+}
+.vnd-state svg {
+    flex-shrink: 0;
+    color: var(--color-danger);
+}
+.vnd-state p {
+    font-size: 14px;
+}
+
+/* ---------- Overview: photo + facts ---------- */
+.vnd-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+    align-items: start;
+    gap: 24px;
+}
+
+/* <button> when there is a photo, <div> when there isn't. Same look as the
+      list card's .vehicle-image, just bigger. */
+.vnd-hero {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    padding: 0;
+    overflow: hidden;
+    background: var(--color-border);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: zoom-in;
+}
+.vnd-hero.is-empty {
+    cursor: default;
+}
+.vnd-hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vnd-overview-info {
+    min-width: 0;
+}
+
+.vnd-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+/* .badge is white-space: nowrap; let a very long model/type wrap instead of
+      pushing the card wider than the screen. */
+.vnd-tags .badge {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.vnd-details {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px 20px;
+}
+.vnd-detail {
+    min-width: 0;
+}
+.vnd-detail.is-wide {
+    grid-column: 1 / -1;
+}
+/* Label style matches .spec-compare-col-title */
+.vnd-detail dt {
+    margin-bottom: 3px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+.vnd-detail dd {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+}
+.vnd-detail dd.is-empty,
+.vnd-spec-row dd.is-empty {
+    font-weight: 400;
+    color: var(--color-muted);
+}
+
+/* ---------- Specifications ---------- */
+.vnd-spec-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.vnd-spec {
+    min-width: 0;
+    padding: 16px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+.vnd-spec.is-upgraded {
+    border-left: 3px solid var(--color-pink);
+}
+.vnd-spec-title {
+    margin-bottom: 12px;
+    font-size: 10.5px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+.vnd-spec.is-upgraded .vnd-spec-title {
+    color: var(--color-pink);
+}
+.vnd-spec-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.vnd-spec-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+}
+.vnd-spec-row dt {
+    flex: none;
+    color: var(--color-muted);
+}
+.vnd-spec-row dd {
+    min-width: 0;
+    font-weight: 600;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+/* ---------- Photos: before/after + gallery ---------- */
+.vnd-compare {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+.vnd-figure {
+    min-width: 0;
+}
+.vnd-figure figcaption {
+    margin-top: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--color-muted);
+}
+
+.vnd-gallery {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.vnd-photo {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    padding: 0;
+    overflow: hidden;
+    background: var(--color-border);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: zoom-in;
+}
+.vnd-compare .vnd-photo {
+    aspect-ratio: 16 / 10; /* keeps the two big photos from getting too tall on wide screens */
+}
+.vnd-photo.is-empty {
+    cursor: default;
+    background: var(--color-bg);
+    border-style: dashed;
+}
+.vnd-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+.vnd-photo:not(.is-empty):hover img {
+    transform: scale(1.03);
+}
+.vnd-photo:focus-visible,
+.vnd-hero:focus-visible {
+    outline: 2px solid var(--color-pink);
+    outline-offset: 2px;
+}
+
+/* Internal notes: .staff-notes-list is capped at 180px (sized for the small
+      Add/Edit form). This page is for reading, so show every note. */
+.vnd-card .staff-notes-list {
+    max-height: none;
+    overflow: visible;
+    margin-bottom: 0;
+}
+
+/* ---------------------------------------------------------------------
+   Vehicle Note Detail: responsive
+   Uses the exact media queries from the RESPONSIVE LAYOUT section above
+   and keeps the same large-to-small order. Only vnd- classes are touched.
+
+   Content width at each tier (viewport - sidebar - .page-main padding;
+   subtract 48px for card padding to get the usable card width):
+     1366-1420   ~1190px +     1280-1365   ~1110px +
+     1180-1279   ~1030px +     1024-1179   ~ 880px +
+      768-1023   ~ 640px +      320-767    ~ 290px +
+   The sidebar can also be pinned open (+172px of padding on .page-main),
+   so the tablet and small-laptop tiers use auto-fit tracks that re-flow on
+   their own instead of relying on a fixed number of columns.
+
+   Global breakpoints with nothing to adjust for this page:
+     - 1500-1600 x 650-750 height   (tire calculator spacing only)
+     - 767-1022, 1114, 1114x705, 1032x1376, max-height 750
+                                    (sidebar / calculator tweaks only)
+     - 768-1179, max-width 767      (inline search bar only)
+     - 320-766                      (same tier as 320-767 below; .page-main
+                                     padding and the mobile top bar)
+   --------------------------------------------------------------------- */
+
+@media only screen and (min-width:1366px) and (max-width:1420px) {
+    .vnd-stack {
+        gap: 18px;
+    }
+
+    .vnd-overview {
+        gap: 22px;
+    }
+
+    .vnd-details {
+        gap: 14px 18px;
+    }
+}
+
+@media only screen and (min-width:1280px) and (max-width:1365px) {
+    .vnd-stack {
+        gap: 18px;
+    }
+
+    .vnd-overview {
+        gap: 20px;
+    }
+
+    .vnd-details {
+        gap: 14px 18px;
+    }
+
+    .vnd-spec {
+        padding: 14px 16px;
+    }
+}
+
+@media only screen and (min-width:1180px) and (max-width:1279px) {
+    .vnd-stack {
+        gap: 16px;
+    }
+
+    .vnd-overview {
+        gap: 20px;
+    }
+
+    .vnd-details {
+        gap: 14px 16px;
+    }
+
+    .vnd-spec {
+        padding: 14px 16px;
+    }
+
+    .vnd-compare,
+    .vnd-spec-grid {
+        gap: 12px;
+    }
+
+    .vnd-gallery {
+        gap: 10px;
+    }
+}
+
+@media only screen and (min-width:1024px) and (max-width:1179px) {
+    .vnd-stack {
+        gap: 16px;
+    }
+
+    .vnd-overview {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+        gap: 20px;
+    }
+
+    .vnd-details {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px 16px;
+    }
+
+    .vnd-spec {
+        padding: 14px 16px;
+    }
+
+    .vnd-compare,
+    .vnd-spec-grid {
+        gap: 12px;
+    }
+
+    .vnd-gallery {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+    }
+}
+
+@media only screen and (min-width:768px) and (max-width:1023px) {
+    .vnd-stack {
+        gap: 16px;
+    }
+
+    /* Side by side only when both columns get at least 300px; otherwise the
+       photo sits above the details. */
+    .vnd-overview {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+        gap: 20px;
+    }
+
+    .vnd-hero {
+        max-height: 340px;
+    }
+
+    .vnd-details {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 14px 16px;
+    }
+
+    .vnd-details .vnd-detail.is-wide {
+        grid-column: 1 / -1;
+    }
+
+    .vnd-spec-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+    }
+
+    .vnd-spec {
+        padding: 14px 16px;
+    }
+
+    .vnd-compare {
+        gap: 12px;
+    }
+
+    .vnd-compare .vnd-photo {
+        aspect-ratio: 4 / 3;
+    }
+
+    .vnd-gallery {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 10px;
+    }
+}
+
+/* Mobile: the sidebar becomes the top bar + drawer and .page-main drops to
+   14px side padding, so the page is a single column. */
+@media only screen and (min-width:320px) and (max-width:767px) {
+    .vnd-stack {
+        gap: 14px;
+    }
+
+    .card.vnd-card,
+    .card.vnd-state {
+        padding: 16px;
+    }
+
+    .vnd-card-title {
+        margin-bottom: 12px;
+        font-size: 15px;
+    }
+
+    /* Back button goes full width under the title, like a mobile action bar */
+    .vnd-page .page-header-action,
+    .vnd-page .page-header-action .btn {
+        width: 100%;
+    }
+
+    .vnd-overview,
+    .vnd-details,
+    .vnd-spec-grid,
+    .vnd-compare {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .vnd-overview {
+        gap: 16px;
+    }
+
+    .vnd-hero {
+        aspect-ratio: 16 / 10;
+    }
+
+    .vnd-tags {
+        margin-bottom: 14px;
+    }
+
+    .vnd-details {
+        gap: 12px;
+    }
+
+    .vnd-spec {
+        padding: 14px;
+    }
+
+    .vnd-compare {
+        gap: 12px;
+    }
+
+    .vnd-compare .vnd-photo {
+        aspect-ratio: 4 / 3;
+    }
+
+    .vnd-gallery {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
     }
 }

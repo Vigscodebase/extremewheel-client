@@ -6,7 +6,12 @@ import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { useLogTireComparison } from "../hooks/queries/useActivity";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
-import { speedoDifferencePct, tireCircumferenceMm, tireDiameterInches } from "../utils/tireMath";
+import {
+  speedoDifferencePct,
+  // tireCircumferenceMm, // hidden: Circumference row is commented out below
+  tireDiameterInches,
+  treadWidthInches,
+} from "../utils/tireMath";
 
 const MOCK_PRESETS = [
   { _id: "t1", label: "Factory Standard", width: 225, aspect: 65, rim: 17 },
@@ -86,8 +91,11 @@ export default function TireSizeComparison() {
   const rows = useMemo(
     () => [
       { label: "Overall diameter", a: `${diameterA.toFixed(2)}"`, b: `${diameterB.toFixed(2)}"` },
-      { label: "Circumference", a: `${tireCircumferenceMm(tireA).toFixed(0)} mm`, b: `${tireCircumferenceMm(tireB).toFixed(0)} mm` },
-      { label: "Sidewall height", a: `${((tireA.width * tireA.aspect) / 100 / 25.4).toFixed(2)}"`, b: `${((tireB.width * tireB.aspect) / 100 / 25.4).toFixed(2)}"` },
+      // Tread Width = Width ÷ 25.4
+      { label: "Tread width", a: `${treadWidthInches(tireA).toFixed(2)}"`, b: `${treadWidthInches(tireB).toFixed(2)}"` },
+      // Hidden for now:
+      // { label: "Circumference", a: `${tireCircumferenceMm(tireA).toFixed(0)} mm`, b: `${tireCircumferenceMm(tireB).toFixed(0)} mm` },
+      // { label: "Sidewall height", a: `${((tireA.width * tireA.aspect) / 100 / 25.4).toFixed(2)}"`, b: `${((tireB.width * tireB.aspect) / 100 / 25.4).toFixed(2)}"` },
     ],
     [tireA, tireB, diameterA, diameterB]
   );

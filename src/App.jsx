@@ -17,6 +17,7 @@ import TireSizeComparison from "./pages/tiresizecomparison";
 import TireSizeOption from "./pages/tiresizeoption";
 import UserManagement from "./pages/usermanagement";
 import VehicleNotes from "./pages/vehiclenotes";
+import VehicleNoteDetail from "./pages/vehiclenotedetail";
 import ProtectedRoute from "./routes/protectedroute";
 import GlobalErrorListener from "./components/GlobalErrorListener"; // <-- 1. Import added here
 
@@ -96,6 +97,7 @@ export default function App() {
 
                 <Route element={<ProtectedRoute pageKey="vehicle-notes" />}>
                   <Route path="/vehicle-notes" element={<VehicleNotes />} />
+                  <Route path="/vehicle-notes/:id" element={<VehicleNoteDetail />} />
                 </Route>
 
                 <Route element={<ProtectedRoute pageKey="reports" />}>

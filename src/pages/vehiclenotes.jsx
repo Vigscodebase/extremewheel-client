@@ -1,11 +1,15 @@
-import { Camera, Car, Download, FileSpreadsheet, FilterX, ImagePlus, Images, MessageSquare, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import { Camera, Car, Download, Eye, FileSpreadsheet, FilterX, ImagePlus, Images, MessageSquare, Pencil, Plus, Search, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../components/confirmdialog";
+import CustomerFormModal from "../components/CustomerFormModal";
+import CustomerSelect from "../components/CustomerSelect";
 import EditableSelect from "../components/EditableSelect";
 import Lightbox from "../components/lightbox";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
 import { useAuth } from "../context/authcontext";
+import { useCustomersQuery, useDeleteCustomer } from "../hooks/queries/useCustomers";
 import {
   useAddVehicleGalleryPhoto,
   useAddVehicleStaffNote,
@@ -49,11 +53,12 @@ const emptyForm = {
   gallery: [],
   staffNotes: [],
   eventDate: "",
+  customer: "", // customer _id ("" = none)
   existingSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
   upgradedSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
 };
 
-const emptyFilters = { make: "", model: "", type: "", yearFrom: "", yearTo: "" };
+const emptyFilters = { search: "", make: "", model: "", type: "", customer: "", yearFrom: "", yearTo: "" };
 
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -73,6 +78,7 @@ function toDateInputValue(value) {
 
 export default function VehicleNotes() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   // Who can grow/prune the predefined dropdown lists (the server enforces the
   // same rule): staff and admin, for all four of Make, Model, Type and Year.
   // "+ Add new…" and the per-option delete button on every one of those
@@ -85,6 +91,14 @@ export default function VehicleNotes() {
   // looks like, and the form ends up with a browser-styled select sitting
   // next to three app-styled ones.
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
+  // Customers: staff and admin can add; only admin can edit and delete (the
+  // server enforces the same). Everyone else never sees customer data, so the
+  // list isn't even requested for them.
+  const isAdmin = user?.role === "admin";
+  const { data: customers, isLoading: loadingCustomers } = useCustomersQuery({ enabled: isStaffOrAdmin });
+  const deleteCustomerMutation = useDeleteCustomer();
+  const [customerModal, setCustomerModal] = useState({ open: false, customer: null });
+  const [customerDelete, setCustomerDelete] = useState(null);
   const { data: fetchedVehicles, isLoading: loading, isError: vehiclesError } = useVehicleNotesQuery();
   const vehicles = vehiclesError ? MOCK_VEHICLES : fetchedVehicles || [];
   const createMutation = useCreateVehicleNote();
@@ -173,7 +187,27 @@ export default function VehicleNotes() {
     [lookupYears]
   );
 
-  const filtersActive = Boolean(filters.make || filters.model || filters.type || filters.yearFrom || filters.yearTo);
+  // Customer filter options — the customer's name, plus their email when
+  // another customer shares that exact name (only email/phone are unique).
+  const customerFilterOptions = useMemo(() => {
+    const list = customers || [];
+    const nameCount = list.reduce((acc, c) => ({ ...acc, [c.fullName.toLowerCase()]: (acc[c.fullName.toLowerCase()] || 0) + 1 }), {});
+    return list.map((c) => ({
+      value: c._id,
+      label: nameCount[c.fullName.toLowerCase()] > 1 ? `${c.fullName} (${c.email})` : c.fullName,
+    }));
+  }, [customers]);
+
+  const selectedCustomer = useMemo(() => {
+    if (!form.customer) return null;
+    const fromList = (customers || []).find((c) => c._id === form.customer);
+    if (fromList) return fromList;
+    return editing?.customer && editing.customer._id === form.customer ? editing.customer : null;
+  }, [customers, form.customer, editing]);
+
+  const filtersActive = Boolean(
+    filters.search.trim() || filters.make || filters.model || filters.type || filters.customer || filters.yearFrom || filters.yearTo
+  );
 
   const clearFilters = () => setFilters(emptyFilters);
 
@@ -186,7 +220,14 @@ export default function VehicleNotes() {
   // Filtering preserves the API's existing sort order (newest first) —
   // only narrows which cards show, same grid + edit button as always.
   const filteredVehicles = useMemo(() => {
+    const q = filters.search.trim().toLowerCase();
     return vehicles.filter((v) => {
+      // Search box: vehicle name, make, model, type or customer name.
+      if (q) {
+        const haystack = [v.name, v.make, v.model, v.type, v.customer?.fullName];
+        if (!haystack.some((field) => field && String(field).toLowerCase().includes(q))) return false;
+      }
+      if (filters.customer && v.customer?._id !== filters.customer) return false;
       if (filters.make && v.make !== filters.make) return false;
       if (filters.model && v.model !== filters.model) return false;
       if (filters.type && v.type !== filters.type) return false;
@@ -234,6 +275,7 @@ export default function VehicleNotes() {
       gallery: v.gallery || [],
       staffNotes: v.staffNotes || [],
       eventDate: toDateInputValue(v.eventDate),
+      customer: v.customer?._id || "",
       existingSpec: {
         engine: v.existingSpec?.engine || "",
         tyre: {
@@ -310,11 +352,15 @@ export default function VehicleNotes() {
       setFormError("Vehicle name, make, model and type are required.");
       return;
     }
+    // The customer field only exists for staff and admin — everyone else's
+    // save must leave it out entirely (the server rejects it from them).
+    const { customer, ...formWithoutCustomer } = form;
+    const payload = isStaffOrAdmin ? { ...formWithoutCustomer, customer } : formWithoutCustomer;
     try {
       if (editing) {
-        await updateMutation.mutateAsync({ id: editing._id, ...form });
+        await updateMutation.mutateAsync({ id: editing._id, ...payload });
       } else {
-        await createMutation.mutateAsync(form);
+        await createMutation.mutateAsync(payload);
       }
       setFormOpen(false);
 
@@ -344,6 +390,27 @@ export default function VehicleNotes() {
       }
     } catch (err) {
       setFormError(err?.response?.data?.message || "Something went wrong. Please try again.");
+    }
+  };
+
+  // --- Customers (dropdown on the Add / Edit vehicle form) ---
+  // A newly added customer is selected straight away; an edited one keeps the
+  // current selection and the prefilled email / phone refresh with the list.
+  const onCustomerSaved = (saved, wasNew) => {
+    if (wasNew && saved?._id) setForm((f) => ({ ...f, customer: saved._id }));
+  };
+
+  const confirmDeleteCustomer = async () => {
+    if (!customerDelete) return;
+    const { _id } = customerDelete;
+    try {
+      await deleteCustomerMutation.mutateAsync(_id);
+      setForm((f) => (f.customer === _id ? { ...f, customer: "" } : f));
+      setFilters((f) => (f.customer === _id ? { ...f, customer: "" } : f));
+    } catch (err) {
+      setFormError(err?.response?.data?.message || "Couldn't delete that customer. Please try again.");
+    } finally {
+      setCustomerDelete(null);
     }
   };
 
@@ -503,7 +570,17 @@ export default function VehicleNotes() {
       )}
 
       <div className="card vehicle-filter-bar mb-20">
-        <div className="vehicle-filter-grid">
+        <div className="search-box vehicle-search">
+          <Search size={16} color="var(--color-muted)" />
+          <input
+            type="search"
+            placeholder={isStaffOrAdmin ? "Search by vehicle name, make, model, type or customer name…" : "Search by vehicle name, make, model or type…"}
+            value={filters.search}
+            onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+            aria-label="Search vehicles"
+          />
+        </div>
+        <div className={`vehicle-filter-grid${isStaffOrAdmin ? " with-customer" : ""}`}>
           <div className="field">
             <label>Make</label>
             <select value={filters.make} onChange={onFilterMakeChange}>
@@ -525,6 +602,15 @@ export default function VehicleNotes() {
               {filterTypeOptions.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
+          {isStaffOrAdmin && (
+            <div className="field">
+              <label>Customer</label>
+              <select value={filters.customer} onChange={(e) => setFilters((f) => ({ ...f, customer: e.target.value }))}>
+                <option value="">All customers</option>
+                {customerFilterOptions.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+          )}
           <div className="field">
             <label>Year from</label>
             <select value={filters.yearFrom} onChange={(e) => setFilters((f) => ({ ...f, yearFrom: e.target.value }))}>
@@ -569,6 +655,12 @@ export default function VehicleNotes() {
                   <span className="badge badge-model">{v.model}</span>
                   <span className="badge badge-model">{v.type}</span>
                 </div>
+                {v.customer && (
+                  <p className="vehicle-customer fs-11 mt-4">
+                    <strong>{v.customer.fullName}</strong>
+                    <span className="text-muted">{[v.customer.email, v.customer.phone].filter(Boolean).join(" · ")}</span>
+                  </p>
+                )}
                 <p className="text-muted fs-11 mt-4">
                   {v.year ? `Year: ${v.year}` : "No year set"}
                   {" · "}
@@ -603,6 +695,15 @@ export default function VehicleNotes() {
                 )}
               </div>
               <div className="vehicle-actions">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => navigate(`/vehicle-notes/${v._id}`)}
+                  title="View details"
+                  aria-label={`View details for ${v.name}`}
+                >
+                  <Eye size={14} />
+                </button>
                 <button type="button" className="icon-btn" onClick={() => openEdit(v)} title="Edit">
                   <Pencil size={14} />
                 </button>
@@ -696,6 +797,34 @@ export default function VehicleNotes() {
               <input type="date" value={form.eventDate} onChange={(e) => setForm((f) => ({ ...f, eventDate: e.target.value }))} />
             </div>
           </div>
+
+          {/* Customer — staff and admin only. Options read "Full name (email)".
+              Staff and admin can add a customer from the dropdown; only admin
+              gets the edit / delete buttons. Picking a customer prefills the
+              (read-only) email and phone below. */}
+          {isStaffOrAdmin && (
+            <div className="field-mb">
+              <CustomerSelect
+                value={form.customer}
+                customers={customers}
+                loading={loadingCustomers}
+                onChange={(id) => setForm((f) => ({ ...f, customer: id }))}
+                onAdd={() => setCustomerModal({ open: true, customer: null })}
+                onEdit={isAdmin ? (c) => setCustomerModal({ open: true, customer: c }) : undefined}
+                onDelete={isAdmin ? (c) => setCustomerDelete(c) : undefined}
+              />
+              <div className="tire-input-grid cols-2 mt-10">
+                <div className="field">
+                  <label>Customer email</label>
+                  <input type="email" value={selectedCustomer?.email || ""} placeholder="Select a customer" readOnly />
+                </div>
+                <div className="field">
+                  <label>Customer phone</label>
+                  <input type="tel" value={selectedCustomer?.phone || ""} placeholder="Select a customer" readOnly />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="field field-mb-lg">
             <label>Before &amp; after photos</label>
@@ -1019,6 +1148,26 @@ export default function VehicleNotes() {
         message={`Remove ${deleteTarget?.name || "this vehicle"} from your records? This can't be undone.`}
         busy={deleting}
       />
+
+      {isStaffOrAdmin && (
+        <CustomerFormModal
+          open={customerModal.open}
+          customer={customerModal.customer}
+          onClose={() => setCustomerModal((m) => ({ ...m, open: false }))}
+          onSaved={(saved) => onCustomerSaved(saved, !customerModal.customer)}
+        />
+      )}
+
+      {isAdmin && (
+        <ConfirmDialog
+          open={!!customerDelete}
+          onClose={() => setCustomerDelete(null)}
+          onConfirm={confirmDeleteCustomer}
+          busy={deleteCustomerMutation.isPending}
+          title="Delete customer"
+          message={`Delete ${customerDelete?.fullName || "this customer"} (${customerDelete?.email || ""})? They'll be removed from any vehicle notes they're attached to — the vehicles themselves are kept. This can't be undone.`}
+        />
+      )}
 
       {isStaffOrAdmin && (
         <ConfirmDialog

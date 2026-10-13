@@ -10,10 +10,10 @@ export default function NotAuthorized() {
         </div>
         <h2 className="not-authorized-title">You don't have access to this page</h2>
         <p className="not-authorized-text">
-          An admin has restricted this section for your role. Contact an admin if you think this is a mistake.
+          Admin has restricted this section for your role.
         </p>
-        <Link to="/dashboard" className="btn btn-primary">
-          Back to Dashboard
+        <Link to="/tech-data" className="btn btn-primary">
+          Back to Tech Data Page
         </Link>
       </div>
     </div>

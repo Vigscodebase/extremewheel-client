@@ -15,48 +15,28 @@ export const usePermissions = () => {
 };
 
 export const PermissionProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   /*
-   * ============================================================
-   * KNOWN BENIGN 401 ON FRESH/INCOGNITO SESSIONS — NOT A BUG, NOT
-   * BEING FIXED HERE. Documenting the timing so it isn't
-   * mistaken for a real outage later.
-   * ============================================================
+   * Only fetch permissions once there is a session to authenticate with.
    *
-   * This query has no `enabled: !!token` guard, so it fires the
-   * instant PermissionLayout mounts for ANY visit to a private
-   * route path — authenticated or not. React fires effects
-   * bottom-up (children before parents — see the interceptor
-   * bugfix note in utils/axiosInstance.js for the same ordering
-   * rule), and PermissionProvider sits *below* AuthProvider in the
-   * tree, so this fires before AuthProvider's bootstrap effect has
-   * run and before ProtectedRoute (a sibling further down, which
-   * depends on that bootstrap finishing) gets a chance to redirect
-   * an unauthenticated visitor to /login.
+   * PermissionProvider mounts for every private route, and React runs child
+   * effects before parent effects, so on a fresh/incognito visit this query
+   * used to fire before any token existed. The server correctly answered
+   * 401 "Not authorized, no token provided.", and the global error listener
+   * showed it as a "Something went wrong" modal on first load, right before
+   * ProtectedRoute redirected to /login.
    *
-   * On a genuinely fresh/incognito session there's no stored token
-   * at all yet, so this request legitimately goes out with no
-   * Authorization header and the server correctly answers
-   * 401 "Not authorized, no token provided." (middleware/auth.js).
-   * The active axios response interceptor doesn't distinguish that
-   * from a real failure, so it surfaces as the same generic
-   * "Something went wrong" modal (GlobalErrorListener) you'd see
-   * for any other error — right before the redirect to /login lands
-   * a beat later. The modal is a global overlay outside <Routes>,
-   * so it stays up across that navigation.
-   *
-   * Net effect: opening the app cold (no session yet, or a token
-   * that's expired) can flash this modal on the way to /login. It's
-   * timing, not data loss — nothing failed to load, there was
-   * simply nothing to authenticate yet. Left as-is intentionally,
-   * consistent with the other TEMPORARILY DISABLED session/refresh
-   * blocks in axiosInstance.js and authcontext.jsx.
+   * `enabled: isAuthenticated` stops that request from being sent at all.
+   * It starts automatically as soon as login succeeds (or immediately on
+   * reload when a persisted session exists, since the auth store hydrates
+   * synchronously).
    */
   const { data, isLoading } = useQuery({
     queryKey: permissionsQueryKey,
     queryFn: fetchPermissions,
+    enabled: isAuthenticated,
     placeholderData: DEFAULT_PERMISSIONS,
     // Polling removed: the query will only refetch on mutations, window focus, or cross-tab sync
     staleTime: 10_000,

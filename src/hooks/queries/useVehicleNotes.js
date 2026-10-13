@@ -10,6 +10,20 @@ export function useVehicleNotesQuery() {
   });
 }
 
+// One vehicle, for the detail page. Lives under the list's key prefix, so every
+// mutation below (which invalidates ["vehicle-notes"]) refreshes it too. If the
+// person came from the list, that cached copy is shown instantly while the
+// full record loads.
+export function useVehicleNoteQuery(id) {
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: [...vehicleNotesKey, id],
+    queryFn: () => vehicleNotesApi.fetchVehicleNote(id),
+    enabled: Boolean(id),
+    placeholderData: () => queryClient.getQueryData(vehicleNotesKey)?.find((v) => v._id === id),
+  });
+}
+
 export function useCreateVehicleNote() {
   const queryClient = useQueryClient();
   return useMutation({

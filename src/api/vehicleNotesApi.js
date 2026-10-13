@@ -3,6 +3,9 @@ import axios from "../utils/axiosInstance";
 export const fetchVehicleNotes = () =>
   axios.get("/vehicle-notes").then((r) => r.data.vehicles || []);
 
+export const fetchVehicleNote = (id) =>
+  axios.get(`/vehicle-notes/${id}`).then((r) => r.data.vehicle);
+
 export const createVehicleNote = (payload) =>
   axios.post("/vehicle-notes", payload).then((r) => r.data.vehicle);
 

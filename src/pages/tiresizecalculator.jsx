@@ -7,12 +7,13 @@ import { useLogTireComparison } from "../hooks/queries/useActivity";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import {
   equivalentInchSize,
-  revsPerMile,
+  // revsPerMile, // hidden: Revs / mile display is commented out below
   sidewallHeightInches,
   speedoDifferencePct,
   speedometerErrorTable,
-  tireCircumferenceMm,
+  // tireCircumferenceMm, // hidden: Circumference display is commented out below
   tireDiameterInches,
+  tireOverallHeightInches,
   tireWidthInches,
 } from "../utils/tireMath";
 
@@ -26,11 +27,13 @@ const SPEED_READINGS = [20, 30, 40, 50, 60, 70, 80, 90];
 
 function specRows(tire) {
   return {
-    diameter: tireDiameterInches(tire),
+    // Hidden for now (display commented out in the tables below):
+    // diameter: tireDiameterInches(tire),
+    // circumference: tireCircumferenceMm(tire) / 25.4,
+    // revsPerMile: revsPerMile(tire),
+    overallHeight: tireOverallHeightInches(tire),
     width: tireWidthInches(tire),
     sidewall: sidewallHeightInches(tire),
-    circumference: tireCircumferenceMm(tire) / 25.4,
-    revsPerMile: revsPerMile(tire),
   };
 }
 
@@ -150,9 +153,15 @@ export default function TireSizeCalculator() {
               </thead>
               <tbody>
                 <tr>
+                  <td class="compare-table-label">Overall Height</td>
+                  <td class="compare-table-value">(sidewall height × 2) + diameter</td>
+                </tr>
+                {/* Hidden for now:
+                <tr>
                   <td class="compare-table-label">Diameter</td>
                   <td class="compare-table-value">rim + 2 × sidewall height</td>
                 </tr>
+                */}
                 <tr>
                   <td class="compare-table-label">Width</td>
                   <td class="compare-table-value">width (mm) ÷ 25.4</td>
@@ -161,6 +170,7 @@ export default function TireSizeCalculator() {
                   <td class="compare-table-label">Sidewall</td>
                   <td class="compare-table-value">(width × aspect ÷ 100) ÷ 25.4</td>
                 </tr>
+                {/* Hidden for now:
                 <tr>
                   <td class="compare-table-label">Circumference</td>
                   <td class="compare-table-value">π × diameter</td>
@@ -169,6 +179,7 @@ export default function TireSizeCalculator() {
                   <td class="compare-table-label">Revs / mile</td>
                   <td class="compare-table-value">1 ÷ (circumference in miles)</td>
                 </tr>
+                */}
               </tbody>
             </table>
           </div>
@@ -189,11 +200,16 @@ export default function TireSizeCalculator() {
               </tr>
             </thead>
             <tbody>
+              <tr><td className="compare-table-label">Overall Height</td><td className="compare-table-value">{fmt(spec.overallHeight)}</td></tr>
+              {/* Hidden for now:
               <tr><td className="compare-table-label">Diameter</td><td className="compare-table-value">{fmt(spec.diameter)}</td></tr>
+              */}
               <tr><td className="compare-table-label">Width</td><td className="compare-table-value">{fmt(spec.width)}</td></tr>
               <tr><td className="compare-table-label">Sidewall</td><td className="compare-table-value">{fmt(spec.sidewall)}</td></tr>
+              {/* Hidden for now:
               <tr><td className="compare-table-label">Circumference</td><td className="compare-table-value">{fmt(spec.circumference)}</td></tr>
               <tr><td className="compare-table-label">Revs / mile</td><td className="compare-table-value">{spec.revsPerMile.toFixed(0)}</td></tr>
+              */}
             </tbody>
           </table>
         </div>
@@ -244,11 +260,16 @@ export default function TireSizeCalculator() {
                   <tr><th>Spec</th><th>Current</th><th>New</th></tr>
                 </thead>
                 <tbody>
+                  <tr><td className="compare-table-label">Overall Height</td><td className="compare-table-value">{fmt(spec.overallHeight)}</td><td className="compare-table-value">{fmt(convertedSpec.overallHeight)}</td></tr>
+                  {/* Hidden for now:
                   <tr><td className="compare-table-label">Diameter</td><td className="compare-table-value">{fmt(spec.diameter)}</td><td className="compare-table-value">{fmt(convertedSpec.diameter)}</td></tr>
+                  */}
                   <tr><td className="compare-table-label">Width</td><td className="compare-table-value">{fmt(spec.width)}</td><td className="compare-table-value">{fmt(convertedSpec.width)}</td></tr>
                   <tr><td className="compare-table-label">Sidewall</td><td className="compare-table-value">{fmt(spec.sidewall)}</td><td className="compare-table-value">{fmt(convertedSpec.sidewall)}</td></tr>
+                  {/* Hidden for now:
                   <tr><td className="compare-table-label">Circumference</td><td className="compare-table-value">{fmt(spec.circumference)}</td><td className="compare-table-value">{fmt(convertedSpec.circumference)}</td></tr>
                   <tr><td className="compare-table-label">Revs / mile</td><td className="compare-table-value">{spec.revsPerMile.toFixed(0)}</td><td className="compare-table-value">{convertedSpec.revsPerMile.toFixed(0)}</td></tr>
+                  */}
                 </tbody>
               </table>
             </div>

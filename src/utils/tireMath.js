@@ -14,6 +14,17 @@ export function tireWidthInches({ width }) {
   return width / 25.4;
 }
 
+// Overall Height = (Sidewall Height × 2) + Diameter
+// where "Diameter" is the rim (wheel) diameter in inches.
+export function tireOverallHeightInches({ width, aspect, rim }) {
+  return sidewallHeightInches({ width, aspect }) * 2 + rim;
+}
+
+// Tread Width = Width ÷ 25.4   (width in mm -> inches)
+export function treadWidthInches({ width }) {
+  return width / 25.4;
+}
+
 export function tireCircumferenceMm({ width, aspect, rim }) {
   const diameterIn = tireDiameterInches({ width, aspect, rim });
   const diameterMm = diameterIn * 25.4;
