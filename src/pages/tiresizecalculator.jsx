@@ -27,7 +27,6 @@ const SPEED_READINGS = [20, 30, 40, 50, 60, 70, 80, 90];
 
 function specRows(tire) {
   return {
-    // Hidden for now (display commented out in the tables below):
     // diameter: tireDiameterInches(tire),
     // circumference: tireCircumferenceMm(tire) / 25.4,
     // revsPerMile: revsPerMile(tire),
