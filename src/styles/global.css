@@ -4299,11 +4299,11 @@ input[type="password"]::-ms-clear {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 16px auto;
+    /* margin: 0 auto 16px auto; */
 }
 
 .error-modal-text {
-    margin-top: 16px;
+    /* margin-top: 16px; */
     text-align: center;
     color: var(--color-ink, #333);
     font-size: 14px;

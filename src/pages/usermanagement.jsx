@@ -1,4 +1,4 @@
-import { Pencil, Plus, Save, Search, ShieldCheck, Trash2, Users as UsersIcon } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Save, Search, ShieldCheck, Trash2, Users as UsersIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import ConfirmDialog from "../components/confirmdialog";
 import Modal from "../components/modal";
@@ -34,6 +34,7 @@ export default function UserManagement() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
 
@@ -62,6 +63,7 @@ export default function UserManagement() {
     setEditing(null);
     setForm(emptyForm);
     setFormError("");
+    setShowPassword(false);
     setFormOpen(true);
   };
 
@@ -69,6 +71,7 @@ export default function UserManagement() {
     setEditing(u);
     setForm({ name: u.name, email: u.email, password: "", role: u.role });
     setFormError("");
+    setShowPassword(false);
     setFormOpen(true);
   };
 
@@ -287,7 +290,39 @@ export default function UserManagement() {
           </div>
           <div className="field mb-14">
             <label htmlFor="uPassword">{editing ? "New password (optional)" : "Password"}</label>
-            <input id="uPassword" name="password" type="password" value={form.password} onChange={onFormChange} placeholder="••••••••" />
+            <div style={{ position: "relative" }}>
+              <input
+                id="uPassword"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                value={form.password}
+                onChange={onFormChange}
+                placeholder="••••••••"
+                style={{ paddingRight: 42 }}
+              />
+              <button
+                type="button"
+                className="toggle-btn"
+                onClick={() => setShowPassword((s) => !s)}
+                aria-label="Toggle password visibility"
+                style={{
+                  position: "absolute",
+                  right: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  display: "flex",
+                  alignItems: "center",
+                  padding: 0,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--color-muted)",
+                }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           <div className="field field-mb-lg">
             <label htmlFor="uRole">Role</label>

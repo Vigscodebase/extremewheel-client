@@ -531,14 +531,14 @@ export default function VehicleNotes() {
 
       {isStaffOrAdmin && user.role !== "guest" && (
         <div className="card vehicle-db-card mb-20">
-          <h3 className="mb-4">
+          <h3 className="mb-24">
             <FileSpreadsheet size={16} className="icon-inline" />
             Vehicle Notes database
           </h3>
-          <p className="text-muted mb-16">
+          {/* <p className="text-muted mb-16">
             Download the current Make / Model / Type reference table as .xlsx, edit it, and re-upload — the Add / Edit vehicle
             dropdowns above stay in sync automatically.
-          </p>
+          </p> */}
           <div className="modal-actions modal-actions-start gap-12">
             <button
               type="button"

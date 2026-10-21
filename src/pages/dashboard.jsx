@@ -352,8 +352,8 @@ export default function Dashboard() {
     <div>
       <PageHeader
         eyebrow="Overview"
-        title={`Welcome back${user?.name ? `, ${user.name.split(" ")[0]}` : ""}`}
-        subtitle="Here's what's happening across your extremewheel."
+        title={`Welcome back${user?.name ? `, ${user.name}` : ""}`}
+        subtitle="Overview of what's happening across your extremewheel."
       />
 
       <div className="kpi-grid">

@@ -174,7 +174,7 @@ export default function TireSizeOption() {
       <PageHeader
         eyebrow="Tire library"
         title="Tire Size Option"
-        subtitle="Save the tire sizes so they're one click away in the comparison tool."
+        subtitle="Save the tire sizes so they're one click away."
         action={
           canManagePresets && (
             <button type="button" className="btn btn-accent" onClick={openAdd}>
