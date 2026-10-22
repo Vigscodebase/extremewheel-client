@@ -14,7 +14,8 @@ import {
 import { useLogVehicleSearch } from "../hooks/queries/useActivity";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import { useUpdateVehicleNote, useVehicleNotesQuery } from "../hooks/queries/useVehicleNotes";
-import { useAuth } from "../context/authcontext";
+import { usePermissions } from "../context/permissioncontext";
+import { PERM } from "../utils/permissions";
 
 const GLOSSARY = [
   { term: "Wheel Offset", def: "The distance (in mm) from the wheel's centerline to its mounting hub surface. Positive offset pulls the wheel face inward; negative pushes it outward." },
@@ -70,7 +71,9 @@ function WheelOffsetChart({ record, show3D = true }) {
 
 export default function TechData() {
   const [tab, setTab] = useState("lookup"); // "lookup" | "manual" | "csv" | "guide"
-  const { user } = useAuth();
+  // The second tab (CSV import / export) is its own per-user permission.
+  const { can } = usePermissions();
+  const canUseCsvTab = can(PERM.TECH_DATA_CSV_TAB);
 
   return (
     <div>
@@ -83,7 +86,7 @@ export default function TechData() {
       <div className="range-toggle mb-20">
         <button type="button" className={tab === "lookup" ? "active" : ""} onClick={() => setTab("lookup")}>Vehicle lookup</button>
         {/* <button type="button" className={tab === "manual" ? "active" : ""} onClick={() => setTab("manual")}>Manual reference</button> */}
-        {user.role !== "guest" && <button type="button" className={tab === "csv" ? "active" : ""} onClick={() => setTab("csv")}>CSV import / export</button>}
+        {canUseCsvTab && <button type="button" className={tab === "csv" ? "active" : ""} onClick={() => setTab("csv")}>CSV import / export</button>}
         <button type="button" className={tab === "guide" ? "active" : ""} onClick={() => setTab("guide")}>Guide</button>
       </div>
 
@@ -109,7 +112,7 @@ export default function TechData() {
 
       {tab === "lookup" && <VehicleLookupTab />}
       {tab === "manual" && <ManualReferenceTab />}
-      {tab === "csv" && <CsvImportExportTab />}
+      {tab === "csv" && canUseCsvTab && <CsvImportExportTab />}
     </div>
   );
 }

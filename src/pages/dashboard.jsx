@@ -21,8 +21,9 @@ import DonutChart from "../components/charts/donutchart";
 import PageHeader from "../components/pageheader";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import { useAuth } from "../context/authcontext";
+import { usePermissions } from "../context/permissioncontext";
+import { PERM, pageKeyForPath } from "../utils/permissions";
 import { useDashboardSummary } from "../hooks/queries/useDashboard";
-import { useAppGuideMakes, useAppGuideModels, useAppGuideYears } from "../hooks/queries/useAppGuide";
 
 const RANGES = ["W", "M", "Y"];
 
@@ -114,6 +115,12 @@ const FALLBACK = {
 // invalid nested-anchor markup.
 function ClickableCard({ to, className = "", children }) {
   const navigate = useNavigate();
+  const { can } = usePermissions();
+  // A tile can be visible without the page it links to (the two are separate
+  // permissions). Then it is just a read-only panel, not a dead link.
+  if (!can(pageKeyForPath(to))) {
+    return <div className={className}>{children}</div>;
+  }
   return (
     <div
       className={`${className} dash-card-clickable`}
@@ -132,16 +139,25 @@ function ClickableCard({ to, className = "", children }) {
   );
 }
 
+// A link that only appears when the user can open its target page — a tile can
+// be visible without the page behind it, and a dead link would just bounce them.
+function PageLink({ to, ...props }) {
+  const { can } = usePermissions();
+  return can(pageKeyForPath(to)) ? <Link to={to} {...props} /> : null;
+}
+
 function KpiCard({ icon: Icon, label, value, tint, to }) {
   const navigate = useNavigate();
+  const { can } = usePermissions();
+  const linkable = !!to && can(pageKeyForPath(to));
   return (
     <div
-      className="card kpi-card dash-card-clickable"
-      role="button"
-      tabIndex={0}
-      onClick={() => to && navigate(to)}
+      className={`card kpi-card${linkable ? " dash-card-clickable" : ""}`}
+      role={linkable ? "button" : undefined}
+      tabIndex={linkable ? 0 : undefined}
+      onClick={() => linkable && navigate(to)}
       onKeyDown={(e) => {
-        if (to && (e.key === "Enter" || e.key === " ")) {
+        if (linkable && (e.key === "Enter" || e.key === " ")) {
           e.preventDefault();
           navigate(to);
         }
@@ -239,25 +255,24 @@ const QUICK_LINKS = [
   { to: "/plus-size", icon: TrendingUp, label: "Plus Size Option", desc: "Find plus-size matches within tolerance" },
 ];
 
-// Staff (and admin) quick-access panel: a jump-off point for the tools used
+// Quick-access panel (its own dashboard tile permission): a jump-off point for the tools used
 // most during a shop visit — a live vehicle search & fitment lookup, plus
 // one-click shortcuts into the tire calculator/comparison/option/plus-size
 // pages, so none of them are more than a click away from the dashboard.
 // Replace your entire QuickAccessPanel function with this
 // Replace your existing QuickAccessPanel with this updated version
 function QuickAccessPanel() {
-  const navigate = useNavigate();
-  const [year, setYear] = useState("");
-  const [make, setMake] = useState("");
-  const [model, setModel] = useState("");
+  const { can } = usePermissions();
 
-  const { data: years, isLoading: loadingYears } = useAppGuideYears();
-  const { data: makes, isLoading: loadingMakes } = useAppGuideMakes(year);
-  const { data: models, isLoading: loadingModels } = useAppGuideModels(year, make);
+  // NOTE: the Year/Make/Model fitment form below is commented out. Its data
+  // hooks (useAppGuideYears / Makes / Models) were removed with it: they fired
+  // on every dashboard load and now 403 for anyone who has this tile but not
+  // Tech Data, which would pop an error dialog. Re-add them (and the
+  // year/make/model state + goToFitment) only when the form is re-enabled.
 
-  const goToFitment = () => {
-    navigate("/application-guide", { state: { prefillYear: year, prefillMake: make, prefillModel: model } });
-  };
+  // Only offer shortcuts to pages this user can actually open.
+  const links = QUICK_LINKS.filter((q) => can(pageKeyForPath(q.to)));
+  if (links.length === 0) return null;
 
   return (
     <div className="card dash-panel mb-20">
@@ -305,7 +320,7 @@ function QuickAccessPanel() {
       </div> */}
 
       <div className="quick-links-grid">
-        {QUICK_LINKS.map((q) => (
+        {links.map((q) => (
           <Link key={q.to} to={q.to} className="quick-link-card">
             <span className="quick-link-icon"><q.icon size={17} /></span>
             <span>
@@ -322,6 +337,10 @@ function QuickAccessPanel() {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  // Every tile is its own per-user permission (dashboard.tile.*); the server
+  // also withholds the data for tiles the user can't see.
+  const { can } = usePermissions();
+  const showKpis = can(PERM.TILE_TOTAL_USERS) || can(PERM.TILE_VEHICLE_NOTES) || can(PERM.TILE_TIRE_PRESETS);
   const { data } = useDashboardSummary();
   const [range, setRange] = useState("W");
   const [selectedDay, setSelectedDay] = useState(FALLBACK.scheduleDays[2]?.day);
@@ -330,10 +349,12 @@ export default function Dashboard() {
   // while the first request is in flight or if the endpoint errors out.
   const stats = useMemo(() => ({ ...FALLBACK, ...(data || {}) }), [data]);
 
-  const showroomTire = useMemo(() => {
-    const latest = stats.recentTireComparisons?.[0]?.data?.tireB || stats.recentTireComparisons?.[0]?.data?.tireA;
-    return latest?.width && latest?.rim ? latest : { width: 265, aspect: 70, rim: 17 };
-  }, [stats.recentTireComparisons]);
+  // The server sends the most recently compared tire for the showroom as its own
+  // field, so it works without the "Recent tire comparisons" tile.
+  const showroomTire = useMemo(
+    () => (data?.showroomTire?.width && data?.showroomTire?.rim ? data.showroomTire : { width: 265, aspect: 70, rim: 17 }),
+    [data]
+  );
 
   const donutData = [
     { label: "Admin", value: stats.usersByRole.admin, color: "#A31621" },
@@ -356,24 +377,27 @@ export default function Dashboard() {
         subtitle="Overview of what's happening across your extremewheel."
       />
 
+      {showKpis && (
       <div className="kpi-grid">
-        {user.role === "admin" && <KpiCard icon={Users} label="Total users" value={stats.totalUsers} tint={{ soft: "var(--color-amber-dark)", solid: "var(--color-pink-soft)" }} to="/user-management" />}
-        <KpiCard icon={Car} label="Vehicles notes" value={stats.totalVehicles} tint={{ soft: "var(--color-pink)", solid: "var(--color-pink-soft)" }} to="/vehicle-notes" />
-        <KpiCard icon={Gauge} label="Tire presets" value={stats.tirePresets} tint={{ soft: "var(--color-sidebar)", solid: "var(--color-pink-soft)" }} to="/tire-options" />
+        {can(PERM.TILE_TOTAL_USERS) && <KpiCard icon={Users} label="Total users" value={stats.totalUsers} tint={{ soft: "var(--color-amber-dark)", solid: "var(--color-pink-soft)" }} to="/user-management" />}
+        {can(PERM.TILE_VEHICLE_NOTES) && <KpiCard icon={Car} label="Vehicles notes" value={stats.totalVehicles} tint={{ soft: "var(--color-pink)", solid: "var(--color-pink-soft)" }} to="/vehicle-notes" />}
+        {can(PERM.TILE_TIRE_PRESETS) && <KpiCard icon={Gauge} label="Tire presets" value={stats.tirePresets} tint={{ soft: "var(--color-sidebar)", solid: "var(--color-pink-soft)" }} to="/tire-options" />}
         {/* <KpiCard icon={ShieldCheck} label="Active sessions" value={stats.activeSessions} tint={{ soft: "var(--color-pink-soft)", solid: "var(--color-pink)" }} /> */}
       </div>
+      )}
 
-      {(user.role === "staff" || user.role === "admin") && <QuickAccessPanel />}
+      {can(PERM.TILE_QUICK_ACCESS) && <QuickAccessPanel />}
 
+      {can(PERM.TILE_TIRE_SHOWROOM) && (
       <ClickableCard to="/tire-calculator" className="card threed-height dash-panel mb-20">
         <div className="panel-head">
           <div>
             <h3>Tire showroom</h3>
             <p>Live 3D preview of your most recently compared size</p>
           </div>
-          <Link to="/tire-calculator" className="see-all-link">
+          <PageLink to="/tire-calculator" className="see-all-link">
             Open calculator <ChevronRight size={14} />
-          </Link>
+          </PageLink>
         </div>
         {/* <Tire3DVisualizer
           tire={showroomTire}
@@ -391,6 +415,7 @@ export default function Dashboard() {
         />
 
       </ClickableCard>
+      )}
 
       {/* <div className="section-title-row">
         <div>
@@ -494,7 +519,9 @@ export default function Dashboard() {
         </div>
       </div> */}
 
+      {(can(PERM.TILE_RECENT_VEHICLES) || can(PERM.TILE_USERS_BY_ROLE)) && (
       <div className="dash-grid">
+        {can(PERM.TILE_RECENT_VEHICLES) && (
         <ClickableCard to="/vehicle-notes" className="card dash-panel">
           <div className="panel-head">
             <div>
@@ -515,8 +542,9 @@ export default function Dashboard() {
             ))}
           </div>
         </ClickableCard>
+        )}
 
-        {user.role === "admin" &&
+        {can(PERM.TILE_USERS_BY_ROLE) &&
           <ClickableCard to="/user-management" className="card dash-panel">
             <div className="panel-head">
               <div>
@@ -545,17 +573,20 @@ export default function Dashboard() {
           </div>
         </div> */}
       </div>
+      )}
 
+      {(can(PERM.TILE_RECENT_COMPARISONS) || can(PERM.TILE_RECENT_VEHICLE_SEARCHES)) && (
       <div className="dash-grid">
+        {can(PERM.TILE_RECENT_COMPARISONS) && (
         <ClickableCard to="/tire-comparison" className="card dash-panel">
           <div className="panel-head">
             <div>
               <h3>Recent tire comparisons</h3>
               {/* <p>Last few tire sizes un through the calculator</p> */}
             </div>
-            <Link to="/tire-comparison" className="see-all-link">
+            <PageLink to="/tire-comparison" className="see-all-link">
               Open comparison <ChevronRight size={14} />
-            </Link>
+            </PageLink>
           </div>
           <div className="recent-list">
             {(stats.recentTireComparisons || []).length === 0 ? (
@@ -576,16 +607,18 @@ export default function Dashboard() {
             )}
           </div>
         </ClickableCard>
+        )}
 
+        {can(PERM.TILE_RECENT_VEHICLE_SEARCHES) && (
         <ClickableCard to="/tech-data" className="card dash-panel">
           <div className="panel-head">
             <div>
               <h3>Recently searched vehicles</h3>
               <p>Latest Application Guide / Tech Data lookups</p>
             </div>
-            <Link to="/tech-data" className="see-all-link">
+            <PageLink to="/tech-data" className="see-all-link">
               Open Tech Data <ChevronRight size={14} />
-            </Link>
+            </PageLink>
           </div>
           <div className="recent-list">
             {(stats.recentVehicleSearches || []).length === 0 ? (
@@ -603,9 +636,12 @@ export default function Dashboard() {
             )}
           </div>
         </ClickableCard>
+        )}
 
       </div>
+      )}
 
+      {can(PERM.TILE_RECENT_PLUS_SIZE) && (
       <div className="dash-grid">
         <ClickableCard to="/plus-size" className="card dash-panel">
           <div className="panel-head">
@@ -613,9 +649,9 @@ export default function Dashboard() {
               <h3>Recent plus-size saves</h3>
               <p>Saved plus-size matches from the Plus Size Options page</p>
             </div>
-            <Link to="/plus-size" className="see-all-link">
+            <PageLink to="/plus-size" className="see-all-link">
               Open Plus Size Options <ChevronRight size={14} />
-            </Link>
+            </PageLink>
           </div>
           <div className="recent-list">
             {(stats.recentPlusSizeSaves || []).length === 0 ? (
@@ -634,7 +670,9 @@ export default function Dashboard() {
           </div>
         </ClickableCard>
       </div>
+      )}
 
+      {can(PERM.TILE_REPORTS) && (
       <div className="dash-grid">
         <ClickableCard to="/reports" className="card dash-panel goal-card">
           <div className="panel-head">
@@ -654,11 +692,12 @@ export default function Dashboard() {
           <p className="goal-subcaption">
             {stats.reportsSummary?.totalActivity ?? 0} events logged in total
           </p>
-          <Link to="/reports" className="btn btn-accent mt-14">
+          <PageLink to="/reports" className="btn btn-accent mt-14">
             <FileBarChart size={15} /> Open Reporting & Data Export
-          </Link>
+          </PageLink>
         </ClickableCard>
       </div>
+      )}
 
       {/* <div className="dash-grid">
         <div className="card dash-panel goal-card">

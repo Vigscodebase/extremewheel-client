@@ -9,6 +9,8 @@ import Lightbox from "../components/lightbox";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
 import { useAuth } from "../context/authcontext";
+import { usePermissions } from "../context/permissioncontext";
+import { PERM } from "../utils/permissions";
 import { useCustomersQuery, useDeleteCustomer } from "../hooks/queries/useCustomers";
 import {
   useAddVehicleGalleryPhoto,
@@ -78,6 +80,15 @@ function toDateInputValue(value) {
 
 export default function VehicleNotes() {
   const { user } = useAuth();
+  // Per-user permissions for this page's buttons (granted by email, not role).
+  // Edit also covers adding / removing gallery photos, since both change the vehicle.
+  const { can } = usePermissions();
+  const canAdd = can(PERM.VEHICLE_ADD);
+  const canEdit = can(PERM.VEHICLE_EDIT);
+  const canDelete = can(PERM.VEHICLE_DELETE);
+  const canSeeDatabase = can(PERM.VEHICLE_DATABASE);
+  const canDownloadDatabase = can(PERM.VEHICLE_DATABASE_DOWNLOAD);
+  const canUploadDatabase = can(PERM.VEHICLE_DATABASE_UPLOAD);
   const navigate = useNavigate();
   // Who can grow/prune the predefined dropdown lists (the server enforces the
   // same rule): staff and admin, for all four of Make, Model, Type and Year.
@@ -523,13 +534,15 @@ export default function VehicleNotes() {
         title="Vehicle Notes"
         subtitle="Keep a visual reference of every vehicle in the extremewheel - including before/after photos and a full image gallery."
         action={
-          <button type="button" className="btn btn-accent" onClick={openAdd}>
-            <Plus size={16} /> Add vehicle
-          </button>
+          canAdd ? (
+            <button type="button" className="btn btn-accent" onClick={openAdd}>
+              <Plus size={16} /> Add vehicle
+            </button>
+          ) : null
         }
       />
 
-      {isStaffOrAdmin && user.role !== "guest" && (
+      {canSeeDatabase && (
         <div className="card vehicle-db-card mb-20">
           <h3 className="mb-24">
             <FileSpreadsheet size={16} className="icon-inline" />
@@ -540,24 +553,30 @@ export default function VehicleNotes() {
             dropdowns above stay in sync automatically.
           </p> */}
           <div className="modal-actions modal-actions-start gap-12">
-            <button
-              type="button"
-              className="btn btn-accent"
-              onClick={() => downloadLookup.mutate()}
-              disabled={downloadLookup.isPending}
-            >
-              <Download size={16} /> {downloadLookup.isPending ? "Preparing…" : "Download database"}
-            </button>
-            <button type="button" className="btn btn-ghost" onClick={() => dbFileInputRef.current?.click()} disabled={importLookup.isPending}>
-              <Upload size={16} /> {importLookup.isPending ? "Uploading…" : "Upload database"}
-            </button>
-            <input
-              ref={dbFileInputRef}
-              type="file"
-              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              hidden
-              onChange={onDbFileChosen}
-            />
+            {canDownloadDatabase && (
+              <button
+                type="button"
+                className="btn btn-accent"
+                onClick={() => downloadLookup.mutate()}
+                disabled={downloadLookup.isPending}
+              >
+                <Download size={16} /> {downloadLookup.isPending ? "Preparing…" : "Download database"}
+              </button>
+            )}
+            {canUploadDatabase && (
+              <>
+                <button type="button" className="btn btn-ghost" onClick={() => dbFileInputRef.current?.click()} disabled={importLookup.isPending}>
+                  <Upload size={16} /> {importLookup.isPending ? "Uploading…" : "Upload database"}
+                </button>
+                <input
+                  ref={dbFileInputRef}
+                  type="file"
+                  accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  hidden
+                  onChange={onDbFileChosen}
+                />
+              </>
+            )}
           </div>
           {dbImportError && <div className="alert-error mt-16">{dbImportError}</div>}
           {dbImportResult && (
@@ -635,7 +654,7 @@ export default function VehicleNotes() {
         <p className="text-muted">Loading vehicles…</p>
       ) : vehicles.length === 0 ? (
         <div className="card empty-state-card text-muted">
-          No vehicles yet — add your first one.
+          {canAdd ? "No vehicles yet — add your first one." : "No vehicles yet."}
         </div>
       ) : filteredVehicles.length === 0 ? (
         <div className="card empty-state-card text-muted">
@@ -704,12 +723,16 @@ export default function VehicleNotes() {
                 >
                   <Eye size={14} />
                 </button>
-                <button type="button" className="icon-btn" onClick={() => openEdit(v)} title="Edit">
-                  <Pencil size={14} />
-                </button>
-                <button type="button" className="icon-btn danger" onClick={() => setDeleteTarget(v)} title="Delete">
-                  <Trash2 size={14} />
-                </button>
+                {canEdit && (
+                  <button type="button" className="icon-btn" onClick={() => openEdit(v)} title="Edit">
+                    <Pencil size={14} />
+                  </button>
+                )}
+                {canDelete && (
+                  <button type="button" className="icon-btn danger" onClick={() => setDeleteTarget(v)} title="Delete">
+                    <Trash2 size={14} />
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -1112,21 +1135,25 @@ export default function VehicleNotes() {
                 {(galleryVehicle.gallery || []).map((photo, i) => (
                   <div key={photo} className="gallery-thumb" onClick={() => setLightboxIndex(i)}>
                     <img src={photo} alt={`gallery ${i + 1}`} />
-                    <button
-                      type="button"
-                      className="gallery-thumb-remove"
-                      onClick={(e) => { e.stopPropagation(); removeGalleryPhotoAt(photo); }}
-                      title="Remove"
-                    >
-                      <X size={12} />
-                    </button>
+                    {canEdit && (
+                      <button
+                        type="button"
+                        className="gallery-thumb-remove"
+                        onClick={(e) => { e.stopPropagation(); removeGalleryPhotoAt(photo); }}
+                        title="Remove"
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
                   </div>
                 ))}
-                <label className="gallery-add-tile">
-                  <ImagePlus size={18} />
-                  Add
-                  <input type="file" accept="image/*" onChange={onQuickAddGalleryPhoto} hidden />
-                </label>
+                {canEdit && (
+                  <label className="gallery-add-tile">
+                    <ImagePlus size={18} />
+                    Add
+                    <input type="file" accept="image/*" onChange={onQuickAddGalleryPhoto} hidden />
+                  </label>
+                )}
               </div>
             </div>
           </div>

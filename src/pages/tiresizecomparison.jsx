@@ -5,6 +5,8 @@ import PageHeader from "../components/pageheader";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { useLogTireComparison } from "../hooks/queries/useActivity";
+import { usePermissions } from "../context/permissioncontext";
+import { PERM } from "../utils/permissions";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import {
   speedoDifferencePct,
@@ -72,6 +74,7 @@ export default function TireSizeComparison() {
   const update = (setter) => (patch) => setter((prev) => ({ ...prev, ...patch }));
 
   const logComparison = useLogTireComparison();
+  const { can } = usePermissions();
   const [saved, setSaved] = useState(false);
   const saveComparison = async () => {
     await logComparison.mutateAsync({
@@ -115,9 +118,11 @@ export default function TireSizeComparison() {
       <div className="card compare-result-card">
         <div className="section-title-row mb-4">
           <div />
-          <button type="button" className="btn btn-ghost" onClick={saveComparison} disabled={logComparison.isPending}>
-            <Save size={14} /> {saved ? "Saved!" : logComparison.isPending ? "Saving…" : "Save comparison"}
-          </button>
+          {can(PERM.COMPARISON_SAVE) && (
+            <button type="button" className="btn btn-ghost" onClick={saveComparison} disabled={logComparison.isPending}>
+              <Save size={14} /> {saved ? "Saved!" : logComparison.isPending ? "Saving…" : "Save comparison"}
+            </button>
+          )}
         </div>
         <div className="wheel-viz">
           <div className="wheel-col">

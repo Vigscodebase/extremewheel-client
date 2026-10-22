@@ -1,5 +1,6 @@
 // Central source of truth for roles and the navigable pages of the app.
-// Adding a new page: add it here + a route in App.jsx + a sidebar icon.
+// Adding a new page: add it to utils/permissions.js (and the server catalog) +
+// a route in App.jsx + a sidebar icon.
 //
 // Any *scalar* config (timeouts, poll intervals, tolerance percentages, etc.)
 // lives in .env and is read here via import.meta.env (Vite). Structural data
@@ -11,35 +12,22 @@
 // Update values in .env (or .env.example for the checked-in template), not
 // here, when you need to change a number.
 
+import { PAGE_PERMISSIONS } from './permissions';
+
 const num = (value, fallback) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
 };
 
+// Account types. A role no longer carries any page/button permissions — those
+// are granted per user (see utils/permissions.js). "admin" is the master account
+// type and always has full access; staff/guest are labels, plus the few
+// data-sensitivity rules that still key off them (customer details, internal
+// staff notes, managing dropdown lists).
 export const ROLES = ['admin', 'staff', 'guest'];
 
-export const PAGES = [
-  { key: 'dashboard', label: 'Dashboard', path: '/dashboard' },
-  { key: 'tire-calculator', label: 'Tire Size Calculator', path: '/tire-calculator' },
-  { key: 'tire-comparison', label: 'Tire Size Comparison', path: '/tire-comparison' },
-  { key: 'tire-options', label: 'Tire Size Option', path: '/tire-options' },
-  { key: 'plus-size', label: 'Plus Size Options', path: '/plus-size' },
-  // { key: 'application-guide', label: 'Application Guide', path: '/application-guide' },
-  { key: 'tech-data', label: 'Tech Data', path: '/tech-data' },
-  { key: 'vehicle-notes', label: 'Vehicle Notes', path: '/vehicle-notes' },
-  { key: 'reports', label: 'Reporting & Data Export', path: '/reports' },
-  { key: 'user-management', label: 'User Management', path: '/user-management' },
-];
-
-// Default access matrix used the very first time the app runs (no backend
-// value saved yet). Admin always has full access and cannot be edited down
-// from the UI (guarded in PermissionContext) so there is always at least
-// one role that can reach User Management to fix mistakes.
-export const DEFAULT_PERMISSIONS = {
-  admin: PAGES.map((p) => p.key),
-  staff: ['dashboard', 'tire-comparison', 'tire-options', 'plus-size', 'application-guide', 'vehicle-notes'],
-  guest: ['dashboard', 'tire-comparison'],
-};
+// The navigable pages — the page permissions, from the single catalog.
+export const PAGES = PAGE_PERMISSIONS;
 
 export const SESSION_TIMEOUT_MS = num(import.meta.env.VITE_SESSION_TIMEOUT_MS, 7.5 * 60 * 1000); // bank-style idle timeout
 export const PERMISSIONS_POLL_MS = num(import.meta.env.VITE_PERMISSIONS_POLL_MS, 20 * 1000); // cross-device permission sync interval

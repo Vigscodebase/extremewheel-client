@@ -5,7 +5,8 @@ import PageHeader from "../components/pageheader";
 import Modal from "../components/modal";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
-import { useAuth } from "../context/authcontext";
+import { usePermissions } from "../context/permissioncontext";
+import { PERM } from "../utils/permissions";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import {
   useDownloadOeTireSizeXlsx,
@@ -298,8 +299,10 @@ function OeToleranceWindow({ oe, tolerances }) {
 
 export default function PlusSizeOptions() {
   const location = useLocation();
-  const { user } = useAuth();
-  const canManageOeLibrary = user?.role === "staff" || user?.role === "admin";
+  // Download and upload are separate per-user permissions (no longer tied to role).
+  const { can } = usePermissions();
+  const canDownloadOe = can(PERM.PLUS_SIZE_DOWNLOAD);
+  const canUploadOe = can(PERM.PLUS_SIZE_UPLOAD);
   const { data: presets } = useTireOptionsQuery();
   const searchMutation = usePlusSizeSearch();
   const saveMutation = useSavePlusSizeMatch();
@@ -407,16 +410,18 @@ export default function PlusSizeOptions() {
         <div className="oe-library-header mb-16">
           <h3 className="mb-0">OE (original equipment) size</h3>
           <div className="oe-library-actions">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              disabled={downloadOeMutation.isPending}
-              onClick={() => downloadOeMutation.mutate()}
-              title="Download the OE tire size library as .xlsx"
-            >
-              <Download size={14} /> {downloadOeMutation.isPending ? "Downloading…" : "Download OE library"}
-            </button>
-            {canManageOeLibrary && (
+            {canDownloadOe && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={downloadOeMutation.isPending}
+                onClick={() => downloadOeMutation.mutate()}
+                title="Download the OE tire size library as .xlsx"
+              >
+                <Download size={14} /> {downloadOeMutation.isPending ? "Downloading…" : "Download OE library"}
+              </button>
+            )}
+            {canUploadOe && (
               <>
                 <button
                   type="button"

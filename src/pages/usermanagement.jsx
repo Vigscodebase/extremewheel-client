@@ -1,12 +1,13 @@
-import { Eye, EyeOff, Pencil, Plus, Save, Search, ShieldCheck, Trash2, Users as UsersIcon } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Search, ShieldCheck, Trash2, TriangleAlert, Users as UsersIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import ConfirmDialog from "../components/confirmdialog";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
+import UserPermissionsPanel from "../components/userpermissionspanel";
 import { useAuth } from "../context/authcontext";
-import { usePermissions } from "../context/permissioncontext";
 import { useCreateUser, useDeleteUser, useUpdateUser, useUsersQuery } from "../hooks/queries/useUsers";
-import { PAGES, ROLES } from "../utils/constants";
+import { ROLES } from "../utils/constants";
+import { formatUserLabel } from "../utils/permissions";
 
 const MOCK_USERS = [
   { _id: "u1", name: "Alicia Roy", email: "alicia@fleet.io", role: "admin", createdAt: "2025-11-02" },
@@ -19,7 +20,6 @@ const EMPTY_USERS = [];
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
-  const { permissions, savePermissions } = usePermissions();
 
   const [tab, setTab] = useState("users");
   const [query, setQuery] = useState("");
@@ -38,20 +38,19 @@ export default function UserManagement() {
 
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const [matrix, setMatrix] = useState(permissions);
-  const [prevPermissions, setPrevPermissions] = useState(permissions);
-  const [matrixDirty, setMatrixDirty] = useState(false);
-  const [savingMatrix, setSavingMatrix] = useState(false);
+  // Permissions tab: which user is being edited (defaults to the first non-admin),
+  // and a notice shown after an email change wipes someone's permissions.
+  const [permUserId, setPermUserId] = useState(null);
+  const [resetNotice, setResetNotice] = useState(null);
 
-  // Sync the locally-editable matrix whenever a fresh `permissions` object
-  // arrives from context (e.g. after the initial fetch resolves). Done
-  // during render — per React's "adjusting state" guidance — rather than
-  // in an effect, so it doesn't cost an extra commit/render pass.
-  if (permissions !== prevPermissions) {
-    setPrevPermissions(permissions);
-    setMatrix(permissions);
-    setMatrixDirty(false);
-  }
+  const permUsers = fetchedUsers || EMPTY_USERS;
+  const defaultPermUserId = (permUsers.find((u) => u.role !== "admin") || permUsers[0])?._id || null;
+  const selectedPermUserId = permUsers.some((u) => u._id === permUserId) ? permUserId : defaultPermUserId;
+
+  const openPermissionsFor = (u) => {
+    setPermUserId(u._id);
+    setTab("access");
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -90,7 +89,9 @@ export default function UserManagement() {
       if (editing) {
         const payload = { id: editing._id, name: form.name, email: form.email, role: form.role };
         if (form.password) payload.password = form.password;
-        await updateUserMutation.mutateAsync(payload);
+        const updated = await updateUserMutation.mutateAsync(payload);
+        // Permissions belong to the email address — if it changed they were wiped.
+        setResetNotice(updated?.permissionsReset ? { id: updated._id, label: formatUserLabel(updated) } : null);
       } else {
         await createUserMutation.mutateAsync(form);
       }
@@ -113,29 +114,12 @@ export default function UserManagement() {
 
   const deleting = deleteUserMutation.isPending;
 
-  const toggleMatrix = (role, pageKey) => {
-    if (role === "admin") return;
-    setMatrix((prev) => {
-      const current = new Set(prev[role] || []);
-      current.has(pageKey) ? current.delete(pageKey) : current.add(pageKey);
-      return { ...prev, [role]: Array.from(current) };
-    });
-    setMatrixDirty(true);
-  };
-
-  const saveMatrix = async () => {
-    setSavingMatrix(true);
-    await savePermissions(matrix);
-    setSavingMatrix(false);
-    setMatrixDirty(false);
-  };
-
   return (
     <div>
       <PageHeader
         eyebrow="Administration"
         title="User Management"
-        subtitle="Manage accounts and control which pages each role can reach"
+        subtitle="Manage accounts and control what each user can open and do"
         action={
           tab === "users" && (
             <button type="button" className="btn btn-accent" onClick={openAdd}>
@@ -150,9 +134,30 @@ export default function UserManagement() {
           <UsersIcon size={15} /> Users
         </button>
         <button type="button" className={tab === "access" ? "active" : ""} onClick={() => setTab("access")}>
-          <ShieldCheck size={15} /> Page Access
+          <ShieldCheck size={15} /> Permissions
         </button>
       </div>
+
+      {tab === "users" && resetNotice && (
+        <div className="speedo-banner warn perm-notice">
+          <TriangleAlert size={14} className="icon-inline" />
+          <span>
+            {resetNotice.label}'s email was changed, so their permissions were reset. Grant access again in the
+            Permissions tab.
+          </span>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => {
+              setPermUserId(resetNotice.id);
+              setTab("access");
+              setResetNotice(null);
+            }}
+          >
+            Review permissions
+          </button>
+        </div>
+      )}
 
       {tab === "users" ? (
         !loading && users.length === 0 ? (
@@ -205,6 +210,16 @@ export default function UserManagement() {
                         <td className="text-muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</td>
                         <td>
                           <div className="flex-row gap-6">
+                            <button
+                              type="button"
+                              className="icon-btn"
+                              onClick={() => openPermissionsFor(u)}
+                              title="Manage permissions"
+                              aria-label={`Manage permissions for ${formatUserLabel(u)}`}
+                              disabled={usersError}
+                            >
+                              <ShieldCheck size={15} />
+                            </button>
                             <button type="button" className="icon-btn" onClick={() => openEdit(u)} title="Edit">
                               <Pencil size={15} />
                             </button>
@@ -226,52 +241,18 @@ export default function UserManagement() {
             </div>
           </div>
         )
-      ) : (
-        <div className="card p-22">
-          <p className="text-muted fs-13-5 mb-18">
-            Choose which pages each role can open. Admin always keeps full access.
-          </p>
+      ) : null}
 
-          <div className="table-responsive">
-            <table className="access-table">
-              <thead>
-                <tr>
-                  <th>Page</th>
-                  {ROLES.map((r) => (
-                    <th key={r} className="capitalize">
-                      {r}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {PAGES.map((page) => (
-                  <tr key={page.key}>
-                    <td className="fw-600">{page.label}</td>
-                    {ROLES.map((role) => (
-                      <td key={role}>
-                        <input
-                          type="checkbox"
-                          checked={(matrix[role] || []).includes(page.key)}
-                          onChange={() => toggleMatrix(role, page.key)}
-                          disabled={role === "admin"}
-                          aria-label={`${role} access to ${page.label}`}
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex-end mt-20">
-            <button type="button" className="btn btn-primary" onClick={saveMatrix} disabled={!matrixDirty || savingMatrix}>
-              <Save size={16} /> {savingMatrix ? "Saving…" : "Save changes"}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Kept mounted (just hidden) so unsaved permission edits survive a tab switch. */}
+      <div hidden={tab !== "access"}>
+        <UserPermissionsPanel
+          users={permUsers}
+          loading={loading}
+          error={usersError}
+          selectedId={selectedPermUserId}
+          onSelect={setPermUserId}
+        />
+      </div>
 
       <Modal open={formOpen} onClose={closeForm} title={editing ? "Edit user" : "Add user"} width={440}>
         <form onSubmit={submitForm}>
@@ -287,6 +268,11 @@ export default function UserManagement() {
           <div className="field mb-14">
             <label htmlFor="uEmail">Email</label>
             <input id="uEmail" name="email" type="email" value={form.email} onChange={onFormChange} placeholder="jane@company.com" />
+            {editing && form.email.trim().toLowerCase() !== (editing.email || "").toLowerCase() && (
+              <p className="field-hint warn-text">
+                Changing the email resets this user's permissions — you'll need to grant them again.
+              </p>
+            )}
           </div>
           <div className="field mb-14">
             <label htmlFor="uPassword">{editing ? "New password (optional)" : "Password"}</label>
@@ -333,6 +319,9 @@ export default function UserManagement() {
                 </option>
               ))}
             </select>
+            <p className="field-hint">
+              Admin has full access. For Staff and Guest, what they can open and do is set per user in the Permissions tab.
+            </p>
           </div>
           <div className="flex-end gap-10">
             <button type="button" className="btn btn-ghost" onClick={closeForm}>
@@ -350,7 +339,7 @@ export default function UserManagement() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
         title="Delete user"
-        message={`This will permanently remove ${deleteTarget?.name || "this user"}'s account. This can't be undone.`}
+        message={`This will permanently remove ${deleteTarget ? formatUserLabel(deleteTarget) : "this user"}'s account and its permissions. This can't be undone.`}
         busy={deleting}
       />
     </div>

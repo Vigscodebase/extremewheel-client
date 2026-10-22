@@ -19,6 +19,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authcontext";
 import { usePermissions } from "../context/permissioncontext";
 import axios from "../utils/axiosInstance";
+import { formatUserLabel } from "../utils/permissions";
 
 const ICONS_MAP = {
   LayoutDashboard,
@@ -172,7 +173,7 @@ export default function Sidebar() {
           <button
             type="button"
             className={`sidebar-avatar mobile-topbar-avatar ${profileOpen ? "is-open" : ""}`}
-            title={user?.name || user?.email}
+            title={formatUserLabel(user)}
             onClick={() => setProfileOpen((prev) => !prev)}
           >
             {initials}
@@ -298,7 +299,7 @@ export default function Sidebar() {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="sidebar-avatar" title={user?.name || user?.email}>
+          <div className="sidebar-avatar" title={formatUserLabel(user)}>
             {initials}
           </div>
 

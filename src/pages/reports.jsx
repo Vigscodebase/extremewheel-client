@@ -2,6 +2,8 @@ import { Car, Download, FileBarChart, Scale, SlidersHorizontal, Search } from "l
 import { useState } from "react";
 import PageHeader from "../components/pageheader";
 import { useDownloadReportCsv, useReportsSummary } from "../hooks/queries/useReports";
+import { usePermissions } from "../context/permissioncontext";
+import { PERM } from "../utils/permissions";
 
 const REPORT_TYPES = [
   { type: "vehicles", label: "Vehicles added", icon: Car, tint: { soft: "var(--color-amber-dark)", solid: "var(--color-pink-soft)" } },
@@ -33,6 +35,8 @@ export default function Reports() {
 
   const { data: summary, isLoading } = useReportsSummary({ from, to });
   const downloadCsv = useDownloadReportCsv();
+  const { can } = usePermissions();
+  const canDownload = can(PERM.REPORTS_DOWNLOAD);
 
   const applyQuickRange = (days) => {
     setFrom(toDateInputValue(new Date(Date.now() - days * 24 * 60 * 60 * 1000)));
@@ -115,7 +119,9 @@ export default function Reports() {
       <div className="card mt-20">
         <h3 className="mb-4">Export to CSV</h3>
         <p className="text-muted mb-16">
-          Downloads are scoped to the date range selected above.
+          {canDownload
+            ? "Downloads are scoped to the date range selected above."
+            : "Record counts for the date range selected above. CSV download isn't enabled for your account."}
         </p>
         <div className="preset-grid">
           {REPORT_TYPES.map(({ type, label }) => (
@@ -124,17 +130,19 @@ export default function Reports() {
                 <p className="preset-label">{label}</p>
                 <p className="preset-size">{summary?.[SUMMARY_KEY[type]] ?? 0} record(s) in range</p>
               </div>
-              <div className="preset-actions">
-                <button
-                  type="button"
-                  className="icon-btn"
-                  title={`Download ${label} CSV`}
-                  onClick={() => downloadCsv.mutate({ type, from, to })}
-                  disabled={downloadCsv.isPending}
-                >
-                  <Download size={14} />
-                </button>
-              </div>
+              {canDownload && (
+                <div className="preset-actions">
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    title={`Download ${label} CSV`}
+                    onClick={() => downloadCsv.mutate({ type, from, to })}
+                    disabled={downloadCsv.isPending}
+                  >
+                    <Download size={14} />
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
