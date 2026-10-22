@@ -3,11 +3,14 @@ import { useMemo, useState } from "react";
 import ConfirmDialog from "../components/confirmdialog";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
+import FieldError from "../components/FieldError";
+import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
 import UserPermissionsPanel from "../components/userpermissionspanel";
 import { useAuth } from "../context/authcontext";
 import { useCreateUser, useDeleteUser, useUpdateUser, useUsersQuery } from "../hooks/queries/useUsers";
 import { ROLES } from "../utils/constants";
 import { formatUserLabel } from "../utils/permissions";
+import { validateEmail, validateFullName, validatePassword } from "../utils/validation";
 
 const MOCK_USERS = [
   { _id: "u1", name: "Alicia Roy", email: "alicia@fleet.io", role: "admin", createdAt: "2025-11-02" },
@@ -34,6 +37,7 @@ export default function UserManagement() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -62,6 +66,7 @@ export default function UserManagement() {
     setEditing(null);
     setForm(emptyForm);
     setFormError("");
+    setFieldErrors({});
     setShowPassword(false);
     setFormOpen(true);
   };
@@ -70,30 +75,52 @@ export default function UserManagement() {
     setEditing(u);
     setForm({ name: u.name, email: u.email, password: "", role: u.role });
     setFormError("");
+    setFieldErrors({});
     setShowPassword(false);
     setFormOpen(true);
   };
 
   const closeForm = () => setFormOpen(false);
 
-  const onFormChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const validators = {
+    name: (v) => validateFullName(v),
+    email: (v) => validateEmail(v),
+    password: (v) => validatePassword(v, { required: !editing }),
+  };
+
+  // Re-validates a field as the user types, but only once it has shown an error
+  // (so a pristine field isn't flagged before the user touches it).
+  const onFormChange = (e) => {
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
+    if (validators[name] && fieldErrors[name] !== undefined) {
+      setFieldErrors((errs) => ({ ...errs, [name]: validators[name](value) }));
+    }
+  };
+  const onFieldBlur = (e) => {
+    const { name, value } = e.target;
+    if (validators[name]) setFieldErrors((errs) => ({ ...errs, [name]: validators[name](value) }));
+  };
 
   const submitForm = async (e) => {
     e.preventDefault();
     setFormError("");
-    if (!form.name || !form.email || (!editing && !form.password)) {
-      setFormError("Name, email and password are required.");
-      return;
-    }
+    const errs = {
+      name: validators.name(form.name),
+      email: validators.email(form.email),
+      password: validators.password(form.password),
+    };
+    setFieldErrors(errs);
+    if (errs.name || errs.email || errs.password) return;
     try {
       if (editing) {
-        const payload = { id: editing._id, name: form.name, email: form.email, role: form.role };
+        const payload = { id: editing._id, name: form.name.trim(), email: form.email.trim(), role: form.role };
         if (form.password) payload.password = form.password;
         const updated = await updateUserMutation.mutateAsync(payload);
         // Permissions belong to the email address — if it changed they were wiped.
         setResetNotice(updated?.permissionsReset ? { id: updated._id, label: formatUserLabel(updated) } : null);
       } else {
-        await createUserMutation.mutateAsync(form);
+        await createUserMutation.mutateAsync({ ...form, name: form.name.trim(), email: form.email.trim() });
       }
       setFormOpen(false);
     } catch (err) {
@@ -255,7 +282,7 @@ export default function UserManagement() {
       </div>
 
       <Modal open={formOpen} onClose={closeForm} title={editing ? "Edit user" : "Add user"} width={440}>
-        <form onSubmit={submitForm}>
+        <form onSubmit={submitForm} noValidate>
           {formError && (
             <div className="alert-error">
               {formError}
@@ -263,11 +290,32 @@ export default function UserManagement() {
           )}
           <div className="field mb-14">
             <label htmlFor="uName">Full name</label>
-            <input id="uName" name="name" value={form.name} onChange={onFormChange} placeholder="Jane Doe" />
+            <input
+              id="uName"
+              name="name"
+              value={form.name}
+              onChange={onFormChange}
+              onBlur={onFieldBlur}
+              placeholder="Jane Doe"
+              aria-invalid={!!fieldErrors.name}
+              aria-describedby={fieldErrors.name ? "uNameError" : undefined}
+            />
+            <FieldError id="uNameError" message={fieldErrors.name} />
           </div>
           <div className="field mb-14">
             <label htmlFor="uEmail">Email</label>
-            <input id="uEmail" name="email" type="email" value={form.email} onChange={onFormChange} placeholder="jane@company.com" />
+            <input
+              id="uEmail"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={onFormChange}
+              onBlur={onFieldBlur}
+              placeholder="jane@company.com"
+              aria-invalid={!!fieldErrors.email}
+              aria-describedby={fieldErrors.email ? "uEmailError" : undefined}
+            />
+            <FieldError id="uEmailError" message={fieldErrors.email} />
             {editing && form.email.trim().toLowerCase() !== (editing.email || "").toLowerCase() && (
               <p className="field-hint warn-text">
                 Changing the email resets this user's permissions — you'll need to grant them again.
@@ -284,6 +332,8 @@ export default function UserManagement() {
                 autoComplete="new-password"
                 value={form.password}
                 onChange={onFormChange}
+                onBlur={onFieldBlur}
+                aria-invalid={!!fieldErrors.password}
                 placeholder="••••••••"
                 style={{ paddingRight: 42 }}
               />
@@ -309,6 +359,8 @@ export default function UserManagement() {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+            <FieldError message={fieldErrors.password} />
+            <PasswordStrengthMeter password={form.password} />
           </div>
           <div className="field field-mb-lg">
             <label htmlFor="uRole">Role</label>

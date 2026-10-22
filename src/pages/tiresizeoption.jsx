@@ -20,6 +20,7 @@ import {
   useVehicleLookupMakes,
 } from "../hooks/queries/useVehicleLookup";
 import { tireDiameterInches } from "../utils/tireMath";
+import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
 
 const MOCK_PRESETS = [
   { _id: "t1", label: "Ford", make: "Ford", width: 225, aspect: 65, rim: 17 },
@@ -261,15 +262,15 @@ export default function TireSizeOption() {
             <div className="preset-form-grid">
               <div className="field">
                 <label htmlFor="pWidth">Width (mm)</label>
-                <input id="pWidth" type="number" value={form.width} onChange={(e) => setForm((f) => ({ ...f, width: e.target.value }))} />
+                <input id="pWidth" {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.width} value={form.width} onChange={(e) => setForm((f) => ({ ...f, width: onlyDigits(e.target.value, TIRE_MAX.width) }))} />
               </div>
               <div className="field">
                 <label htmlFor="pAspect">Aspect (%)</label>
-                <input id="pAspect" type="number" value={form.aspect} onChange={(e) => setForm((f) => ({ ...f, aspect: e.target.value }))} />
+                <input id="pAspect" {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.aspect} value={form.aspect} onChange={(e) => setForm((f) => ({ ...f, aspect: onlyDigits(e.target.value, TIRE_MAX.aspect) }))} />
               </div>
               <div className="field">
                 <label htmlFor="pRim">Rim (in)</label>
-                <input id="pRim" type="number" value={form.rim} onChange={(e) => setForm((f) => ({ ...f, rim: e.target.value }))} />
+                <input id="pRim" {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.rim} value={form.rim} onChange={(e) => setForm((f) => ({ ...f, rim: onlyDigits(e.target.value, TIRE_MAX.rim) }))} />
               </div>
             </div>
             <div className="modal-actions">

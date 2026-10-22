@@ -7,6 +7,7 @@ import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { usePermissions } from "../context/permissioncontext";
 import { PERM } from "../utils/permissions";
+import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
 import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
 import {
   useDownloadOeTireSizeXlsx,
@@ -472,15 +473,15 @@ export default function PlusSizeOptions() {
         <div className="tire-input-grid">
           <div className="field">
             <label>Width</label>
-            <input type="number" value={oe.width} onChange={(e) => setOe((f) => ({ ...f, width: e.target.value }))} />
+            <input {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.width} value={oe.width} onChange={(e) => setOe((f) => ({ ...f, width: onlyDigits(e.target.value, TIRE_MAX.width) }))} />
           </div>
           <div className="field">
             <label>Aspect</label>
-            <input type="number" value={oe.aspect} onChange={(e) => setOe((f) => ({ ...f, aspect: e.target.value }))} />
+            <input {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.aspect} value={oe.aspect} onChange={(e) => setOe((f) => ({ ...f, aspect: onlyDigits(e.target.value, TIRE_MAX.aspect) }))} />
           </div>
           <div className="field">
             <label>Rim</label>
-            <input type="number" value={oe.rim} onChange={(e) => setOe((f) => ({ ...f, rim: e.target.value }))} />
+            <input {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.rim} value={oe.rim} onChange={(e) => setOe((f) => ({ ...f, rim: onlyDigits(e.target.value, TIRE_MAX.rim) }))} />
           </div>
           {/*
             TEMPORARILY DISABLED — Target rim (optional). See the note by

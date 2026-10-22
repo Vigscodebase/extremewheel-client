@@ -11,6 +11,7 @@ import PageHeader from "../components/pageheader";
 import { useAuth } from "../context/authcontext";
 import { usePermissions } from "../context/permissioncontext";
 import { PERM } from "../utils/permissions";
+import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
 import { useCustomersQuery, useDeleteCustomer } from "../hooks/queries/useCustomers";
 import {
   useAddVehicleGalleryPhoto,
@@ -888,25 +889,28 @@ export default function VehicleNotes() {
                 <div className="field">
                   <label>Width</label>
                   <input
-                    type="number"
+                    {...NUMERIC_INPUT_PROPS}
+                    maxLength={TIRE_MAX.width}
                     value={form.existingSpec.tyre.width}
-                    onChange={(e) => updateSpec("existingSpec")({ tyre: { width: e.target.value } })}
+                    onChange={(e) => updateSpec("existingSpec")({ tyre: { width: onlyDigits(e.target.value, TIRE_MAX.width) } })}
                   />
                 </div>
                 <div className="field">
                   <label>Aspect</label>
                   <input
-                    type="number"
+                    {...NUMERIC_INPUT_PROPS}
+                    maxLength={TIRE_MAX.aspect}
                     value={form.existingSpec.tyre.aspect}
-                    onChange={(e) => updateSpec("existingSpec")({ tyre: { aspect: e.target.value } })}
+                    onChange={(e) => updateSpec("existingSpec")({ tyre: { aspect: onlyDigits(e.target.value, TIRE_MAX.aspect) } })}
                   />
                 </div>
                 <div className="field">
                   <label>Rim</label>
                   <input
-                    type="number"
+                    {...NUMERIC_INPUT_PROPS}
+                    maxLength={TIRE_MAX.rim}
                     value={form.existingSpec.tyre.rim}
-                    onChange={(e) => updateSpec("existingSpec")({ tyre: { rim: e.target.value } })}
+                    onChange={(e) => updateSpec("existingSpec")({ tyre: { rim: onlyDigits(e.target.value, TIRE_MAX.rim) } })}
                   />
                 </div>
               </div>
@@ -928,25 +932,28 @@ export default function VehicleNotes() {
                 <div className="field">
                   <label>Width</label>
                   <input
-                    type="number"
+                    {...NUMERIC_INPUT_PROPS}
+                    maxLength={TIRE_MAX.width}
                     value={form.upgradedSpec.tyre.width}
-                    onChange={(e) => updateSpec("upgradedSpec")({ tyre: { width: e.target.value } })}
+                    onChange={(e) => updateSpec("upgradedSpec")({ tyre: { width: onlyDigits(e.target.value, TIRE_MAX.width) } })}
                   />
                 </div>
                 <div className="field">
                   <label>Aspect</label>
                   <input
-                    type="number"
+                    {...NUMERIC_INPUT_PROPS}
+                    maxLength={TIRE_MAX.aspect}
                     value={form.upgradedSpec.tyre.aspect}
-                    onChange={(e) => updateSpec("upgradedSpec")({ tyre: { aspect: e.target.value } })}
+                    onChange={(e) => updateSpec("upgradedSpec")({ tyre: { aspect: onlyDigits(e.target.value, TIRE_MAX.aspect) } })}
                   />
                 </div>
                 <div className="field">
                   <label>Rim</label>
                   <input
-                    type="number"
+                    {...NUMERIC_INPUT_PROPS}
+                    maxLength={TIRE_MAX.rim}
                     value={form.upgradedSpec.tyre.rim}
-                    onChange={(e) => updateSpec("upgradedSpec")({ tyre: { rim: e.target.value } })}
+                    onChange={(e) => updateSpec("upgradedSpec")({ tyre: { rim: onlyDigits(e.target.value, TIRE_MAX.rim) } })}
                   />
                 </div>
               </div>
