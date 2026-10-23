@@ -2,6 +2,7 @@ import { ArrowRightLeft, Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PageHeader from "../components/pageheader";
+import SaveComparisonModal from "../components/SaveComparisonModal";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { useLogTireComparison } from "../hooks/queries/useActivity";
@@ -76,12 +77,19 @@ export default function TireSizeComparison() {
   const logComparison = useLogTireComparison();
   const { can } = usePermissions();
   const [saved, setSaved] = useState(false);
-  const saveComparison = async () => {
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+
+  // Runs after the popup has saved the comparison (with its vehicle details and
+  // customer) to the saved-comparisons collection: logs it to recent activity as
+  // before, with the vehicle name leading the summary so the recent-comparisons
+  // list shows which vehicle it belongs to.
+  const logToRecentActivity = async (savedComparison) => {
+    const sizes = `${tireA.width}/${tireA.aspect}R${tireA.rim} vs ${tireB.width}/${tireB.aspect}R${tireB.rim}`;
     await logComparison.mutateAsync({
       tireA,
       tireB,
-      diffPct: Number(diffPct.toFixed(2)),
-      summary: `${tireA.width}/${tireA.aspect}R${tireA.rim} vs ${tireB.width}/${tireB.aspect}R${tireB.rim}`,
+      diffPct: roundedDiffPct,
+      summary: savedComparison?.name ? `${savedComparison.name} — ${sizes}` : sizes,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -90,6 +98,7 @@ export default function TireSizeComparison() {
   const diameterA = tireDiameterInches(tireA);
   const diameterB = tireDiameterInches(tireB);
   const diffPct = speedoDifferencePct(tireA, tireB);
+  const roundedDiffPct = Number(diffPct.toFixed(2));
 
   const rows = useMemo(
     () => [
@@ -119,7 +128,7 @@ export default function TireSizeComparison() {
         <div className="section-title-row mb-4">
           <div />
           {can(PERM.COMPARISON_SAVE) && (
-            <button type="button" className="btn btn-ghost" onClick={saveComparison} disabled={logComparison.isPending}>
+            <button type="button" className="btn btn-ghost" onClick={() => setSaveModalOpen(true)} disabled={logComparison.isPending}>
               <Save size={14} /> {saved ? "Saved!" : logComparison.isPending ? "Saving…" : "Save comparison"}
             </button>
           )}
@@ -163,6 +172,17 @@ export default function TireSizeComparison() {
         {/* <TireSuggestions tire={tireA} label="Tire A" />
         <TireSuggestions tire={tireB} label="Tire B" /> */}
       </div>
+
+      {/* Mounted only while open so every "Save comparison" starts a fresh form. */}
+      {saveModalOpen && (
+        <SaveComparisonModal
+          tireA={tireA}
+          tireB={tireB}
+          diffPct={roundedDiffPct}
+          onClose={() => setSaveModalOpen(false)}
+          onSaveComparison={logToRecentActivity}
+        />
+      )}
     </div>
   );
 }
