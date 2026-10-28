@@ -1,9 +1,20 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as savedComparisonsApi from "../../api/savedComparisonsApi";
 
-// No list is shown anywhere yet, so there is no query cache to invalidate.
+export const savedComparisonsKey = ["saved-comparisons"];
+
+export function useSavedComparisonsQuery() {
+  return useQuery({
+    queryKey: savedComparisonsKey,
+    queryFn: savedComparisonsApi.fetchSavedComparisons,
+  });
+}
+
+// A new save shows up in the "Saved comparisons" table straight away.
 export function useCreateSavedComparison() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: savedComparisonsApi.createSavedComparison,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: savedComparisonsKey }),
   });
 }

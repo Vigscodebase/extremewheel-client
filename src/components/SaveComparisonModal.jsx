@@ -1,4 +1,3 @@
-import { ImagePlus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ConfirmDialog from "./confirmdialog";
 import CustomerFormModal from "./CustomerFormModal";
@@ -6,7 +5,6 @@ import CustomerSelect from "./CustomerSelect";
 import EditableSelect from "./EditableSelect";
 import Modal from "./modal";
 import { useAuth } from "../context/authcontext";
-import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
 import { useCustomersQuery, useDeleteCustomer } from "../hooks/queries/useCustomers";
 import { useCreateSavedComparison } from "../hooks/queries/useSavedComparisons";
 import {
@@ -22,27 +20,16 @@ import {
   useVehicleLookupYears,
 } from "../hooks/queries/useVehicleLookup";
 
-function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 /**
  * "Save comparison" popup for the Tire Size Comparison page.
  *
- * Collects the same vehicle details as the Vehicle Notes "Add vehicle" form —
- * name, Make -> Model -> Type (cascading), Year, engine + tyre spec, a
- * multi-photo gallery and (staff / admin) a customer — with the same
- * predefined, dynamic dropdowns (EditableSelect + the Vehicle Notes database),
- * the same "+ Add new…" / delete rules, the same customer dropdown (same
- * Customer data, same add / edit / delete rules) and the same validation.
- *
- * A comparison is a plain Tire A vs Tire B, so there is ONE engine spec and ONE
- * tyre spec — no Existing / Upgraded pair.
+ * Collects the vehicle details the same way as the Vehicle Notes "Add vehicle"
+ * form — name, Make -> Model -> Type (cascading), Year and (staff / admin) a
+ * customer — with the same predefined, dynamic dropdowns (EditableSelect + the
+ * Vehicle Notes database), the same "+ Add new…" / delete rules, the same
+ * customer dropdown (same Customer data, same add / edit / delete rules) and
+ * the same validation. The comparison itself (Tire A vs Tire B) comes from the
+ * page, so no tyre size, engine spec or photos are asked for here.
  *
  * On submit it saves to the separate "saved comparisons" collection (not a
  * Vehicle Note), then calls `onSaveComparison(saved)` so the page can log the
@@ -71,10 +58,7 @@ export default function SaveComparisonModal({ tireA, tireB, diffPct, onClose, on
     model: "",
     type: "",
     year: "",
-    gallery: [],
     customer: "", // customer _id ("" = none)
-    engine: "",
-    tyre: { width: "", aspect: "", rim: "" },
   });
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -119,8 +103,6 @@ export default function SaveComparisonModal({ tireA, tireB, diffPct, onClose, on
     }
   }, [lookupTypes]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const updateTyre = (patch) => setForm((f) => ({ ...f, tyre: { ...f.tyre, ...patch } }));
-
   // A newly added customer is selected straight away; an edited one keeps the
   // current selection and the prefilled email / phone refresh with the list.
   const onCustomerSaved = (saved, wasNew) => {
@@ -140,19 +122,6 @@ export default function SaveComparisonModal({ tireA, tireB, diffPct, onClose, on
     } finally {
       setCustomerDelete(null);
     }
-  };
-
-  const onGalleryFilesChange = async (e) => {
-    const input = e.target;
-    const files = Array.from(input.files || []);
-    if (files.length === 0) return;
-    const dataUrls = await Promise.all(files.map(fileToDataUrl));
-    setForm((f) => ({ ...f, gallery: [...f.gallery, ...dataUrls] }));
-    input.value = "";
-  };
-
-  const removeGalleryPhotoAt = (index) => {
-    setForm((f) => ({ ...f, gallery: f.gallery.filter((_, i) => i !== index) }));
   };
 
   const submitForm = async (e) => {
@@ -250,22 +219,6 @@ export default function SaveComparisonModal({ tireA, tireB, diffPct, onClose, on
     }
     return `Delete the type "${value}" from ${make} ${model}? If it's the only type for this model, the model is removed too. Existing vehicle notes keep their type.`;
   })();
-
-  const renderTyreFields = () => (
-    <div className="tire-input-grid">
-      {["width", "aspect", "rim"].map((key) => (
-        <div className="field" key={key}>
-          <label>{key.charAt(0).toUpperCase() + key.slice(1)}</label>
-          <input
-            {...NUMERIC_INPUT_PROPS}
-            maxLength={TIRE_MAX[key]}
-            value={form.tyre[key]}
-            onChange={(e) => updateTyre({ [key]: onlyDigits(e.target.value, TIRE_MAX[key]) })}
-          />
-        </div>
-      ))}
-    </div>
-  );
 
   return (
     <>
@@ -366,39 +319,6 @@ export default function SaveComparisonModal({ tireA, tireB, diffPct, onClose, on
               </div>
             </div>
           )}
-
-          <div className="field-mb-lg">
-            <div className="spec-section">
-              <div className="field field-mb">
-                <label>Engine spec</label>
-                <input
-                  value={form.engine}
-                  onChange={(e) => setForm((f) => ({ ...f, engine: e.target.value }))}
-                  placeholder="e.g. 2.2L Duratorq TDCi Diesel"
-                />
-              </div>
-              {renderTyreFields()}
-            </div>
-          </div>
-
-          <div className="field field-mb-lg">
-            <label>Image gallery</label>
-            <div className="gallery-grid">
-              {form.gallery.map((photo, i) => (
-                <div key={`${i}-${photo.length}`} className="gallery-thumb">
-                  <img src={photo} alt="gallery item" />
-                  <button type="button" className="gallery-thumb-remove" onClick={() => removeGalleryPhotoAt(i)} title="Remove">
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
-              <label className="gallery-add-tile">
-                <ImagePlus size={18} />
-                Add photos
-                <input type="file" accept="image/*" multiple onChange={onGalleryFilesChange} hidden />
-              </label>
-            </div>
-          </div>
 
           <div className="modal-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>

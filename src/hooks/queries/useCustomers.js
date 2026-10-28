@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as customersApi from "../../api/customersApi";
+import { savedComparisonsKey } from "./useSavedComparisons";
+import { tireOptionsKey } from "./useTireOptions";
 import { vehicleNotesKey } from "./useVehicleNotes";
 
 export const customersKey = ["customers"];
@@ -14,8 +16,9 @@ export function useCustomersQuery({ enabled = true } = {}) {
   });
 }
 
-// A customer change also changes what the vehicle notes show (their populated
-// customer name / email / phone), so refresh those too.
+// A customer change also changes what the vehicle notes, the saved tire
+// comparisons and the Tire Size Option presets show (their populated customer
+// name / email / phone), so refresh those too.
 function useCustomerMutation(mutationFn) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -23,6 +26,8 @@ function useCustomerMutation(mutationFn) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customersKey });
       queryClient.invalidateQueries({ queryKey: vehicleNotesKey });
+      queryClient.invalidateQueries({ queryKey: savedComparisonsKey });
+      queryClient.invalidateQueries({ queryKey: tireOptionsKey });
     },
   });
 }

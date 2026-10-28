@@ -1,13 +1,16 @@
-import { Box, Pencil, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Box, FilterX, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import ConfirmDialog from "../components/confirmdialog";
+import CustomerFormModal from "../components/CustomerFormModal";
+import CustomerSelect from "../components/CustomerSelect";
 import EditableSelect from "../components/EditableSelect";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { useAuth } from "../context/authcontext";
+import { useCustomersQuery, useDeleteCustomer } from "../hooks/queries/useCustomers";
 import {
   useCreateTireOption,
   useDeleteTireOption,
@@ -32,7 +35,11 @@ const MOCK_PRESETS = [
 // "Preset name" dropdown, which is backed by the shared Vehicle Notes make
 // list (saved as both `make` and `label`, since the Calculator, Comparison
 // and Tech Data pages display `label`).
-const emptyForm = { make: "", width: 205, aspect: 55, rim: 16 };
+//
+// `customer` is the _id of a customer ("" = none) — one of the shared customers,
+// the same list Vehicle Notes uses. Only the link is saved with the preset.
+const emptyForm = { make: "", width: 205, aspect: 55, rim: 16, customer: "" };
+const emptyFilters = { search: "", customer: "" };
 
 export default function TireSizeOption() {
   const location = useLocation();
@@ -65,6 +72,15 @@ export default function TireSizeOption() {
   const addMakeMutation = useAddVehicleLookupMake();
   const deleteMakeMutation = useDeleteVehicleLookupMake();
 
+  // Customers: staff and admin can add; only admin can edit and delete (the
+  // server enforces the same). Everyone else never sees customer data, so the
+  // list isn't even requested for them. This is the same shared customer list
+  // (and the same add / edit / delete) as the Vehicle Notes page.
+  const { data: customers, isLoading: loadingCustomers } = useCustomersQuery({ enabled: canManagePresets });
+  const deleteCustomerMutation = useDeleteCustomer();
+  const [customerModal, setCustomerModal] = useState({ open: false, customer: null });
+  const [customerDelete, setCustomerDelete] = useState(null);
+
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -72,6 +88,45 @@ export default function TireSizeOption() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [previewPreset, setPreviewPreset] = useState(null);
   const [makeToDelete, setMakeToDelete] = useState(null);
+  const [filters, setFilters] = useState(emptyFilters);
+
+  const filtersActive = Boolean(filters.search.trim() || filters.customer);
+  const clearFilters = () => setFilters(emptyFilters);
+
+  // Customer filter options — the customer's name, plus their email when
+  // another customer shares that exact name (only email/phone are unique).
+  const customerFilterOptions = useMemo(() => {
+    const list = customers || [];
+    const nameCount = list.reduce((acc, c) => ({ ...acc, [c.fullName.toLowerCase()]: (acc[c.fullName.toLowerCase()] || 0) + 1 }), {});
+    return list.map((c) => ({
+      value: c._id,
+      label: nameCount[c.fullName.toLowerCase()] > 1 ? `${c.fullName} (${c.email})` : c.fullName,
+    }));
+  }, [customers]);
+
+  // The customer picked in the Add / Edit form, for the read-only email/phone
+  // fields — from the prefetched list, or (while that loads) the preset's own
+  // populated customer.
+  const selectedCustomer = useMemo(() => {
+    if (!form.customer) return null;
+    const fromList = (customers || []).find((c) => c._id === form.customer);
+    if (fromList) return fromList;
+    return editing?.customer && editing.customer._id === form.customer ? editing.customer : null;
+  }, [customers, form.customer, editing]);
+
+  // Search box: preset name or customer name. The customer filter narrows to
+  // one customer. Filtering preserves the API's order (newest first).
+  const filteredPresets = useMemo(() => {
+    const q = filters.search.trim().toLowerCase();
+    return presets.filter((p) => {
+      if (q) {
+        const haystack = [p.label, p.customer?.fullName];
+        if (!haystack.some((field) => field && String(field).toLowerCase().includes(q))) return false;
+      }
+      if (filters.customer && p.customer?._id !== filters.customer) return false;
+      return true;
+    });
+  }, [presets, filters]);
 
   // Arrived here via a "Saved preset" suggestion chip elsewhere in the app —
   // open the add-preset form pre-loaded with that size so it's one click
@@ -80,7 +135,7 @@ export default function TireSizeOption() {
     const prefill = location.state?.prefillPreset;
     if (prefill && canManagePresets) {
       setEditing(null);
-      setForm({ make: prefill.make || "", width: prefill.width, aspect: prefill.aspect, rim: prefill.rim });
+      setForm({ make: prefill.make || "", width: prefill.width, aspect: prefill.aspect, rim: prefill.rim, customer: "" });
       setFormError("");
       setFormOpen(true);
     }
@@ -98,10 +153,17 @@ export default function TireSizeOption() {
 
   const openEdit = (p) => {
     setEditing(p);
-    // Older presets were saved with a custom name and an optional make — only
-    // the make carries over; saving names the preset after it, so it lands in
-    // the "Preset name" field.
-    setForm({ make: p.make || "", width: p.width, aspect: p.aspect, rim: p.rim });
+    // The preset's name is what the card shows: `label`. `make` mirrors it
+    // when the server stores it, but it isn't always saved, so fall back to
+    // the label — otherwise the "Preset name" field opens blank.
+    const presetName = p.make || p.label || "";
+    // Reuse the dropdown's own spelling when the name matches a known one only
+    // by letter case ("BENTLEY" vs "Bentley"), so it shows as selected.
+    const knownMake = (vehicleMakes || []).find((m) => m.toLowerCase() === presetName.toLowerCase());
+    // The customer arrives populated ({ _id, fullName, ... }); tolerate a bare
+    // id too so the field is never left blank for a preset that has one.
+    const customerId = typeof p.customer === "string" ? p.customer : p.customer?._id || "";
+    setForm({ make: knownMake || presetName, width: p.width, aspect: p.aspect, rim: p.rim, customer: customerId });
     setFormError("");
     setFormOpen(true);
   };
@@ -117,7 +179,8 @@ export default function TireSizeOption() {
     // reuses the existing spelling instead of creating a near-duplicate.
     const existingMake = (vehicleMakes || []).find((m) => m.toLowerCase() === typedMake.toLowerCase());
     const make = existingMake || typedMake;
-    const payload = { label: make, make, width: Number(form.width), aspect: Number(form.aspect), rim: Number(form.rim) };
+    // customer: "" detaches the customer when editing (the server unsets it).
+    const payload = { label: make, make, width: Number(form.width), aspect: Number(form.aspect), rim: Number(form.rim), customer: form.customer || "" };
     try {
       if (editing) {
         await updateMutation.mutateAsync({ id: editing._id, ...payload });
@@ -131,7 +194,7 @@ export default function TireSizeOption() {
       // real option from now on. Never blocks or fails the preset save above.
       // Skipped when editing a preset without changing its name, so an older
       // preset whose name was since deleted doesn't bring it back.
-      const isNewMake = !existingMake && make !== editing?.make;
+      const isNewMake = !existingMake && make !== (editing?.make || editing?.label);
       if (canManagePresets && isNewMake) {
         addMakeMutation.mutate(make, { onError: () => { } });
       }
@@ -170,6 +233,27 @@ export default function TireSizeOption() {
     }
   };
 
+  // --- Customers (dropdown on the Add / Edit preset form) ---
+  // A newly added customer is selected straight away; an edited one keeps the
+  // current selection (and the lists refresh on their own).
+  const onCustomerSaved = (saved, wasNew) => {
+    if (wasNew && saved?._id) setForm((f) => ({ ...f, customer: saved._id }));
+  };
+
+  const confirmDeleteCustomer = async () => {
+    if (!customerDelete) return;
+    const { _id } = customerDelete;
+    try {
+      await deleteCustomerMutation.mutateAsync(_id);
+      setForm((f) => (f.customer === _id ? { ...f, customer: "" } : f));
+      setFilters((f) => (f.customer === _id ? { ...f, customer: "" } : f));
+    } catch (err) {
+      setFormError(err?.response?.data?.message || "Couldn't delete that customer. Please try again.");
+    } finally {
+      setCustomerDelete(null);
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -185,19 +269,58 @@ export default function TireSizeOption() {
         }
       />
 
+      {!loading && presets.length > 0 && (
+        <div className={`card vehicle-filter-bar mb-20${canManagePresets ? "" : " preset-search-bar"}`}>
+          <div className="search-box vehicle-search">
+            <Search size={16} color="var(--color-muted)" />
+            <input
+              type="search"
+              placeholder={canManagePresets ? "Search by preset name or customer name…" : "Search by preset name…"}
+              value={filters.search}
+              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+              aria-label="Search presets"
+            />
+          </div>
+          {/* {canManagePresets && (
+            <div className="preset-filter-grid">
+              <div className="field">
+                <label>Customer</label>
+                <select value={filters.customer} onChange={(e) => setFilters((f) => ({ ...f, customer: e.target.value }))}>
+                  <option value="">All customers</option>
+                  {customerFilterOptions.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+              <button type="button" className="btn btn-ghost vehicle-filter-clear" onClick={clearFilters} disabled={!filtersActive}>
+                <FilterX size={14} /> Clear filter
+              </button>
+            </div>
+          )} */}
+        </div>
+      )}
+
       {loading ? (
         <p className="text-muted">Loading presets…</p>
       ) : presets.length === 0 ? (
         <div className="card empty-state-block">
           No tire presets yet{canManagePresets ? " — add your first one." : "."}
         </div>
+      ) : filteredPresets.length === 0 ? (
+        <div className="card empty-state-block">
+          No presets match the current filters.
+        </div>
       ) : (
         <div className="preset-grid">
-          {presets.map((p) => (
+          {filteredPresets.map((p) => (
             <div key={p._id} className="card preset-card">
               <div className="preset-info">
                 <p className="preset-label">{p.label}</p>
                 {p.make && p.make !== p.label && <span className="badge badge-model mb-4">{p.make}</span>}
+                {p.customer && (
+                  <p className="vehicle-customer fs-11 mt-4">
+                    <strong>{p.customer.fullName}</strong>
+                    <span className="text-muted">{[p.customer.email, p.customer.phone].filter(Boolean).join(" · ")}</span>
+                  </p>
+                )}
                 <p className="preset-size">
                   {p.width}/{p.aspect}R{p.rim}
                 </p>
@@ -273,6 +396,34 @@ export default function TireSizeOption() {
                 <input id="pRim" {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.rim} value={form.rim} onChange={(e) => setForm((f) => ({ ...f, rim: onlyDigits(e.target.value, TIRE_MAX.rim) }))} />
               </div>
             </div>
+
+            {/* Customer — staff and admin only (this whole form is). Options
+                read "Full name (email)". Staff and admin can add a customer
+                from the dropdown; only admin gets the edit / delete buttons.
+                Picking a customer prefills the (read-only) email and phone
+                below. The customer list is shared with Vehicle Notes. */}
+            <div className="field-mb">
+              <CustomerSelect
+                value={form.customer}
+                customers={customers}
+                loading={loadingCustomers}
+                onChange={(id) => setForm((f) => ({ ...f, customer: id }))}
+                onAdd={() => setCustomerModal({ open: true, customer: null })}
+                onEdit={isAdmin ? (c) => setCustomerModal({ open: true, customer: c }) : undefined}
+                onDelete={isAdmin ? (c) => setCustomerDelete(c) : undefined}
+              />
+              <div className="tire-input-grid cols-2 mt-10">
+                <div className="field">
+                  <label>Customer email</label>
+                  <input type="email" value={selectedCustomer?.email || ""} placeholder="Select a customer" readOnly />
+                </div>
+                <div className="field">
+                  <label>Customer phone</label>
+                  <input type="tel" value={selectedCustomer?.phone || ""} placeholder="Select a customer" readOnly />
+                </div>
+              </div>
+            </div>
+
             <div className="modal-actions">
               <button type="button" className="btn btn-ghost" onClick={() => setFormOpen(false)}>
                 Cancel
@@ -292,6 +443,28 @@ export default function TireSizeOption() {
           onConfirm={confirmDelete}
           title="Delete preset"
           message={`Remove "${deleteTarget?.label}"? This can't be undone.`}
+        />
+      )}
+
+      {/* Rendered outside the preset form on purpose: a submit inside this
+          modal would otherwise bubble through the portal to the preset form. */}
+      {canManagePresets && (
+        <CustomerFormModal
+          open={customerModal.open}
+          customer={customerModal.customer}
+          onClose={() => setCustomerModal((m) => ({ ...m, open: false }))}
+          onSaved={(saved) => onCustomerSaved(saved, !customerModal.customer)}
+        />
+      )}
+
+      {isAdmin && (
+        <ConfirmDialog
+          open={!!customerDelete}
+          onClose={() => setCustomerDelete(null)}
+          onConfirm={confirmDeleteCustomer}
+          busy={deleteCustomerMutation.isPending}
+          title="Delete customer"
+          message={`Delete ${customerDelete?.fullName || "this customer"} (${customerDelete?.email || ""})? This customer is shared with Vehicle Notes, so they'll be removed from any vehicle notes, saved comparisons and tire presets they're attached to — the vehicles and presets themselves are kept. This can't be undone.`}
         />
       )}
 

@@ -5246,3 +5246,100 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
 
 .field-hint { margin: 6px 0 0; font-size: 12.5px; color: var(--color-muted); }
 .field-hint.warn-text { color: var(--color-amber-dark); }
+
+/* Search bar above the preset grid on the Tire Size Option page */
+.preset-search-bar .search-box.vehicle-search {
+    margin-bottom: 0;
+}
+
+/* Customer filter row under the search box on the Tire Size Option page */
+.preset-filter-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 320px) auto;
+    gap: 14px;
+    align-items: end;
+}
+
+@media (max-width: 600px) {
+    .preset-filter-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =====================================================================
+   Tire Size Comparison: "Saved comparisons" details listing
+   (search + filter bar reuse the Vehicle Notes classes above)
+   ===================================================================== */
+
+.saved-comparisons {
+    margin-top: 32px;
+}
+
+/* The table card carries its own padding so rows get the full card width */
+.saved-comparisons-card {
+    padding: 8px 0 0;
+    overflow: hidden;
+}
+
+.saved-comparisons-table {
+    min-width: 900px;
+}
+
+.saved-comparisons-table td {
+    vertical-align: top;
+}
+
+.saved-vehicle-name {
+    font-weight: 700;
+    margin: 0 0 6px;
+}
+
+.saved-vehicle-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.saved-nowrap {
+    white-space: nowrap;
+}
+
+.saved-diff {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.saved-diff.ok {
+    background: var(--color-mint-soft);
+    color: var(--color-mint);
+}
+
+.saved-diff.warn {
+    background: var(--color-amber-soft);
+    color: #A05D0F;
+}
+
+.saved-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 20px;
+    border-top: 1px solid var(--color-border);
+}
+
+.saved-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.saved-apply-btn {
+    padding: 7px 12px;
+    font-size: 12.5px;
+    white-space: nowrap;
+}

@@ -1199,7 +1199,7 @@ export default function VehicleNotes() {
           onConfirm={confirmDeleteCustomer}
           busy={deleteCustomerMutation.isPending}
           title="Delete customer"
-          message={`Delete ${customerDelete?.fullName || "this customer"} (${customerDelete?.email || ""})? They'll be removed from any vehicle notes they're attached to — the vehicles themselves are kept. This can't be undone.`}
+          message={`Delete ${customerDelete?.fullName || "this customer"} (${customerDelete?.email || ""})? They'll be removed from any vehicle notes and tire presets they're attached to — the vehicles and presets themselves are kept. This can't be undone.`}
         />
       )}
 

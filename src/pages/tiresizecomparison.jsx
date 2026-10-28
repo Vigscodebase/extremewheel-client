@@ -1,8 +1,9 @@
 import { ArrowRightLeft, Save } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PageHeader from "../components/pageheader";
 import SaveComparisonModal from "../components/SaveComparisonModal";
+import SavedComparisonsList from "../components/SavedComparisonsList";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { useLogTireComparison } from "../hooks/queries/useActivity";
@@ -74,6 +75,28 @@ export default function TireSizeComparison() {
 
   const update = (setter) => (patch) => setter((prev) => ({ ...prev, ...patch }));
 
+  // "Apply" on a row of the Saved comparisons table: load that comparison's two
+  // tires into the form above and scroll back up to it. Bumping `applyKey`
+  // remounts the two TireForms so their "Load a saved preset" dropdowns drop
+  // back to "Custom size…" instead of still naming a preset that no longer
+  // matches the numbers.
+  const topRef = useRef(null);
+  const [applyKey, setApplyKey] = useState(0);
+  const [appliedFrom, setAppliedFrom] = useState(null);
+  const toTire = (t) => ({ width: Number(t.width), aspect: Number(t.aspect), rim: Number(t.rim) });
+  const applySavedComparison = (savedA, savedB, row) => {
+    setTireA(toTire(savedA));
+    setTireB(toTire(savedB));
+    setApplyKey((k) => k + 1);
+    setAppliedFrom({ name: row?.name || "saved comparison", at: Date.now() });
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  useEffect(() => {
+    if (!appliedFrom) return undefined;
+    const timer = setTimeout(() => setAppliedFrom(null), 5000);
+    return () => clearTimeout(timer);
+  }, [appliedFrom]);
+
   const logComparison = useLogTireComparison();
   const { can } = usePermissions();
   const [saved, setSaved] = useState(false);
@@ -113,15 +136,21 @@ export default function TireSizeComparison() {
   );
 
   return (
-    <div>
+    <div ref={topRef}>
       <PageHeader eyebrow="Tire library" title="Tire Size Comparison" subtitle="Compare two tire specs side by side before approving a swap." />
 
+      {appliedFrom && (
+        <div className="speedo-banner ok" role="status">
+          Loaded <strong>{appliedFrom.name}</strong> into the comparison: {tireA.width}/{tireA.aspect} R{tireA.rim} vs {tireB.width}/{tireB.aspect} R{tireB.rim}.
+        </div>
+      )}
+
       <div className="compare-grid">
-        <TireForm title="Tire A" value={tireA} onChange={update(setTireA)} presets={presets} />
+        <TireForm key={`a-${applyKey}`} title="Tire A" value={tireA} onChange={update(setTireA)} presets={presets} />
         <div className="compare-arrow">
           <ArrowRightLeft size={18} />
         </div>
-        <TireForm title="Tire B" value={tireB} onChange={update(setTireB)} presets={presets} />
+        <TireForm key={`b-${applyKey}`} title="Tire B" value={tireB} onChange={update(setTireB)} presets={presets} />
       </div>
 
       <div className="card compare-result-card">
@@ -172,6 +201,9 @@ export default function TireSizeComparison() {
         {/* <TireSuggestions tire={tireA} label="Tire A" />
         <TireSuggestions tire={tireB} label="Tire B" /> */}
       </div>
+
+      {/* Details listing of every saved comparison, with search + filters (same as Vehicle Notes) and an Apply button per row. */}
+      <SavedComparisonsList onApply={applySavedComparison} />
 
       {/* Mounted only while open so every "Save comparison" starts a fresh form. */}
       {saveModalOpen && (
