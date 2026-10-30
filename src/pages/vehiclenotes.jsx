@@ -1,15 +1,18 @@
-import { Camera, Car, Download, Eye, FileSpreadsheet, FilterX, ImagePlus, Images, MessageSquare, Pencil, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import { Camera, Car, Download, Eye, FileSpreadsheet, FilterX, ImagePlus, Images, MessageSquare, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../components/confirmdialog";
 import CustomerFormModal from "../components/CustomerFormModal";
 import CustomerSelect from "../components/CustomerSelect";
+import CursorPager from "../components/CursorPager";
+import SearchAutocomplete from "../components/SearchAutocomplete";
 import EditableSelect from "../components/EditableSelect";
 import Lightbox from "../components/lightbox";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
 import { useAuth } from "../context/authcontext";
 import { usePermissions } from "../context/permissioncontext";
+import useDebouncedValue from "../hooks/useDebouncedValue";
 import { PERM } from "../utils/permissions";
 import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
 import { useCustomersQuery, useDeleteCustomer } from "../hooks/queries/useCustomers";
@@ -21,7 +24,8 @@ import {
   useRemoveVehicleGalleryPhoto,
   useRemoveVehicleStaffNote,
   useUpdateVehicleNote,
-  useVehicleNotesQuery,
+  useVehicleNoteSuggestions,
+  useVehicleNotesPage,
 } from "../hooks/queries/useVehicleNotes";
 import {
   useDeleteVehicleLookupMake,
@@ -61,15 +65,54 @@ const emptyForm = {
   upgradedSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
 };
 
-const emptyFilters = { search: "", make: "", model: "", type: "", customer: "", yearFrom: "", yearTo: "" };
+const emptyFilters = { search: "", exact: false, make: "", model: "", type: "", customer: "", yearFrom: "", yearTo: "" };
 
-function fileToDataUrl(file) {
+function readAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+// Photos are stored as base64 data URLs inside the vehicle's MongoDB document.
+// Raw phone / camera photos are several MB each, so a vehicle with a handful of
+// photos made a ~22 MB request: it never finished uploading before the 15 s
+// axios timeout (so the save looked stuck on "Saving…" and then failed), and it
+// would also exceed MongoDB's 16 MB per-document limit. Downscale and re-encode
+// every photo before it goes into the form — a 1600 px JPEG is ~150–400 KB and
+// looks identical at the sizes the app displays.
+const MAX_PHOTO_EDGE = 1600;
+const PHOTO_QUALITY = 0.82;
+
+async function fileToDataUrl(file) {
+  const original = await readAsDataUrl(file);
+  // Only raster photos are re-encoded; anything else (or any failure) falls
+  // back to the original so a photo is never lost.
+  if (!file.type?.startsWith("image/") || file.type === "image/gif" || file.type === "image/svg+xml") return original;
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = original;
+    });
+    const scale = Math.min(1, MAX_PHOTO_EDGE / Math.max(img.naturalWidth, img.naturalHeight));
+    const width = Math.max(1, Math.round(img.naturalWidth * scale));
+    const height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff"; // JPEG has no transparency
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    const compressed = canvas.toDataURL("image/jpeg", PHOTO_QUALITY);
+    return compressed.length < original.length ? compressed : original;
+  } catch {
+    return original;
+  }
 }
 
 function toDateInputValue(value) {
@@ -111,8 +154,29 @@ export default function VehicleNotes() {
   const deleteCustomerMutation = useDeleteCustomer();
   const [customerModal, setCustomerModal] = useState({ open: false, customer: null });
   const [customerDelete, setCustomerDelete] = useState(null);
-  const { data: fetchedVehicles, isLoading: loading, isError: vehiclesError } = useVehicleNotesQuery();
-  const vehicles = vehiclesError ? MOCK_VEHICLES : fetchedVehicles || [];
+  // Paginated: one page of 10 cards at a time, fetched from the server with the
+  // search text (debounced) and filters — never every vehicle at once. See
+  // hooks/queries/useCursorPagination.js.
+  const [filters, setFilters] = useState(emptyFilters);
+  const debouncedSearch = useDebouncedValue(filters.search, 300);
+  const debouncedExact = useDebouncedValue(filters.exact, 300); // true once a suggestion was picked
+  const listParams = useMemo(
+    () => ({
+      q: debouncedSearch.trim(),
+      exact: debouncedExact ? "1" : "",
+      make: filters.make,
+      model: filters.model,
+      type: filters.type,
+      customer: isStaffOrAdmin ? filters.customer : "",
+      yearFrom: filters.yearFrom,
+      yearTo: filters.yearTo,
+    }),
+    [debouncedSearch, debouncedExact, filters.make, filters.model, filters.type, filters.customer, filters.yearFrom, filters.yearTo, isStaffOrAdmin]
+  );
+  const pager = useVehicleNotesPage(listParams);
+  const { isLoading: loading, isError: vehiclesError, isPageChanging } = pager;
+  const { suggestions, isFetching: suggesting } = useVehicleNoteSuggestions(debouncedSearch, !debouncedExact);
+  const vehicles = vehiclesError ? MOCK_VEHICLES : pager.items;
   const createMutation = useCreateVehicleNote();
   const updateMutation = useUpdateVehicleNote();
   const deleteMutation = useDeleteVehicleNote();
@@ -130,7 +194,6 @@ export default function VehicleNotes() {
 
   const [galleryVehicle, setGalleryVehicle] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(null);
-  const [filters, setFilters] = useState(emptyFilters);
 
   // Predefined Make/Model/Type dropdown data (cascading) — sourced from the
   // "Vehicle Notes database" (see database card below). Model options
@@ -229,26 +292,9 @@ export default function VehicleNotes() {
   const onFilterMakeChange = (e) => setFilters((f) => ({ ...f, make: e.target.value, model: "", type: "" }));
   const onFilterModelChange = (e) => setFilters((f) => ({ ...f, model: e.target.value, type: "" }));
 
-  // Filtering preserves the API's existing sort order (newest first) —
-  // only narrows which cards show, same grid + edit button as always.
-  const filteredVehicles = useMemo(() => {
-    const q = filters.search.trim().toLowerCase();
-    return vehicles.filter((v) => {
-      // Search box: vehicle name, make, model, type or customer name.
-      if (q) {
-        const haystack = [v.name, v.make, v.model, v.type, v.customer?.fullName];
-        if (!haystack.some((field) => field && String(field).toLowerCase().includes(q))) return false;
-      }
-      if (filters.customer && v.customer?._id !== filters.customer) return false;
-      if (filters.make && v.make !== filters.make) return false;
-      if (filters.model && v.model !== filters.model) return false;
-      if (filters.type && v.type !== filters.type) return false;
-      const y = Number(v.year);
-      if (filters.yearFrom && (!Number.isFinite(y) || y < Number(filters.yearFrom))) return false;
-      if (filters.yearTo && (!Number.isFinite(y) || y > Number(filters.yearTo))) return false;
-      return true;
-    });
-  }, [vehicles, filters]);
+  // Search + every filter run on the server (newest first), so `vehicles` is
+  // already exactly the page of cards to show.
+  const filteredVehicles = vehicles;
 
   // --- Vehicle Notes database (Make/Model/Type master list) upload ---
   const onDbFileChosen = async (e) => {
@@ -368,6 +414,10 @@ export default function VehicleNotes() {
     // save must leave it out entirely (the server rejects it from them).
     const { customer, ...formWithoutCustomer } = form;
     const payload = isStaffOrAdmin ? { ...formWithoutCustomer, customer } : formWithoutCustomer;
+    // The card thumbnail defaults to the "before" photo. Don't send (and store)
+    // the same multi-hundred-KB data URL twice — the list and detail pages
+    // already fall back to beforeImage when `image` is empty.
+    if (payload.image && payload.image === payload.beforeImage) payload.image = "";
     try {
       if (editing) {
         await updateMutation.mutateAsync({ id: editing._id, ...payload });
@@ -590,16 +640,14 @@ export default function VehicleNotes() {
       )}
 
       <div className="card vehicle-filter-bar mb-20">
-        <div className="search-box vehicle-search">
-          <Search size={16} color="var(--color-muted)" />
-          <input
-            type="search"
-            placeholder={isStaffOrAdmin ? "Search by vehicle name, make, model, type or customer name…" : "Search by vehicle name, make, model or type…"}
-            value={filters.search}
-            onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-            aria-label="Search vehicles"
-          />
-        </div>
+        <SearchAutocomplete
+          value={filters.search}
+          onChange={(search, picked = false) => setFilters((f) => ({ ...f, search, exact: picked }))}
+          suggestions={suggestions}
+          loading={suggesting}
+          placeholder={isStaffOrAdmin ? "Search by vehicle name, make, model, type or customer name…" : "Search by vehicle name, make, model or type…"}
+          ariaLabel="Search vehicles"
+        />
         <div className={`vehicle-filter-grid${isStaffOrAdmin ? " with-customer" : ""}`}>
           <div className="field">
             <label>Make</label>
@@ -653,16 +701,18 @@ export default function VehicleNotes() {
 
       {loading ? (
         <p className="text-muted">Loading vehicles…</p>
-      ) : vehicles.length === 0 ? (
-        <div className="card empty-state-card text-muted">
-          {canAdd ? "No vehicles yet — add your first one." : "No vehicles yet."}
-        </div>
       ) : filteredVehicles.length === 0 ? (
         <div className="card empty-state-card text-muted">
-          No vehicles match the current filters.
+          {filtersActive
+            ? "No vehicles match the current filters."
+            : canAdd ? "No vehicles yet — add your first one." : "No vehicles yet."}
         </div>
       ) : (
-        <div className="vehicle-grid">
+        <>
+        {pager.searchMode === "text" && (
+          <p className="text-muted fs-11 search-note">No exact matches — showing related results.</p>
+        )}
+        <div className={`vehicle-grid${isPageChanging ? " list-updating" : ""}`}>
           {filteredVehicles.map((v) => (
             <div key={v._id} className="card vehicle-card">
               <div className="vehicle-image">
@@ -738,6 +788,8 @@ export default function VehicleNotes() {
             </div>
           ))}
         </div>
+        {!vehiclesError && <CursorPager pager={pager} noun="vehicles" />}
+        </>
       )}
 
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Edit vehicle" : "Add vehicle"} width={560}>

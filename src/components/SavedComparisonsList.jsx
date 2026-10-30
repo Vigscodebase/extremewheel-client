@@ -1,18 +1,21 @@
-import { ArrowUp, ChevronLeft, ChevronRight, FilterX, Search } from "lucide-react";
+import { ArrowUp, FilterX } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useAuth } from "../context/authcontext";
-import { useSavedComparisonsQuery } from "../hooks/queries/useSavedComparisons";
-
-const PAGE_SIZE = 10;
+import useDebouncedValue from "../hooks/useDebouncedValue";
+import { useCustomersQuery } from "../hooks/queries/useCustomers";
+import {
+  useSavedComparisonFacets,
+  useSavedComparisonSuggestions,
+  useSavedComparisonsPage,
+} from "../hooks/queries/useSavedComparisons";
+import CursorPager from "./CursorPager";
+import SearchAutocomplete from "./SearchAutocomplete";
 
 // Same filter set as the Vehicle Notes page: search + Make, Model, Type,
 // Customer (staff / admin only) and a Year from / Year to range.
-const emptyFilters = { search: "", make: "", model: "", type: "", customer: "", yearFrom: "", yearTo: "" };
+const emptyFilters = { search: "", exact: false, make: "", model: "", type: "", customer: "", yearFrom: "", yearTo: "" };
 
 const tireLabel = (t) => (t?.width ? `${t.width}/${t.aspect} R${t.rim}` : "—");
-
-const uniqueSorted = (values) =>
-  [...new Set(values.filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }));
 
 /**
  * "Saved comparisons" — the details listing at the end of the Tire Size
@@ -20,12 +23,12 @@ const uniqueSorted = (values) =>
  * popup, with the same search bar + filter bar (and the same look) as the
  * Vehicle Notes page.
  *
- * The filter dropdowns are built from the saved comparisons themselves, so
- * they only ever offer values that will actually match something, and they
- * work for everyone who can open the page (the Make / Model / Type / Year
- * lookup lists need Vehicle Notes or Save-comparison access). Make -> Model ->
- * Type still cascade exactly like Vehicle Notes: changing an upstream filter
- * clears whichever downstream filter is no longer a valid combination.
+ * The table is paginated on the server (10 rows per page, cursor based) and the
+ * search box has type-ahead suggestions, so only the rows on screen are ever
+ * fetched. The filter dropdowns come from the server's /facets endpoint — the
+ * values actually saved — so they only offer values that will match something.
+ * Make -> Model -> Type still cascade exactly like Vehicle Notes: changing an
+ * upstream filter clears whichever downstream filter is no longer valid.
  *
  * Each row has an "Apply" button that loads that saved comparison's Tire A and
  * Tire B into the comparison at the top of the page (`onApply(tireA, tireB, row)`).
@@ -38,87 +41,57 @@ export default function SavedComparisonsList({ onApply }) {
   const { user } = useAuth();
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
 
-  const { data, isLoading, isError } = useSavedComparisonsQuery();
-  const comparisons = useMemo(() => data || [], [data]);
-
   const [filters, setFilters] = useState(emptyFilters);
-  const [page, setPage] = useState(1);
 
-  // Any filter change goes back to the first page of results.
-  const patchFilters = (patch) => {
-    setFilters((f) => ({ ...f, ...patch }));
-    setPage(1);
-  };
-  const clearFilters = () => {
-    setFilters(emptyFilters);
-    setPage(1);
-  };
-
-  // --- Filter option lists, derived from what has actually been saved ---
-  const makeOptions = useMemo(() => uniqueSorted(comparisons.map((c) => c.make)), [comparisons]);
-
-  // Model options need a Make, Type options need a Make + Model (as on Vehicle Notes).
-  const modelOptions = useMemo(
-    () => (filters.make ? uniqueSorted(comparisons.filter((c) => c.make === filters.make).map((c) => c.model)) : []),
-    [comparisons, filters.make]
-  );
-  const typeOptions = useMemo(
-    () =>
-      filters.make && filters.model
-        ? uniqueSorted(comparisons.filter((c) => c.make === filters.make && c.model === filters.model).map((c) => c.type))
-        : [],
-    [comparisons, filters.make, filters.model]
+  // The search text updates on every keystroke; the list and the suggestions
+  // follow it once typing pauses.
+  const debouncedSearch = useDebouncedValue(filters.search, 300);
+  const debouncedExact = useDebouncedValue(filters.exact, 300); // true once a suggestion was picked
+  const params = useMemo(
+    () => ({
+      q: debouncedSearch.trim(),
+      exact: debouncedExact ? "1" : "",
+      make: filters.make,
+      model: filters.model,
+      type: filters.type,
+      customer: isStaffOrAdmin ? filters.customer : "",
+      yearFrom: filters.yearFrom,
+      yearTo: filters.yearTo,
+    }),
+    [debouncedSearch, debouncedExact, filters.make, filters.model, filters.type, filters.customer, filters.yearFrom, filters.yearTo, isStaffOrAdmin]
   );
 
-  const yearOptions = useMemo(
-    () =>
-      [...new Set(comparisons.map((c) => Number(c.year)).filter((y) => Number.isFinite(y) && y > 0))].sort((a, b) => a - b),
-    [comparisons]
-  );
+  const pager = useSavedComparisonsPage(params);
+  const { items: visible, isLoading, isError, isPageChanging, total } = pager;
+  const { suggestions, isFetching: suggesting } = useSavedComparisonSuggestions(debouncedSearch, !debouncedExact);
 
-  // Customer options — the customer's name, plus their email when another
-  // customer shares that exact name (only email / phone are unique).
+  // Filter option lists (Make / Model / Type cascade, years on file).
+  const { data: facets } = useSavedComparisonFacets({ make: filters.make, model: filters.model });
+  const makeOptions = facets?.makes ?? [];
+  const modelOptions = filters.make ? facets?.models ?? [] : [];
+  const typeOptions = filters.make && filters.model ? facets?.types ?? [] : [];
+  const yearOptions = facets?.years ?? [];
+
+  // Customers (staff / admin only) — the same shared list Vehicle Notes uses.
+  // The customer's name, plus their email when another customer shares that exact name.
+  const { data: customers } = useCustomersQuery({ enabled: isStaffOrAdmin });
   const customerOptions = useMemo(() => {
-    const byId = new Map();
-    comparisons.forEach((c) => {
-      if (c.customer?._id) byId.set(c.customer._id, c.customer);
-    });
-    const list = [...byId.values()].sort((a, b) => a.fullName.localeCompare(b.fullName));
+    const list = customers || [];
     const nameCount = list.reduce((acc, c) => ({ ...acc, [c.fullName.toLowerCase()]: (acc[c.fullName.toLowerCase()] || 0) + 1 }), {});
     return list.map((c) => ({
       value: c._id,
       label: nameCount[c.fullName.toLowerCase()] > 1 ? `${c.fullName} (${c.email})` : c.fullName,
     }));
-  }, [comparisons]);
+  }, [customers]);
+
+  // Any filter change goes back to the first page of results (the pager does
+  // that by itself when the params change).
+  const patchFilters = (patch) => setFilters((f) => ({ ...f, ...patch }));
+  const clearFilters = () => setFilters(emptyFilters);
 
   const filtersActive = Boolean(
     filters.search.trim() || filters.make || filters.model || filters.type || filters.customer || filters.yearFrom || filters.yearTo
   );
-
-  // Filtering keeps the API's order (newest first).
-  const filtered = useMemo(() => {
-    const q = filters.search.trim().toLowerCase();
-    return comparisons.filter((c) => {
-      // Search box: vehicle name, make, model, type or customer name.
-      if (q) {
-        const haystack = [c.name, c.make, c.model, c.type, c.customer?.fullName];
-        if (!haystack.some((field) => field && String(field).toLowerCase().includes(q))) return false;
-      }
-      if (filters.customer && c.customer?._id !== filters.customer) return false;
-      if (filters.make && c.make !== filters.make) return false;
-      if (filters.model && c.model !== filters.model) return false;
-      if (filters.type && c.type !== filters.type) return false;
-      const y = Number(c.year);
-      if (filters.yearFrom && (!Number.isFinite(y) || y < Number(filters.yearFrom))) return false;
-      if (filters.yearTo && (!Number.isFinite(y) || y > Number(filters.yearTo))) return false;
-      return true;
-    });
-  }, [comparisons, filters]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages); // e.g. a save/delete elsewhere shrank the list
-  const firstIndex = (currentPage - 1) * PAGE_SIZE;
-  const visible = filtered.slice(firstIndex, firstIndex + PAGE_SIZE);
 
   return (
     <section className="saved-comparisons" aria-labelledby="saved-comparisons-title">
@@ -128,24 +101,24 @@ export default function SavedComparisonsList({ onApply }) {
           <p>
             {isLoading
               ? "Loading…"
-              : filtersActive
-                ? `${filtered.length} of ${comparisons.length} saved comparison${comparisons.length === 1 ? "" : "s"}`
-                : `${comparisons.length} saved comparison${comparisons.length === 1 ? "" : "s"}`}
+              : total != null
+                ? `About ${total.toLocaleString()} saved comparison${total === 1 ? "" : "s"}`
+                : visible.length > 0
+                  ? `Page ${pager.page} · ${visible.length} shown${pager.hasNext ? " · more available" : ""}`
+                  : ""}
           </p>
         </div>
       </div>
 
       <div className="card vehicle-filter-bar mb-20">
-        <div className="search-box vehicle-search">
-          <Search size={16} color="var(--color-muted)" />
-          <input
-            type="search"
-            placeholder={isStaffOrAdmin ? "Search by vehicle name, make, model, type or customer name…" : "Search by vehicle name, make, model or type…"}
-            value={filters.search}
-            onChange={(e) => patchFilters({ search: e.target.value })}
-            aria-label="Search saved comparisons"
-          />
-        </div>
+        <SearchAutocomplete
+          value={filters.search}
+          onChange={(search, picked = false) => patchFilters({ search, exact: picked })}
+          suggestions={suggestions}
+          loading={suggesting}
+          placeholder={isStaffOrAdmin ? "Search by vehicle name, make, model, type, tire size or customer name…" : "Search by vehicle name, make, model, type or tire size…"}
+          ariaLabel="Search saved comparisons"
+        />
         <div className={`vehicle-filter-grid${isStaffOrAdmin ? " with-customer" : ""}`}>
           <div className="field">
             <label>Make</label>
@@ -201,13 +174,16 @@ export default function SavedComparisonsList({ onApply }) {
         <p className="text-muted">Loading saved comparisons…</p>
       ) : isError ? (
         <div className="card empty-state-card text-muted">Couldn't load the saved comparisons. Please try again.</div>
-      ) : comparisons.length === 0 ? (
-        <div className="card empty-state-card text-muted">No saved comparisons yet — use “Save comparison” above to add one.</div>
-      ) : filtered.length === 0 ? (
-        <div className="card empty-state-card text-muted">No saved comparisons match the current filters.</div>
+      ) : visible.length === 0 ? (
+        <div className="card empty-state-card text-muted">
+          {filtersActive ? "No saved comparisons match the current filters." : "No saved comparisons yet — use “Save comparison” above to add one."}
+        </div>
       ) : (
         <div className="card saved-comparisons-card">
-          <div className="table-responsive">
+          {pager.searchMode === "text" && (
+            <p className="text-muted fs-11 search-note p-14">No exact matches — showing related results.</p>
+          )}
+          <div className={`table-responsive${isPageChanging ? " list-updating" : ""}`}>
             <table className="user-table saved-comparisons-table">
               <thead>
                 <tr>
@@ -279,36 +255,7 @@ export default function SavedComparisonsList({ onApply }) {
             </table>
           </div>
 
-          {filtered.length > PAGE_SIZE && (
-            <div className="saved-pagination">
-              <span className="text-muted fs-11">
-                Showing {firstIndex + 1}–{Math.min(firstIndex + PAGE_SIZE, filtered.length)} of {filtered.length}
-              </span>
-              <div className="saved-pagination-controls">
-                <button
-                  type="button"
-                  className="icon-btn"
-                  onClick={() => setPage(currentPage - 1)}
-                  disabled={currentPage <= 1}
-                  title="Previous page"
-                  aria-label="Previous page"
-                >
-                  <ChevronLeft size={15} />
-                </button>
-                <span className="fs-11">Page {currentPage} of {totalPages}</span>
-                <button
-                  type="button"
-                  className="icon-btn"
-                  onClick={() => setPage(currentPage + 1)}
-                  disabled={currentPage >= totalPages}
-                  title="Next page"
-                  aria-label="Next page"
-                >
-                  <ChevronRight size={15} />
-                </button>
-              </div>
-            </div>
-          )}
+          <CursorPager pager={pager} noun="comparisons" />
         </div>
       )}
     </section>

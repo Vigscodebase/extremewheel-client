@@ -115,7 +115,14 @@ axios.interceptors.response.use(
       !error.config?.headers?.Authorization &&
       !error.config?.url?.startsWith("/auth/");
 
-    if (!isTokenlessUnauthorized) {
+    // Requests cancelled on purpose (the person kept typing, so the previous
+    // search / suggestion request was aborted) are not errors. `silentError`
+    // marks background requests — list pages and type-ahead suggestions — whose
+    // failure the page already shows inline (or recovers from by itself, e.g.
+    // an expired page cursor), so they shouldn't also raise the global dialog.
+    const isQuietFailure = Axios.isCancel(error) || error.config?.silentError === true;
+
+    if (!isTokenlessUnauthorized && !isQuietFailure) {
       const errorMessage =
         error.response?.data?.message ||
         "An unexpected error occurred. Please try again.";

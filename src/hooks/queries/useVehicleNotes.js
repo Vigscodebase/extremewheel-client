@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as vehicleNotesApi from "../../api/vehicleNotesApi";
+import useCursorPagination from "./useCursorPagination";
+import useSuggestions from "./useSuggestions";
 
 export const vehicleNotesKey = ["vehicle-notes"];
 
@@ -20,7 +22,16 @@ export function useVehicleNoteQuery(id) {
     queryKey: [...vehicleNotesKey, id],
     queryFn: () => vehicleNotesApi.fetchVehicleNote(id),
     enabled: Boolean(id),
-    placeholderData: () => queryClient.getQueryData(vehicleNotesKey)?.find((v) => v._id === id),
+    placeholderData: () => {
+      const fromList = queryClient.getQueryData(vehicleNotesKey)?.find((v) => v._id === id);
+      if (fromList) return fromList;
+      // Otherwise reuse the card from any cached page of the paginated list.
+      for (const [, page] of queryClient.getQueriesData({ queryKey: [...vehicleNotesKey, "page"] })) {
+        const hit = page?.items?.find((v) => v._id === id);
+        if (hit) return hit;
+      }
+      return undefined;
+    },
   });
 }
 
@@ -81,3 +92,11 @@ export function useRemoveVehicleStaffNote() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: vehicleNotesKey }),
   });
 }
+
+// Paginated + searchable cards for the Vehicle Notes page (10 per page, cursor
+// based). The full-list hook above stays for Tech Data.
+export const useVehicleNotesPage = (params) =>
+  useCursorPagination({ queryKey: vehicleNotesKey, fetchPage: vehicleNotesApi.fetchVehicleNotesPage, params });
+
+export const useVehicleNoteSuggestions = (text, enabled = true) =>
+  useSuggestions({ queryKey: vehicleNotesKey, fetchSuggestions: vehicleNotesApi.fetchVehicleNoteSuggestions, text, enabled });

@@ -1,20 +1,24 @@
-import { Box, FilterX, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Box, Pencil, Plus, Trash2, FilterX } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import ConfirmDialog from "../components/confirmdialog";
 import CustomerFormModal from "../components/CustomerFormModal";
 import CustomerSelect from "../components/CustomerSelect";
+import CursorPager from "../components/CursorPager";
+import SearchAutocomplete from "../components/SearchAutocomplete";
 import EditableSelect from "../components/EditableSelect";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { useAuth } from "../context/authcontext";
+import useDebouncedValue from "../hooks/useDebouncedValue";
 import { useCustomersQuery, useDeleteCustomer } from "../hooks/queries/useCustomers";
 import {
   useCreateTireOption,
   useDeleteTireOption,
-  useTireOptionsQuery,
+  useTireOptionSuggestions,
+  useTireOptionsPage,
   useUpdateTireOption,
 } from "../hooks/queries/useTireOptions";
 import {
@@ -39,7 +43,7 @@ const MOCK_PRESETS = [
 // `customer` is the _id of a customer ("" = none) — one of the shared customers,
 // the same list Vehicle Notes uses. Only the link is saved with the preset.
 const emptyForm = { make: "", width: 205, aspect: 55, rim: 16, customer: "" };
-const emptyFilters = { search: "", customer: "" };
+const emptyFilters = { search: "", exact: false, customer: "" };
 
 export default function TireSizeOption() {
   const location = useLocation();
@@ -51,8 +55,20 @@ export default function TireSizeOption() {
   // one from it, is for those same two roles.
   const isAdmin = user?.role === "admin";
   const canManagePresets = user?.role === "staff" || isAdmin;
-  const { data: fetchedPresets, isLoading: loading, isError: presetsError } = useTireOptionsQuery();
-  const presets = presetsError ? MOCK_PRESETS : fetchedPresets || [];
+  // Paginated: one page of 12 presets at a time, fetched from the server with
+  // the search text (debounced) — never the whole library. See
+  // hooks/queries/useCursorPagination.js.
+  const [filters, setFilters] = useState(emptyFilters);
+  const debouncedSearch = useDebouncedValue(filters.search, 300);
+  const debouncedExact = useDebouncedValue(filters.exact, 300); // true once a suggestion was picked
+  const params = useMemo(
+    () => ({ q: debouncedSearch.trim(), exact: debouncedExact ? "1" : "", customer: filters.customer }),
+    [debouncedSearch, debouncedExact, filters.customer]
+  );
+  const pager = useTireOptionsPage(params);
+  const { isLoading: loading, isError: presetsError, isPageChanging } = pager;
+  const { suggestions, isFetching: suggesting } = useTireOptionSuggestions(debouncedSearch, !debouncedExact);
+  const presets = presetsError ? MOCK_PRESETS : pager.items;
   const createMutation = useCreateTireOption();
   const updateMutation = useUpdateTireOption();
   const deleteMutation = useDeleteTireOption();
@@ -88,7 +104,6 @@ export default function TireSizeOption() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [previewPreset, setPreviewPreset] = useState(null);
   const [makeToDelete, setMakeToDelete] = useState(null);
-  const [filters, setFilters] = useState(emptyFilters);
 
   const filtersActive = Boolean(filters.search.trim() || filters.customer);
   const clearFilters = () => setFilters(emptyFilters);
@@ -114,19 +129,10 @@ export default function TireSizeOption() {
     return editing?.customer && editing.customer._id === form.customer ? editing.customer : null;
   }, [customers, form.customer, editing]);
 
-  // Search box: preset name or customer name. The customer filter narrows to
-  // one customer. Filtering preserves the API's order (newest first).
-  const filteredPresets = useMemo(() => {
-    const q = filters.search.trim().toLowerCase();
-    return presets.filter((p) => {
-      if (q) {
-        const haystack = [p.label, p.customer?.fullName];
-        if (!haystack.some((field) => field && String(field).toLowerCase().includes(q))) return false;
-      }
-      if (filters.customer && p.customer?._id !== filters.customer) return false;
-      return true;
-    });
-  }, [presets, filters]);
+  // Search (preset name, size, or customer name for staff / admin) and the
+  // customer filter run on the server, so `presets` is already the page to show.
+  const filteredPresets = presets;
+  const hasAnyPreset = (pager.total ?? 0) > 0 || presets.length > 0 || filtersActive;
 
   // Arrived here via a "Saved preset" suggestion chip elsewhere in the app —
   // open the add-preset form pre-loaded with that size so it's one click
@@ -269,19 +275,17 @@ export default function TireSizeOption() {
         }
       />
 
-      {!loading && presets.length > 0 && (
+      {!loading && hasAnyPreset && (
         <div className={`card vehicle-filter-bar mb-20${canManagePresets ? "" : " preset-search-bar"}`}>
-          <div className="search-box vehicle-search">
-            <Search size={16} color="var(--color-muted)" />
-            <input
-              type="search"
-              placeholder={canManagePresets ? "Search by preset name or customer name…" : "Search by preset name…"}
-              value={filters.search}
-              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-              aria-label="Search presets"
-            />
-          </div>
-          {/* {canManagePresets && (
+          <SearchAutocomplete
+            value={filters.search}
+            onChange={(search, picked = false) => setFilters((f) => ({ ...f, search, exact: picked }))}
+            suggestions={suggestions}
+            loading={suggesting}
+            placeholder={canManagePresets ? "Search by preset name, tire size or customer name…" : "Search by preset name or tire size…"}
+            ariaLabel="Search presets"
+          />
+          {canManagePresets && (
             <div className="preset-filter-grid">
               <div className="field">
                 <label>Customer</label>
@@ -294,22 +298,20 @@ export default function TireSizeOption() {
                 <FilterX size={14} /> Clear filter
               </button>
             </div>
-          )} */}
+          )}
         </div>
       )}
 
       {loading ? (
         <p className="text-muted">Loading presets…</p>
-      ) : presets.length === 0 ? (
-        <div className="card empty-state-block">
-          No tire presets yet{canManagePresets ? " — add your first one." : "."}
-        </div>
       ) : filteredPresets.length === 0 ? (
         <div className="card empty-state-block">
-          No presets match the current filters.
+          {filtersActive
+            ? "No presets match the current filters."
+            : `No tire presets yet${canManagePresets ? " — add your first one." : "."}`}
         </div>
       ) : (
-        <div className="preset-grid">
+        <div className={`preset-grid${isPageChanging ? " list-updating" : ""}`}>
           {filteredPresets.map((p) => (
             <div key={p._id} className="card preset-card">
               <div className="preset-info">
@@ -343,6 +345,8 @@ export default function TireSizeOption() {
           ))}
         </div>
       )}
+
+      {!presetsError && <CursorPager pager={pager} noun="presets" />}
 
       <Modal open={!!previewPreset} onClose={() => setPreviewPreset(null)} title={previewPreset?.label || "3D preview"} width={420}>
         {previewPreset && (

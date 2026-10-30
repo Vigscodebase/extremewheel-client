@@ -1,13 +1,16 @@
-import { Eye, EyeOff, Pencil, Plus, Search, ShieldCheck, Trash2, TriangleAlert, Users as UsersIcon } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, ShieldCheck, Trash2, TriangleAlert, Users as UsersIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import ConfirmDialog from "../components/confirmdialog";
+import CursorPager from "../components/CursorPager";
+import SearchAutocomplete from "../components/SearchAutocomplete";
 import Modal from "../components/modal";
 import PageHeader from "../components/pageheader";
 import FieldError from "../components/FieldError";
 import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
 import UserPermissionsPanel from "../components/userpermissionspanel";
 import { useAuth } from "../context/authcontext";
-import { useCreateUser, useDeleteUser, useUpdateUser, useUsersQuery } from "../hooks/queries/useUsers";
+import useDebouncedValue from "../hooks/useDebouncedValue";
+import { useCreateUser, useDeleteUser, useUpdateUser, useUserSuggestions, useUsersPage, useUsersQuery } from "../hooks/queries/useUsers";
 import { ROLES } from "../utils/constants";
 import { formatUserLabel } from "../utils/permissions";
 import { validateEmail, validateFullName, validatePassword } from "../utils/validation";
@@ -26,9 +29,24 @@ export default function UserManagement() {
 
   const [tab, setTab] = useState("users");
   const [query, setQuery] = useState("");
+  const [queryExact, setQueryExact] = useState(false); // true once a suggestion was picked
 
-  const { data: fetchedUsers, isLoading: loading, isError: usersError } = useUsersQuery();
-  const users = usersError ? MOCK_USERS : fetchedUsers || EMPTY_USERS;
+  // Users tab: paginated + searchable on the server (10 per page, cursor based).
+  const debouncedQuery = useDebouncedValue(query, 300);
+  const debouncedExact = useDebouncedValue(queryExact, 300);
+  const listParams = useMemo(() => ({ q: debouncedQuery.trim(), exact: debouncedExact ? "1" : "" }), [debouncedQuery, debouncedExact]);
+  const pager = useUsersPage(listParams);
+  const { isLoading: loading, isError: usersError, isPageChanging } = pager;
+  const { suggestions, isFetching: suggesting } = useUserSuggestions(debouncedQuery, !debouncedExact);
+  const users = usersError ? MOCK_USERS : pager.items;
+
+  // Permissions tab: its user picker needs the whole list, so that (small)
+  // request waits until the tab is opened instead of loading with the page.
+  const {
+    data: fetchedUsers,
+    isLoading: permLoading,
+    isError: permError,
+  } = useUsersQuery({ enabled: tab === "access" });
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
   const deleteUserMutation = useDeleteUser();
@@ -56,11 +74,8 @@ export default function UserManagement() {
     setTab("access");
   };
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter((u) => u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q));
-  }, [users, query]);
+  // Search runs on the server, so `users` is already the page to show.
+  const filtered = users;
 
   const openAdd = () => {
     setEditing(null);
@@ -187,20 +202,25 @@ export default function UserManagement() {
       )}
 
       {tab === "users" ? (
-        !loading && users.length === 0 ? (
+        !loading && users.length === 0 && !query.trim() ? (
           <div className="card empty-state-block">
             No users yet — add your first one.
           </div>
         ) : (
           <div className="card p-0">
             <div className="panel-head-strip">
-              <div className="search-box">
-                <Search size={16} color="var(--color-muted)" />
-                <input placeholder="Search by name or email…" value={query} onChange={(e) => setQuery(e.target.value)} />
-              </div>
+              <SearchAutocomplete
+                className="search-box"
+                value={query}
+                onChange={(text, picked = false) => { setQuery(text); setQueryExact(picked); }}
+                suggestions={suggestions}
+                loading={suggesting}
+                placeholder="Search by name or email…"
+                ariaLabel="Search users"
+              />
             </div>
 
-            <div className="table-responsive">
+            <div className={`table-responsive${isPageChanging ? " list-updating" : ""}`}>
               <table className="user-table">
                 <thead>
                   <tr>
@@ -266,6 +286,7 @@ export default function UserManagement() {
                 </tbody>
               </table>
             </div>
+            {!usersError && <CursorPager pager={pager} noun="users" />}
           </div>
         )
       ) : null}
@@ -274,8 +295,8 @@ export default function UserManagement() {
       <div hidden={tab !== "access"}>
         <UserPermissionsPanel
           users={permUsers}
-          loading={loading}
-          error={usersError}
+          loading={permLoading}
+          error={permError}
           selectedId={selectedPermUserId}
           onSelect={setPermUserId}
         />
