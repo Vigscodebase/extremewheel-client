@@ -5581,3 +5581,249 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
     margin-top: 24px;
     padding: 16px 4px 4px;
 }
+
+/* Save tray + "saving" placeholders on the Vehicle Notes page.
+   Colours fall back to neutral values when the app's CSS variables don't exist. */
+
+.save-tray {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 1200;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(360px, calc(100vw - 32px));
+    pointer-events: none;
+    /* only the cards take clicks */
+}
+
+.save-card {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 12px 12px 14px;
+    background: var(--card-bg, #fff);
+    color: var(--text, #1f2230);
+    border: 1px solid var(--border, #e3e5ee);
+    border-left: 4px solid var(--accent, #4f46e5);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(20, 24, 40, 0.14);
+    animation: save-card-in 0.18s ease-out;
+}
+
+.save-card-done {
+    border-left-color: #16a34a;
+}
+
+.save-card-failed {
+    border-left-color: #a31621;
+}
+
+.save-card-icon {
+    display: flex;
+    padding-top: 1px;
+    color: var(--accent, #4f46e5);
+}
+
+.save-card-done .save-card-icon {
+    color: #16a34a;
+}
+
+.save-card-failed .save-card-icon {
+    color: #a31621;
+}
+
+.save-card-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.save-card-title {
+    margin: 0;
+    font-weight: 600;
+    font-size: 13.5px;
+    overflow-wrap: anywhere;
+}
+
+.save-card-detail {
+    margin: 2px 0 0;
+    font-size: 12.5px;
+    color: var(--text-muted, #6b7085);
+}
+
+.save-card-bar {
+    position: relative;
+    height: 3px;
+    margin-top: 9px;
+    border-radius: 3px;
+    background: var(--border, #e3e5ee);
+    overflow: hidden;
+}
+
+.save-card-bar span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 35%;
+    border-radius: 3px;
+    background: var(--accent, #4f46e5);
+    animation: save-bar 1.2s ease-in-out infinite;
+}
+
+.save-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.save-card-btn {
+    font: inherit;
+    font-size: 12.5px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border, #d4d7e3);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.save-card-btn.primary {
+    background: var(--accent, #4f46e5);
+    border-color: var(--accent, #4f46e5);
+    color: #fff;
+}
+
+.save-card-close {
+    border: 0;
+    background: transparent;
+    color: var(--text-muted, #6b7085);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 4px;
+    line-height: 0;
+}
+
+.save-card-close:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.save-spin {
+    animation: save-rotate 0.9s linear infinite;
+}
+
+/* Upload progress under the form's buttons */
+.save-upload-bar {
+    height: 4px;
+    margin: 14px 0 0;
+    border-radius: 4px;
+    background: var(--border, #e3e5ee);
+    overflow: hidden;
+}
+
+.save-upload-bar span {
+    display: block;
+    height: 100%;
+    background: var(--accent, #a31621);
+    transition: width 0.15s linear;
+}
+
+/* A vehicle that is still being created: a placeholder card in the grid */
+.vehicle-card-pending {
+    position: relative;
+    overflow: hidden;
+}
+
+.vehicle-card-pending .vehicle-image {
+    background: linear-gradient(100deg, #eceef5 30%, #f7f8fc 50%, #eceef5 70%);
+    background-size: 200% 100%;
+    animation: save-shimmer 1.4s linear infinite;
+}
+
+.vehicle-card-pending .vehicle-name {
+    opacity: 0.85;
+}
+
+.vehicle-pending-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-muted, #6b7085);
+}
+
+/* An existing vehicle that is being updated: dimmed, with a small "Saving…" tag */
+.vehicle-card.is-saving {
+    position: relative;
+    opacity: 0.78;
+}
+
+.vehicle-saving-tag {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border, #e3e5ee);
+    box-shadow: 0 2px 8px rgba(20, 24, 40, 0.12);
+    z-index: 2;
+}
+
+@keyframes save-card-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes save-bar {
+    0% {
+        left: -35%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+@keyframes save-rotate {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes save-shimmer {
+    to {
+        background-position: -200% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .save-card,
+    .save-card-bar span,
+    .save-spin,
+    .vehicle-card-pending .vehicle-image {
+        animation: none;
+    }
+}
+
+@media (max-width: 520px) {
+    .save-tray {
+        right: 8px;
+        left: 8px;
+        bottom: 8px;
+        width: auto;
+    }
+}

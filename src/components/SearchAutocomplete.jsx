@@ -39,7 +39,9 @@ function Highlight({ text, query }) {
  * resulting `suggestions` back in. `onChange(text, picked)` — `picked` is true
  * when the text came from clicking / pressing Enter on a suggestion, so the
  * page can search for exactly that ("Customer Name 2" must not also return
- * "Customer Name 20"); typing calls it with `picked` false.
+ * "Customer Name 20"); typing calls it with `picked` false. A third argument,
+ * the clicked suggestion ({ text, kind }), lets the page tell WHAT was picked
+ * (a vehicle, a make, a customer …); pages that don't need it ignore it.
  */
 export default function SearchAutocomplete({
   value,
@@ -66,7 +68,7 @@ export default function SearchAutocomplete({
   }, []);
 
   const pick = (s) => {
-    onChange(s.text, true); // second argument: picked from the list (search for exactly this)
+    onChange(s.text, true, s); // 2nd argument: picked from the list (search for exactly this); 3rd: which suggestion
     setOpen(false);
     setActive(-1);
   };

@@ -1,4 +1,4 @@
-import { Camera, Car, Download, Eye, FileSpreadsheet, FilterX, ImagePlus, Images, MessageSquare, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import { Camera, Car, Download, Eye, FileSpreadsheet, FilterX, ImagePlus, Images, Loader2, MessageSquare, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../components/confirmdialog";
@@ -6,6 +6,7 @@ import CustomerFormModal from "../components/CustomerFormModal";
 import CustomerSelect from "../components/CustomerSelect";
 import CursorPager from "../components/CursorPager";
 import SearchAutocomplete from "../components/SearchAutocomplete";
+import SaveStatusTray from "../components/SaveStatusTray";
 import EditableSelect from "../components/EditableSelect";
 import Lightbox from "../components/lightbox";
 import Modal from "../components/modal";
@@ -13,17 +14,16 @@ import PageHeader from "../components/pageheader";
 import { useAuth } from "../context/authcontext";
 import { usePermissions } from "../context/permissioncontext";
 import useDebouncedValue from "../hooks/useDebouncedValue";
+import useVehicleNoteSaves, { saveErrorMessage } from "../hooks/useVehicleNoteSaves";
 import { PERM } from "../utils/permissions";
 import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
 import { useCustomersQuery, useDeleteCustomer } from "../hooks/queries/useCustomers";
 import {
   useAddVehicleGalleryPhoto,
   useAddVehicleStaffNote,
-  useCreateVehicleNote,
   useDeleteVehicleNote,
   useRemoveVehicleGalleryPhoto,
   useRemoveVehicleStaffNote,
-  useUpdateVehicleNote,
   useVehicleNoteSuggestions,
   useVehicleNotesPage,
 } from "../hooks/queries/useVehicleNotes";
@@ -65,7 +65,7 @@ const emptyForm = {
   upgradedSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
 };
 
-const emptyFilters = { search: "", exact: false, make: "", model: "", type: "", customer: "", yearFrom: "", yearTo: "" };
+const emptyFilters = { search: "", exact: false, pick: "", make: "", model: "", type: "", customer: "", yearFrom: "", yearTo: "" };
 
 function readAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -159,11 +159,16 @@ export default function VehicleNotes() {
   // hooks/queries/useCursorPagination.js.
   const [filters, setFilters] = useState(emptyFilters);
   const debouncedSearch = useDebouncedValue(filters.search, 300);
-  const debouncedExact = useDebouncedValue(filters.exact, 300); // true once a suggestion was picked
+  // A suggestion that was clicked is applied immediately. Debouncing it too left
+  // the OLD results (everything matching what had been typed so far) on screen
+  // for 300 ms after the click, which looked like "it also shows other items".
+  const picked = filters.exact;
+  const effectiveSearch = picked ? filters.search : debouncedSearch;
   const listParams = useMemo(
     () => ({
-      q: debouncedSearch.trim(),
-      exact: debouncedExact ? "1" : "",
+      q: effectiveSearch.trim(),
+      exact: picked ? "1" : "",
+      pick: picked ? filters.pick : "",
       make: filters.make,
       model: filters.model,
       type: filters.type,
@@ -171,14 +176,18 @@ export default function VehicleNotes() {
       yearFrom: filters.yearFrom,
       yearTo: filters.yearTo,
     }),
-    [debouncedSearch, debouncedExact, filters.make, filters.model, filters.type, filters.customer, filters.yearFrom, filters.yearTo, isStaffOrAdmin]
+    [effectiveSearch, picked, filters.pick, filters.make, filters.model, filters.type, filters.customer, filters.yearFrom, filters.yearTo, isStaffOrAdmin]
   );
   const pager = useVehicleNotesPage(listParams);
   const { isLoading: loading, isError: vehiclesError, isPageChanging } = pager;
-  const { suggestions, isFetching: suggesting } = useVehicleNoteSuggestions(debouncedSearch, !debouncedExact);
+  const { suggestions, isFetching: suggesting } = useVehicleNoteSuggestions(debouncedSearch, !picked);
   const vehicles = vehiclesError ? MOCK_VEHICLES : pager.items;
-  const createMutation = useCreateVehicleNote();
-  const updateMutation = useUpdateVehicleNote();
+  // Saving runs in the background (Redis queue → worker → live updates over
+  // WebSocket): the form only waits for the upload, then closes, and the tray
+  // at the bottom shows progress. See hooks/useVehicleNoteSaves.js.
+  const saveJobs = useVehicleNoteSaves({ enabled: canAdd || canEdit });
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadPct, setUploadPct] = useState(null);
   const deleteMutation = useDeleteVehicleNote();
   const addGalleryPhoto = useAddVehicleGalleryPhoto();
   const removeGalleryPhoto = useRemoveVehicleGalleryPhoto();
@@ -241,7 +250,7 @@ export default function VehicleNotes() {
   // added vehicle's year automatically becomes selectable without any
   // extra bookkeeping.
 
-  const saving = createMutation.isPending || updateMutation.isPending;
+  const saving = submitting;
   const deleting = deleteMutation.isPending;
   const currentEditingVehicle = editing ? vehicles.find((v) => v._id === editing._id) || editing : null;
 
@@ -286,6 +295,14 @@ export default function VehicleNotes() {
 
   const clearFilters = () => setFilters(emptyFilters);
 
+  // The search box calls this with (text, picked, suggestion). `picked` is true
+  // when the text came from clicking a suggestion — then we also remember WHAT
+  // was clicked (a vehicle name, make, model, year or customer) so the server
+  // shows exactly that, not everything sharing a word with it.
+  const onSearchChange = (search, picked = false, suggestion) => {
+    setFilters((f) => ({ ...f, search, exact: picked, pick: picked ? suggestion?.kind || "" : "" }));
+  };
+
   // Make -> Model -> Type cascades here exactly like it does on the
   // Add/Edit vehicle form: changing an upstream filter clears whatever
   // downstream filter would no longer be a valid combination.
@@ -295,6 +312,22 @@ export default function VehicleNotes() {
   // Search + every filter run on the server (newest first), so `vehicles` is
   // already exactly the page of cards to show.
   const filteredVehicles = vehicles;
+
+  // Saves still in flight: new vehicles get a placeholder card at the top of the
+  // list, edited ones get a "Saving…" tag and can't be edited / deleted again
+  // until they finish (two saves of one vehicle could otherwise land out of order).
+  const pendingCreates = filtersActive
+    ? []
+    : saveJobs.saves.filter(
+        (j) =>
+          j.kind === "create" && !j.hidden && j.status !== "failed" &&
+          !filteredVehicles.some((v) => v._id === j.vehicleId)
+      );
+  const savingVehicleIds = new Set(
+    saveJobs.saves
+      .filter((j) => j.kind === "update" && (j.status === "sending" || j.status === "queued" || j.status === "processing"))
+      .map((j) => j.editId)
+  );
 
   // --- Vehicle Notes database (Make/Model/Type master list) upload ---
   const onDbFileChosen = async (e) => {
@@ -418,41 +451,66 @@ export default function VehicleNotes() {
     // the same multi-hundred-KB data URL twice — the list and detail pages
     // already fall back to beforeImage when `image` is empty.
     if (payload.image && payload.image === payload.beforeImage) payload.image = "";
-    try {
-      if (editing) {
-        await updateMutation.mutateAsync({ id: editing._id, ...payload });
-      } else {
-        await createMutation.mutateAsync(payload);
-      }
-      setFormOpen(false);
-
-      // Best-effort: fold whatever Make/Model/Type/Year was just saved back
-      // into the predefined lists. Upserts server-side, so this is a no-op
-      // when they were picked from the dropdown already — it only matters
-      // when "+ Add new…" was used. Never blocks the save above, and never
-      // surfaces an error to the person — the vehicle note itself already
-      // saved successfully regardless of what happens here.
-      // Additions are staff/admin, and skipped when editing a vehicle without
-      // changing the value — otherwise saving an older vehicle would quietly
-      // bring back a Make/Model/Type/Year someone has since deleted.
-      const lookupUnchanged =
-        editing &&
-        form.make === (editing.make || "") &&
-        form.model === (editing.model || "") &&
-        form.type === (editing.type || "");
-      const yearUnchanged = editing && form.year === (editing.year || "");
+    // What to do once the save has really finished (not merely been accepted):
+    // best-effort, fold whatever Make/Model/Type/Year was just saved back into
+    // the predefined lists. Upserts server-side, so this is a no-op when they
+    // were picked from the dropdown already — it only matters when "+ Add new…"
+    // was used. Never surfaces an error to the person — the vehicle note itself
+    // saved successfully regardless of what happens here. Running it only after
+    // a successful save means a failed save never leaves stray list entries.
+    // Additions are staff/admin, and skipped when editing a vehicle without
+    // changing the value — otherwise saving an older vehicle would quietly
+    // bring back a Make/Model/Type/Year someone has since deleted.
+    const lookupUnchanged =
+      editing &&
+      form.make === (editing.make || "") &&
+      form.model === (editing.model || "") &&
+      form.type === (editing.type || "");
+    const yearUnchanged = editing && form.year === (editing.year || "");
+    const { make, model, type, year } = form;
+    const afterSave = () => {
       if (isStaffOrAdmin && !lookupUnchanged) {
-        quickAddLookup.mutate(
-          { make: form.make, model: form.model, type: form.type },
-          { onError: () => { } }
-        );
+        quickAddLookup.mutate({ make, model, type }, { onError: () => { } });
       }
-      if (isStaffOrAdmin && form.year && !yearUnchanged) {
-        quickAddLookupYear.mutate(form.year, { onError: () => { } });
+      if (isStaffOrAdmin && year && !yearUnchanged) {
+        quickAddLookupYear.mutate(year, { onError: () => { } });
       }
+    };
+
+    setSubmitting(true);
+    setUploadPct(0);
+    try {
+      // Resolves as soon as the server has accepted the save (the upload is the
+      // only wait). Writing it to the database happens in the background and is
+      // reported by the tray.
+      await saveJobs.submit({
+        kind: editing ? "update" : "create",
+        id: editing?._id,
+        payload,
+        label: form.name,
+        formSnapshot: form,
+        editingSnapshot: editing,
+        onUploadProgress: setUploadPct,
+        onDone: afterSave,
+      });
+      setFormOpen(false);
     } catch (err) {
-      setFormError(err?.response?.data?.message || "Something went wrong. Please try again.");
+      setFormError(saveErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+      setUploadPct(null);
     }
+  };
+
+  // A save that failed for a reason only the person can fix (e.g. photos too
+  // large): bring the form back exactly as it was, with everything filled in.
+  const reopenFailedSave = (save) => {
+    if (!save.formSnapshot) return;
+    setEditing(save.editingSnapshot || null);
+    setForm(save.formSnapshot);
+    setFormError(save.message || "");
+    setFormOpen(true);
+    saveJobs.dismiss(save.clientRef);
   };
 
   // --- Customers (dropdown on the Add / Edit vehicle form) ---
@@ -642,7 +700,7 @@ export default function VehicleNotes() {
       <div className="card vehicle-filter-bar mb-20">
         <SearchAutocomplete
           value={filters.search}
-          onChange={(search, picked = false) => setFilters((f) => ({ ...f, search, exact: picked }))}
+          onChange={onSearchChange}
           suggestions={suggestions}
           loading={suggesting}
           placeholder={isStaffOrAdmin ? "Search by vehicle name, make, model, type or customer name…" : "Search by vehicle name, make, model or type…"}
@@ -701,7 +759,7 @@ export default function VehicleNotes() {
 
       {loading ? (
         <p className="text-muted">Loading vehicles…</p>
-      ) : filteredVehicles.length === 0 ? (
+      ) : filteredVehicles.length === 0 && pendingCreates.length === 0 ? (
         <div className="card empty-state-card text-muted">
           {filtersActive
             ? "No vehicles match the current filters."
@@ -713,8 +771,22 @@ export default function VehicleNotes() {
           <p className="text-muted fs-11 search-note">No exact matches — showing related results.</p>
         )}
         <div className={`vehicle-grid${isPageChanging ? " list-updating" : ""}`}>
+          {pendingCreates.map((j) => (
+            <div key={j.clientRef} className="card vehicle-card vehicle-card-pending" aria-busy="true">
+              <div className="vehicle-image" />
+              <div className="vehicle-body">
+                <p className="vehicle-name">{j.label}</p>
+                <p className="vehicle-pending-note">
+                  {j.status === "done" ? "Saved" : <><Loader2 size={13} className="save-spin" /> Saving this vehicle…</>}
+                </p>
+              </div>
+            </div>
+          ))}
           {filteredVehicles.map((v) => (
-            <div key={v._id} className="card vehicle-card">
+            <div key={v._id} className={`card vehicle-card${savingVehicleIds.has(v._id) ? " is-saving" : ""}`}>
+              {savingVehicleIds.has(v._id) && (
+                <span className="vehicle-saving-tag"><Loader2 size={12} className="save-spin" /> Saving…</span>
+              )}
               <div className="vehicle-image">
                 {v.image || v.beforeImage ? <img src={v.image || v.beforeImage} alt={v.name} /> : <Car size={30} color="#C6C9D6" />}
               </div>
@@ -775,12 +847,24 @@ export default function VehicleNotes() {
                   <Eye size={14} />
                 </button>
                 {canEdit && (
-                  <button type="button" className="icon-btn" onClick={() => openEdit(v)} title="Edit">
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => openEdit(v)}
+                    title={savingVehicleIds.has(v._id) ? "Saving — available again in a moment" : "Edit"}
+                    disabled={savingVehicleIds.has(v._id)}
+                  >
                     <Pencil size={14} />
                   </button>
                 )}
                 {canDelete && (
-                  <button type="button" className="icon-btn danger" onClick={() => setDeleteTarget(v)} title="Delete">
+                  <button
+                    type="button"
+                    className="icon-btn danger"
+                    onClick={() => setDeleteTarget(v)}
+                    title="Delete"
+                    disabled={savingVehicleIds.has(v._id)}
+                  >
                     <Trash2 size={14} />
                   </button>
                 )}
@@ -792,7 +876,7 @@ export default function VehicleNotes() {
         </>
       )}
 
-      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Edit vehicle" : "Add vehicle"} width={560}>
+      <Modal open={formOpen} onClose={() => { if (!saving) setFormOpen(false); }} title={editing ? "Edit vehicle" : "Add vehicle"} width={560}>
         <form onSubmit={submitForm}>
           {formError && (
             <div className="alert-error">
@@ -1111,13 +1195,20 @@ export default function VehicleNotes() {
           </div>
 
           <div className="modal-actions">
-            <button type="button" className="btn btn-ghost" onClick={() => setFormOpen(false)}>
+            <button type="button" className="btn btn-ghost" onClick={() => setFormOpen(false)} disabled={saving}>
               Cancel
             </button>
             <button type="submit" className="btn btn-accent" disabled={saving}>
-              {saving ? "Saving…" : editing ? "Save changes" : "Add vehicle"}
+              {saving
+                ? uploadPct != null && uploadPct < 100 ? `Uploading… ${uploadPct}%` : "Sending…"
+                : editing ? "Save changes" : "Add vehicle"}
             </button>
           </div>
+          {saving && (
+            <div className="save-upload-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={uploadPct ?? 0}>
+              <span style={{ width: `${uploadPct ?? 0}%` }} />
+            </div>
+          )}
         </form>
       </Modal>
 
@@ -1265,6 +1356,13 @@ export default function VehicleNotes() {
           message={lookupDeleteMessage}
         />
       )}
+
+      <SaveStatusTray
+        saves={saveJobs.saves}
+        onDismiss={saveJobs.dismiss}
+        onRetry={saveJobs.retry}
+        onReopen={reopenFailedSave}
+      />
     </div>
   );
 }

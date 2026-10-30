@@ -10,6 +10,8 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
         secure: true,
+        // Live "saving…" updates: also forward WebSocket upgrades (/api/ws -> Express /ws)
+        ws: true,
         // ADD THIS: Strips '/api' before sending to Express
         rewrite: (path) => path.replace(/^\/api/, '')
       },

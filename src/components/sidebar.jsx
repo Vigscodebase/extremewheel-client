@@ -211,7 +211,7 @@ export default function Sidebar() {
         aria-hidden={!mobileOpen}
       >
         <div className="mobile-drawer-header">
-          <img src="/sidebar-logo.png" alt="logo" />
+          <img src="/sidebar-logo.webp" alt="logo" />
           <button type="button" className="close-btn mobile-drawer-close" onClick={() => setMobileOpen(false)} aria-label="Close menu">
             <X size={20} />
           </button>
@@ -266,7 +266,7 @@ export default function Sidebar() {
       >
         <div className="sidebar-header">
           <div className="sidebar-logo">
-            <img src="/sidebar-logo.png" alt="sidebar-logo" />
+            <img src="/sidebar-logo.webp" alt="sidebar-logo" />
           </div>
           {isSidebarExpanded && (
             <button className="close-btn" onClick={handleClose} aria-label="Close menu">
