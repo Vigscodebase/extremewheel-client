@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect } from "react";
+import AuthImage from "./AuthImage";
 
 // Simple full-screen image preview with keyboard (Esc / arrow key) support.
 // `images` is an array of { src, label }; `index` is the currently shown one.
@@ -38,7 +39,7 @@ export default function Lightbox({ images, index, onClose, onIndexChange }) {
       )}
 
       <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
-        <img src={current.src} alt={current.label || "preview"} />
+        <AuthImage src={current.src} alt={current.label || "preview"} />
         {current.label && <p className="lightbox-caption">{current.label}</p>}
         {images.length > 1 && (
           <p className="lightbox-counter">{index + 1} / {images.length}</p>

@@ -4,7 +4,7 @@ import PageHeader from "../components/pageheader";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { useLogTireComparison } from "../hooks/queries/useActivity";
-import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
+// import { useTireOptionsQuery } from "../hooks/queries/useTireOptions"; // hidden: Tire Size Option feature is switched off
 import {
   equivalentInchSize,
   // revsPerMile, // hidden: Revs / mile display is commented out below
@@ -12,16 +12,17 @@ import {
   speedoDifferencePct,
   speedometerErrorTable,
   // tireCircumferenceMm, // hidden: Circumference display is commented out below
-  tireDiameterInches,
+  // tireDiameterInches, // hidden: only used by the Tire Size Option "alternate sizes" card, commented out below
   tireOverallHeightInches,
   tireWidthInches,
 } from "../utils/tireMath";
 
-const MOCK_PRESETS = [
-  { _id: "t1", label: "Factory Standard", width: 225, aspect: 65, rim: 17 },
-  { _id: "t2", label: "Off-Road Package", width: 265, aspect: 70, rim: 17 },
-  { _id: "t3", label: "Highway Comfort", width: 215, aspect: 60, rim: 16 },
-];
+// Hidden: Tire Size Option presets are switched off, so no preset (or mock preset) data is used here.
+// const MOCK_PRESETS = [
+//   { _id: "t1", label: "Factory Standard", width: 225, aspect: 65, rim: 17 },
+//   { _id: "t2", label: "Off-Road Package", width: 265, aspect: 70, rim: 17 },
+//   { _id: "t3", label: "Highway Comfort", width: 215, aspect: 60, rim: 16 },
+// ];
 
 const SPEED_READINGS = [20, 30, 40, 50, 60, 70, 80, 90];
 
@@ -37,8 +38,9 @@ function specRows(tire) {
 }
 
 export default function TireSizeCalculator() {
-  const { data: fetchedPresets, isError: presetsError } = useTireOptionsQuery();
-  const presets = presetsError || !fetchedPresets?.length ? MOCK_PRESETS : fetchedPresets;
+  // Hidden: no Tire Size Option data is fetched or checked any more.
+  // const { data: fetchedPresets, isError: presetsError } = useTireOptionsQuery();
+  // const presets = presetsError || !fetchedPresets?.length ? MOCK_PRESETS : fetchedPresets;
   const logComparison = useLogTireComparison();
 
   const [tire, setTire] = useState({ width: 265, aspect: 70, rim: 17 });
@@ -47,10 +49,11 @@ export default function TireSizeCalculator() {
   const [targetRim, setTargetRim] = useState(18);
   const [logged, setLogged] = useState(false);
 
-  const applyPreset = (id) => {
-    const preset = presets.find((p) => p._id === id);
-    if (preset) setTire({ width: preset.width, aspect: preset.aspect, rim: preset.rim });
-  };
+  // Hidden: "Load a saved preset" is switched off.
+  // const applyPreset = (id) => {
+  //   const preset = presets.find((p) => p._id === id);
+  //   if (preset) setTire({ width: preset.width, aspect: preset.aspect, rim: preset.rim });
+  // };
 
   const spec = useMemo(() => specRows(tire), [tire]);
 
@@ -61,17 +64,19 @@ export default function TireSizeCalculator() {
   const diffPct = useMemo(() => speedoDifferencePct(tire, convertedTire), [tire, convertedTire]);
   const speedoTable = useMemo(() => speedometerErrorTable(tire, convertedTire, SPEED_READINGS), [tire, convertedTire]);
 
-  // Alternate sizes — presets whose overall diameter falls within ±1" of
-  // the entered size, sorted by closeness (mirrors tiresize.com's
-  // "alternate tire sizes within 1 inch" suggestion using our own preset
-  // library instead of a full manufacturer database).
-  const alternates = useMemo(() => {
-    const target = tireDiameterInches(tire);
-    return presets
-      .map((p) => ({ ...p, diameter: tireDiameterInches(p) }))
-      .filter((p) => Math.abs(p.diameter - target) <= 1 && !(p.width === tire.width && p.aspect === tire.aspect && p.rim === tire.rim))
-      .sort((a, b) => Math.abs(a.diameter - target) - Math.abs(b.diameter - target));
-  }, [presets, tire]);
+  // Hidden: "Alternate sizes" were calculated from the Tire Size Option presets,
+  // which are switched off.
+  // // Alternate sizes — presets whose overall diameter falls within ±1" of
+  // // the entered size, sorted by closeness (mirrors tiresize.com's
+  // // "alternate tire sizes within 1 inch" suggestion using our own preset
+  // // library instead of a full manufacturer database).
+  // const alternates = useMemo(() => {
+  //   const target = tireDiameterInches(tire);
+  //   return presets
+  //     .map((p) => ({ ...p, diameter: tireDiameterInches(p) }))
+  //     .filter((p) => Math.abs(p.diameter - target) <= 1 && !(p.width === tire.width && p.aspect === tire.aspect && p.rim === tire.rim))
+  //     .sort((a, b) => Math.abs(a.diameter - target) - Math.abs(b.diameter - target));
+  // }, [presets, tire]);
 
   const fmt = (inches) => (unit === "mm" ? `${(inches * 25.4).toFixed(1)} mm` : `${inches.toFixed(2)}"`);
 
@@ -105,8 +110,9 @@ export default function TireSizeCalculator() {
         <div className="calculator-form-item">
           <h3>
             <Calculator size={16} className="icon-inline" />
-            Tire Size
+            Input Tire Size
           </h3>
+          {/* Hidden: "Load a saved preset" (Tire Size Option presets are switched off)
           <div className="field field-mb">
             <label>Load a saved preset</label>
             <select onChange={(e) => e.target.value && applyPreset(e.target.value)} defaultValue="">
@@ -118,6 +124,7 @@ export default function TireSizeCalculator() {
               ))}
             </select>
           </div>
+          */}
           <div className="tire-input-grid">
             <div className="field">
               <label>Width (mm)</label>
@@ -136,10 +143,10 @@ export default function TireSizeCalculator() {
             {tire.width}/{tire.aspect} R{tire.rim} · equivalent inch size ≈ {equivalentInchSize(tire)}
           </p>
 
-          <div className="range-toggle mt-10">
+          {/* <div className="range-toggle mt-10">
             <button type="button" className={unit === "in" ? "active" : ""} onClick={() => setUnit("in")}>inches</button>
             <button type="button" className={unit === "mm" ? "active" : ""} onClick={() => setUnit("mm")}>mm</button>
-          </div>
+          </div> */}
         </div>
         <div className="calculator-form-item formula-table-container">
           <div class="table-responsive">
@@ -297,6 +304,7 @@ export default function TireSizeCalculator() {
         )}
       </div>
 
+      {/* Hidden: "Alternate tire sizes" are built from Tire Size Option presets (switched off)
       <div className="card alternate-tire-size">
         <h3 className="mb-10">Alternate tire sizes (within 1" diameter)</h3>
         {alternates.length === 0 ? (
@@ -315,6 +323,7 @@ export default function TireSizeCalculator() {
           </div>
         )}
       </div>
+      */}
     </div>
   );
 }

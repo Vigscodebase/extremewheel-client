@@ -1,6 +1,7 @@
 import { Car, ImageOff, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTireSuggestions } from "../hooks/queries/useActivity";
+import AuthImage from "./AuthImage";
 
 function specText(spec) {
   const tyre = spec?.tyre;
@@ -31,12 +32,12 @@ function VehicleSuggestionCard({ vehicle }) {
       {photo ? (
         <div className="suggestion-photo-row">
           <div className="suggestion-photo">
-            <img src={vehicle.beforeImage || vehicle.image || photo} alt={`${vehicle.name} before`} />
+            <AuthImage src={vehicle.beforeImage || vehicle.image || photo} alt={`${vehicle.name} before`} />
             <span className="suggestion-photo-tag">Before</span>
           </div>
           <div className="suggestion-photo">
             {vehicle.afterImage ? (
-              <img src={vehicle.afterImage} alt={`${vehicle.name} after`} />
+              <AuthImage src={vehicle.afterImage} alt={`${vehicle.name} after`} />
             ) : (
               <span className="suggestion-photo-fallback">
                 <ImageOff size={16} />
@@ -118,7 +119,9 @@ function ChipSuggestion({ icon: Icon, text, to, state }) {
 export default function TireSuggestions({ tire, label }) {
   const { data, isLoading } = useTireSuggestions(tire);
 
-  const presets = data?.presets || [];
+  // Hidden: Tire Size Option presets are switched off, so "Saved preset" matches are never shown.
+  // const presets = data?.presets || [];
+  const presets = [];
   const comparisons = data?.comparisons || [];
   const plusSizeSaves = data?.plusSizeSaves || [];
   const vehicles = data?.vehicles || [];
@@ -143,6 +146,7 @@ export default function TireSuggestions({ tire, label }) {
 
       {(presets.length > 0 || comparisons.length > 0 || plusSizeSaves.length > 0) && (
         <div className="suggestion-chip-row">
+          {/* Hidden: "Saved preset" chips (Tire Size Option is switched off)
           {presets.map((p) => (
             <ChipSuggestion
               key={p._id}
@@ -152,6 +156,7 @@ export default function TireSuggestions({ tire, label }) {
               state={{ prefillPreset: { label: p.label, make: p.make, width: p.width, aspect: p.aspect, rim: p.rim } }}
             />
           ))}
+          */}
           {comparisons.map((c) => (
             <ChipSuggestion
               key={c._id}

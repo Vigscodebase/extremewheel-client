@@ -19,7 +19,7 @@ export const PAGE_PERMISSIONS = [
   { key: 'tire-calculator', label: 'Tire Size Calculator', path: '/tire-calculator' },
   { key: 'tire-comparison', label: 'Tire Size Comparison', path: '/tire-comparison' },
   { key: 'plus-size', label: 'Plus Size Options', path: '/plus-size' },
-  { key: 'tire-options', label: 'Tire Size Option', path: '/tire-options' },
+  // { key: 'tire-options', label: 'Tire Size Option', path: '/tire-options' }, // hidden: Tire Size Option is switched off
   // { key: 'application-guide', label: 'Application Guide', path: '/application-guide' }, // hidden page
   { key: 'tech-data', label: 'Tech Data', path: '/tech-data' },
   { key: 'vehicle-notes', label: 'Vehicle Notes', path: '/vehicle-notes' },
@@ -64,7 +64,7 @@ const el = (key, label, parent) => ({ key, label, parent });
 export const ELEMENT_PERMISSIONS = [
   el(PERM.TILE_TOTAL_USERS, 'Total users', 'dashboard'),
   el(PERM.TILE_VEHICLE_NOTES, 'Vehicle notes count', 'dashboard'),
-  el(PERM.TILE_TIRE_PRESETS, 'Tire presets count', 'dashboard'),
+  // el(PERM.TILE_TIRE_PRESETS, 'Tire presets count', 'dashboard'), // hidden: "Tire presets" tile is switched off
   el(PERM.TILE_QUICK_ACCESS, 'Quick access', 'dashboard'),
   el(PERM.TILE_TIRE_SHOWROOM, 'Tire showroom', 'dashboard'),
   el(PERM.TILE_RECENT_VEHICLES, 'Recently added vehicles', 'dashboard'),

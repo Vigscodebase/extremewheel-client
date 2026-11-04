@@ -1,4 +1,4 @@
-import { Car, Download, FileBarChart, Scale, SlidersHorizontal, Search } from "lucide-react";
+import { Car, Download, FileBarChart, Scale, /* SlidersHorizontal, // hidden: only used by the "Tire presets added" report */ Search } from "lucide-react";
 import { useState } from "react";
 import PageHeader from "../components/pageheader";
 import { useDownloadReportCsv, useReportsSummary } from "../hooks/queries/useReports";
@@ -9,14 +9,14 @@ const REPORT_TYPES = [
   { type: "vehicles", label: "Vehicles added", icon: Car, tint: { soft: "var(--color-amber-dark)", solid: "var(--color-pink-soft)" } },
   { type: "tire-comparisons", label: "Tire comparisons", icon: Scale, tint: { soft: "var(--color-sidebar)", solid: "var(--color-pink-soft)" } },
   { type: "vehicle-searches", label: "Vehicle searches", icon: Search, tint: { soft: "var(--color-muted)", solid: "var(--color-pink-soft)" } },
-  { type: "tire-options", label: "Tire presets added", icon: SlidersHorizontal, tint: { soft: "var(--color-pink)", solid: "var(--color-pink-soft)" } },
+  // { type: "tire-options", label: "Tire presets added", icon: SlidersHorizontal, tint: { soft: "var(--color-pink)", solid: "var(--color-pink-soft)" } }, // hidden: Tire Size Option is switched off
 ];
 
 const SUMMARY_KEY = {
   vehicles: "vehiclesAdded",
   "tire-comparisons": "tireComparisons",
   "vehicle-searches": "vehicleSearches",
-  "tire-options": "tirePresetsAdded",
+  // "tire-options": "tirePresetsAdded", // hidden: Tire Size Option is switched off
 };
 
 function toDateInputValue(date) {

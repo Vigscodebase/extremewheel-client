@@ -39,7 +39,7 @@ const FALLBACK_NAV = [
   { key: "tire-calculator", label: "Tire Size Calculator", path: "/tire-calculator", icon: "Calculator" },
   { key: "tire-comparison", label: "Tire Size Comparison", path: "/tire-comparison", icon: "Scale" },
   { key: "plus-size", label: "Plus Size Options", path: "/plus-size", icon: "TrendingUp" },
-  { key: "tire-options", label: "Tire Size Option", path: "/tire-options", icon: "SlidersHorizontal" },
+  // { key: "tire-options", label: "Tire Size Option", path: "/tire-options", icon: "SlidersHorizontal" }, // hidden: Tire Size Option is switched off
   // { key: "application-guide", label: "Application Guide", path: "/application-guide", icon: "Search" },
   { key: "tech-data", label: "Tech Data", path: "/tech-data", icon: "Wrench" },
   { key: "vehicle-notes", label: "Vehicle Notes", path: "/vehicle-notes", icon: "Car" },

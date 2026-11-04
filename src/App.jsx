@@ -14,7 +14,7 @@ import ResetPassword from "./pages/resetpassword";
 import TechData from "./pages/techdata";
 import TireSizeCalculator from "./pages/tiresizecalculator";
 import TireSizeComparison from "./pages/tiresizecomparison";
-import TireSizeOption from "./pages/tiresizeoption";
+// import TireSizeOption from "./pages/tiresizeoption"; // hidden: Tire Size Option page is switched off
 import UserManagement from "./pages/usermanagement";
 import VehicleNotes from "./pages/vehiclenotes";
 import VehicleNoteDetail from "./pages/vehiclenotedetail";
@@ -79,9 +79,11 @@ export default function App() {
                   <Route path="/tire-comparison" element={<TireSizeComparison />} />
                 </Route>
 
+                {/* Hidden: Tire Size Option page is switched off (an old /tire-options link falls through to the dashboard)
                 <Route element={<ProtectedRoute pageKey="tire-options" />}>
                   <Route path="/tire-options" element={<TireSizeOption />} />
                 </Route>
+                */}
 
                 <Route element={<ProtectedRoute pageKey="plus-size" />}>
                   <Route path="/plus-size" element={<PlusSizeOptions />} />

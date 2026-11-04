@@ -102,9 +102,30 @@ axios.interceptors.response.use(
 );
 */
 
+// Sign-in / registration / password-reset calls report their own 401s.
+const CREDENTIAL_CALL = /^\/auth\/(login|register|forgot-password|reset-password)(\/|\?|$)/;
+const SESSION_ENDED_MESSAGE = "Your session has ended. Please sign in again.";
+
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
+    // The API answers 401 to a request that DID carry a token only when that
+    // session can no longer be used: the account was deleted, or its password,
+    // email or role was changed (which signs out every device), or the token is
+    // invalid. Carrying on would just show a wall of error dialogs on a dead
+    // session, so end it: clearing it sends ProtectedRoute to /login.
+    const sentAuthorization = error.response?.status === 401 && error.config?.headers?.Authorization;
+    if (sentAuthorization && !CREDENTIAL_CALL.test(error.config?.url || "")) {
+      const { token, clearSession } = useAuthStore.getState();
+      // Only if that token is still the current one — a late response to a
+      // request made before the person signed in again must not sign them out.
+      if (token && sentAuthorization === `Bearer ${token}`) {
+        clearSession();
+        window.dispatchEvent(new CustomEvent("api-error", { detail: SESSION_ENDED_MESSAGE }));
+      }
+      return Promise.reject(error);
+    }
+
     // A 401 on a request that was sent with no Authorization header just
     // means "there is no session yet" (e.g. a cold visit before the router
     // redirects to /login). That is not a failure worth a modal, so stay

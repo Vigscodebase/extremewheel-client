@@ -1,6 +1,7 @@
 import { Camera, Car, Download, Eye, FileSpreadsheet, FilterX, ImagePlus, Images, Loader2, MessageSquare, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AuthImage from "../components/AuthImage";
 import ConfirmDialog from "../components/confirmdialog";
 import CustomerFormModal from "../components/CustomerFormModal";
 import CustomerSelect from "../components/CustomerSelect";
@@ -788,7 +789,7 @@ export default function VehicleNotes() {
                 <span className="vehicle-saving-tag"><Loader2 size={12} className="save-spin" /> Saving…</span>
               )}
               <div className="vehicle-image">
-                {v.image || v.beforeImage ? <img src={v.image || v.beforeImage} alt={v.name} /> : <Car size={30} color="#C6C9D6" />}
+                {v.image || v.beforeImage ? <AuthImage src={v.image || v.beforeImage} alt={v.name} /> : <Car size={30} color="#C6C9D6" />}
               </div>
               <div className="vehicle-body">
                 <p className="vehicle-name">{v.name}</p>
@@ -990,7 +991,7 @@ export default function VehicleNotes() {
             <label>Before &amp; after photos</label>
             <div className="before-after-grid">
               <label className="image-upload">
-                {form.beforeImage ? <img src={form.beforeImage} alt="before preview" /> : (
+                {form.beforeImage ? <AuthImage src={form.beforeImage} alt="before preview" /> : (
                   <span className="image-upload-placeholder">
                     <Camera size={18} color="var(--color-muted)" />
                     <span className="text-muted fs-11">Before</span>
@@ -999,7 +1000,7 @@ export default function VehicleNotes() {
                 <input type="file" accept="image/*" onChange={onSingleFileChange("beforeImage")} hidden />
               </label>
               <label className="image-upload">
-                {form.afterImage ? <img src={form.afterImage} alt="after preview" /> : (
+                {form.afterImage ? <AuthImage src={form.afterImage} alt="after preview" /> : (
                   <span className="image-upload-placeholder">
                     <Camera size={18} color="var(--color-muted)" />
                     <span className="text-muted fs-11">After</span>
@@ -1180,7 +1181,7 @@ export default function VehicleNotes() {
             <div className="gallery-grid">
               {form.gallery.map((photo) => (
                 <div key={photo} className="gallery-thumb">
-                  <img src={photo} alt="gallery item" />
+                  <AuthImage src={photo} alt="gallery item" />
                   <button type="button" className="gallery-thumb-remove" onClick={() => removeFormGalleryPhoto(photo)} title="Remove">
                     <X size={12} />
                   </button>
@@ -1221,10 +1222,10 @@ export default function VehicleNotes() {
                 <label>Before / after</label>
                 <div className="before-after-grid">
                   <div className="gallery-thumb wide">
-                    {galleryVehicle.beforeImage ? <img src={galleryVehicle.beforeImage} alt="before" /> : <span className="text-muted fs-11">No before photo</span>}
+                    {galleryVehicle.beforeImage ? <AuthImage src={galleryVehicle.beforeImage} alt="before" /> : <span className="text-muted fs-11">No before photo</span>}
                   </div>
                   <div className="gallery-thumb wide">
-                    {galleryVehicle.afterImage ? <img src={galleryVehicle.afterImage} alt="after" /> : <span className="text-muted fs-11">No after photo</span>}
+                    {galleryVehicle.afterImage ? <AuthImage src={galleryVehicle.afterImage} alt="after" /> : <span className="text-muted fs-11">No after photo</span>}
                   </div>
                 </div>
               </div>
@@ -1284,7 +1285,7 @@ export default function VehicleNotes() {
               <div className="gallery-grid">
                 {(galleryVehicle.gallery || []).map((photo, i) => (
                   <div key={photo} className="gallery-thumb" onClick={() => setLightboxIndex(i)}>
-                    <img src={photo} alt={`gallery ${i + 1}`} />
+                    <AuthImage src={photo} alt={`gallery ${i + 1}`} />
                     {canEdit && (
                       <button
                         type="button"
@@ -1342,7 +1343,8 @@ export default function VehicleNotes() {
           onConfirm={confirmDeleteCustomer}
           busy={deleteCustomerMutation.isPending}
           title="Delete customer"
-          message={`Delete ${customerDelete?.fullName || "this customer"} (${customerDelete?.email || ""})? They'll be removed from any vehicle notes and tire presets they're attached to — the vehicles and presets themselves are kept. This can't be undone.`}
+          // message={`Delete ${customerDelete?.fullName || "this customer"} (${customerDelete?.email || ""})? They'll be removed from any vehicle notes and tire presets they're attached to — the vehicles and presets themselves are kept. This can't be undone.`} // hidden: wording mentioned Tire Size Option presets
+          message={`Delete ${customerDelete?.fullName || "this customer"} (${customerDelete?.email || ""})? They'll be removed from any vehicle notes they're attached to — the vehicles themselves are kept. This can't be undone.`}
         />
       )}
 

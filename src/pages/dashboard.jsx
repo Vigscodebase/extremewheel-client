@@ -30,7 +30,7 @@ const RANGES = ["W", "M", "Y"];
 const FALLBACK = {
   totalUsers: 18,
   totalVehicles: 34,
-  tirePresets: 12,
+  // tirePresets: 12, // hidden: "Tire presets" tile is switched off
   activeSessions: 6,
   activity: [
     { label: "Mon", value: 12 },
@@ -251,7 +251,7 @@ function ContactRow({ name, role, online }) {
 const QUICK_LINKS = [
   { to: "/tire-calculator", icon: Gauge, label: "Tire Size Calculator", desc: "Convert & size up a single tire spec" },
   { to: "/tire-comparison", icon: Scale, label: "Tire Size Comparison", desc: "Compare two tire specs side by side" },
-  { to: "/tire-options", icon: Car, label: "Tire Size Option", desc: "Manage saved tire size presets" },
+  // { to: "/tire-options", icon: Car, label: "Tire Size Option", desc: "Manage saved tire size presets" }, // hidden: Tire Size Option is switched off
   { to: "/plus-size", icon: TrendingUp, label: "Plus Size Option", desc: "Find plus-size matches within tolerance" },
 ];
 
@@ -340,7 +340,8 @@ export default function Dashboard() {
   // Every tile is its own per-user permission (dashboard.tile.*); the server
   // also withholds the data for tiles the user can't see.
   const { can } = usePermissions();
-  const showKpis = can(PERM.TILE_TOTAL_USERS) || can(PERM.TILE_VEHICLE_NOTES) || can(PERM.TILE_TIRE_PRESETS);
+  // const showKpis = can(PERM.TILE_TOTAL_USERS) || can(PERM.TILE_VEHICLE_NOTES) || can(PERM.TILE_TIRE_PRESETS); // hidden: "Tire presets" tile is switched off
+  const showKpis = can(PERM.TILE_TOTAL_USERS) || can(PERM.TILE_VEHICLE_NOTES);
   const { data } = useDashboardSummary();
   const [range, setRange] = useState("W");
   const [selectedDay, setSelectedDay] = useState(FALLBACK.scheduleDays[2]?.day);
@@ -378,43 +379,45 @@ export default function Dashboard() {
       />
 
       {showKpis && (
-      <div className="kpi-grid">
-        {can(PERM.TILE_TOTAL_USERS) && <KpiCard icon={Users} label="Total users" value={stats.totalUsers} tint={{ soft: "var(--color-amber-dark)", solid: "var(--color-pink-soft)" }} to="/user-management" />}
-        {can(PERM.TILE_VEHICLE_NOTES) && <KpiCard icon={Car} label="Vehicles notes" value={stats.totalVehicles} tint={{ soft: "var(--color-pink)", solid: "var(--color-pink-soft)" }} to="/vehicle-notes" />}
+        <div className="kpi-grid">
+          {can(PERM.TILE_TOTAL_USERS) && <KpiCard icon={Users} label="Total users" value={stats.totalUsers} tint={{ soft: "var(--color-amber-dark)", solid: "var(--color-pink-soft)" }} to="/user-management" />}
+          {can(PERM.TILE_VEHICLE_NOTES) && <KpiCard icon={Car} label="Vehicles notes" value={stats.totalVehicles} tint={{ soft: "var(--color-pink)", solid: "var(--color-pink-soft)" }} to="/vehicle-notes" />}
+          {/* Hidden: "Tire presets" tile (Tire Size Option is switched off)
         {can(PERM.TILE_TIRE_PRESETS) && <KpiCard icon={Gauge} label="Tire presets" value={stats.tirePresets} tint={{ soft: "var(--color-sidebar)", solid: "var(--color-pink-soft)" }} to="/tire-options" />}
-        {/* <KpiCard icon={ShieldCheck} label="Active sessions" value={stats.activeSessions} tint={{ soft: "var(--color-pink-soft)", solid: "var(--color-pink)" }} /> */}
-      </div>
+        */}
+          {/* <KpiCard icon={ShieldCheck} label="Active sessions" value={stats.activeSessions} tint={{ soft: "var(--color-pink-soft)", solid: "var(--color-pink)" }} /> */}
+        </div>
       )}
 
       {can(PERM.TILE_QUICK_ACCESS) && <QuickAccessPanel />}
 
       {can(PERM.TILE_TIRE_SHOWROOM) && (
-      <ClickableCard to="/tire-calculator" className="card threed-height dash-panel mb-20">
-        <div className="panel-head">
-          <div>
-            <h3>Tire showroom</h3>
-            <p>Live 3D preview of your most recently compared size</p>
+        <ClickableCard to="/tire-calculator" className="card threed-height dash-panel mb-20">
+          <div className="panel-head">
+            <div>
+              <h3>Tire showroom</h3>
+              <p>Live 3D preview of your most recently compared size</p>
+            </div>
+            <PageLink to="/tire-calculator" className="see-all-link">
+              Open calculator <ChevronRight size={14} />
+            </PageLink>
           </div>
-          <PageLink to="/tire-calculator" className="see-all-link">
-            Open calculator <ChevronRight size={14} />
-          </PageLink>
-        </div>
-        {/* <Tire3DVisualizer
+          {/* <Tire3DVisualizer
           tire={showroomTire}
           label={`${showroomTire.width}/${showroomTire.aspect}R${showroomTire.rim}`}
           accent="#FF6F91"
           height={260}
         /> */}
 
-        <Tire3DVisualizer
-          tire={showroomTire}
-          label={`${showroomTire.width}/${showroomTire.aspect}R${showroomTire.rim}`}
-          accent="#FF6F91"
-          height="100%"
-          variant="dashboard"
-        />
+          <Tire3DVisualizer
+            tire={showroomTire}
+            label={`${showroomTire.width}/${showroomTire.aspect}R${showroomTire.rim}`}
+            accent="#FF6F91"
+            height="100%"
+            variant="dashboard"
+          />
 
-      </ClickableCard>
+        </ClickableCard>
       )}
 
       {/* <div className="section-title-row">
@@ -520,43 +523,43 @@ export default function Dashboard() {
       </div> */}
 
       {(can(PERM.TILE_RECENT_VEHICLES) || can(PERM.TILE_USERS_BY_ROLE)) && (
-      <div className="dash-grid">
-        {can(PERM.TILE_RECENT_VEHICLES) && (
-        <ClickableCard to="/vehicle-notes" className="card dash-panel">
-          <div className="panel-head">
-            <div>
-              <h3>Recently added vehicles</h3>
-              <p>Latest entries in Vehicle Notes</p>
-            </div>
-          </div>
-          <div className="recent-list">
-            {stats.recentVehicles.map((v) => (
-              <div key={v.name} className="recent-row">
-                <div className="recent-avatar">{v.name.charAt(0)}</div>
-                <div className="recent-info">
-                  <p className="recent-name">{v.name}</p>
-                  <p className="recent-type">{v.type}</p>
+        <div className="dash-grid">
+          {can(PERM.TILE_RECENT_VEHICLES) && (
+            <ClickableCard to="/vehicle-notes" className="card dash-panel">
+              <div className="panel-head">
+                <div>
+                  <h3>Recently added vehicles</h3>
+                  <p>Latest entries in Vehicle Notes</p>
                 </div>
-                <span className="badge badge-model">{v.model}</span>
               </div>
-            ))}
-          </div>
-        </ClickableCard>
-        )}
-
-        {can(PERM.TILE_USERS_BY_ROLE) &&
-          <ClickableCard to="/user-management" className="card dash-panel">
-            <div className="panel-head">
-              <div>
-                <h3>Users by role</h3>
-                <p>Current access distribution</p>
+              <div className="recent-list">
+                {stats.recentVehicles.map((v) => (
+                  <div key={v.name} className="recent-row">
+                    <div className="recent-avatar">{v.name.charAt(0)}</div>
+                    <div className="recent-info">
+                      <p className="recent-name">{v.name}</p>
+                      <p className="recent-type">{v.type}</p>
+                    </div>
+                    <span className="badge badge-model">{v.model}</span>
+                  </div>
+                ))}
               </div>
-            </div>
-            <DonutChart data={donutData} />
-          </ClickableCard>
-        }
+            </ClickableCard>
+          )}
 
-        {/* <div className="card dash-panel">
+          {can(PERM.TILE_USERS_BY_ROLE) &&
+            <ClickableCard to="/user-management" className="card dash-panel">
+              <div className="panel-head">
+                <div>
+                  <h3>Users by role</h3>
+                  <p>Current access distribution</p>
+                </div>
+              </div>
+              <DonutChart data={donutData} />
+            </ClickableCard>
+          }
+
+          {/* <div className="card dash-panel">
           <div className="panel-head">
             <div>
               <h3>Team on duty</h3>
@@ -572,76 +575,76 @@ export default function Dashboard() {
             ))}
           </div>
         </div> */}
-      </div>
+        </div>
       )}
 
       {(can(PERM.TILE_RECENT_COMPARISONS) || can(PERM.TILE_RECENT_VEHICLE_SEARCHES)) && (
-      <div className="dash-grid">
-        {can(PERM.TILE_RECENT_COMPARISONS) && (
-        <ClickableCard to="/tire-comparison" className="card dash-panel">
-          <div className="panel-head">
-            <div>
-              <h3>Recent tire comparisons</h3>
-              {/* <p>Last few tire sizes un through the calculator</p> */}
-            </div>
-            <PageLink to="/tire-comparison" className="see-all-link">
-              Open comparison <ChevronRight size={14} />
-            </PageLink>
-          </div>
-          <div className="recent-list">
-            {(stats.recentTireComparisons || []).length === 0 ? (
-              <p className="service-empty">No comparisons logged yet.</p>
-            ) : (
-              stats.recentTireComparisons.map((c) => (
-                <div key={c._id} className="recent-row">
-                  <div className="recent-avatar"><Scale size={15} /></div>
-                  <div className="recent-info">
-                    <p className="recent-name">{c.summary}</p>
-                    <p className="recent-type">{new Date(c.createdAt).toLocaleDateString()}</p>
-                  </div>
-                  {typeof c.data?.diffPct === "number" && (
-                    <span className="badge badge-model">{c.data.diffPct >= 0 ? "+" : ""}{c.data.diffPct.toFixed(1)}%</span>
-                  )}
+        <div className="dash-grid">
+          {can(PERM.TILE_RECENT_COMPARISONS) && (
+            <ClickableCard to="/tire-comparison" className="card dash-panel">
+              <div className="panel-head">
+                <div>
+                  <h3>Recent tire comparisons</h3>
+                  {/* <p>Last few tire sizes un through the calculator</p> */}
                 </div>
-              ))
-            )}
-          </div>
-        </ClickableCard>
-        )}
+                <PageLink to="/tire-comparison" className="see-all-link">
+                  Open comparison <ChevronRight size={14} />
+                </PageLink>
+              </div>
+              <div className="recent-list">
+                {(stats.recentTireComparisons || []).length === 0 ? (
+                  <p className="service-empty">No comparisons logged yet.</p>
+                ) : (
+                  stats.recentTireComparisons.map((c) => (
+                    <div key={c._id} className="recent-row">
+                      <div className="recent-avatar"><Scale size={15} /></div>
+                      <div className="recent-info">
+                        <p className="recent-name">{c.summary}</p>
+                        <p className="recent-type">{new Date(c.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      {typeof c.data?.diffPct === "number" && (
+                        <span className="badge badge-model">{c.data.diffPct >= 0 ? "+" : ""}{c.data.diffPct.toFixed(1)}%</span>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </ClickableCard>
+          )}
 
-        {can(PERM.TILE_RECENT_VEHICLE_SEARCHES) && (
-        <ClickableCard to="/tech-data" className="card dash-panel">
-          <div className="panel-head">
-            <div>
-              <h3>Recently searched vehicles</h3>
-              <p>Latest Application Guide / Tech Data lookups</p>
-            </div>
-            <PageLink to="/tech-data" className="see-all-link">
-              Open Tech Data <ChevronRight size={14} />
-            </PageLink>
-          </div>
-          <div className="recent-list">
-            {(stats.recentVehicleSearches || []).length === 0 ? (
-              <p className="service-empty">No vehicle searches logged yet.</p>
-            ) : (
-              stats.recentVehicleSearches.map((s) => (
-                <div key={s._id} className="recent-row">
-                  <div className="recent-avatar"><Search size={15} /></div>
-                  <div className="recent-info">
-                    <p className="recent-name">{s.summary}</p>
-                    <p className="recent-type">{new Date(s.createdAt).toLocaleDateString()}</p>
-                  </div>
+          {can(PERM.TILE_RECENT_VEHICLE_SEARCHES) && (
+            <ClickableCard to="/tech-data" className="card dash-panel">
+              <div className="panel-head">
+                <div>
+                  <h3>Recently searched vehicles</h3>
+                  <p>Latest Application Guide / Tech Data lookups</p>
                 </div>
-              ))
-            )}
-          </div>
-        </ClickableCard>
-        )}
+                <PageLink to="/tech-data" className="see-all-link">
+                  Open Tech Data <ChevronRight size={14} />
+                </PageLink>
+              </div>
+              <div className="recent-list">
+                {(stats.recentVehicleSearches || []).length === 0 ? (
+                  <p className="service-empty">No vehicle searches logged yet.</p>
+                ) : (
+                  stats.recentVehicleSearches.map((s) => (
+                    <div key={s._id} className="recent-row">
+                      <div className="recent-avatar"><Search size={15} /></div>
+                      <div className="recent-info">
+                        <p className="recent-name">{s.summary}</p>
+                        <p className="recent-type">{new Date(s.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ClickableCard>
+          )}
 
-      </div>
+        </div>
       )}
 
-      {can(PERM.TILE_RECENT_PLUS_SIZE) && (
+      {/* {can(PERM.TILE_RECENT_PLUS_SIZE) && (
       <div className="dash-grid">
         <ClickableCard to="/plus-size" className="card dash-panel">
           <div className="panel-head">
@@ -670,33 +673,33 @@ export default function Dashboard() {
           </div>
         </ClickableCard>
       </div>
-      )}
+      )} */}
 
       {can(PERM.TILE_REPORTS) && (
-      <div className="dash-grid">
-        <ClickableCard to="/reports" className="card dash-panel goal-card">
-          <div className="panel-head">
-            <div>
-              <h3>Reports</h3>
-              <p>Activity captured for date-range exports</p>
+        <div className="dash-grid">
+          <ClickableCard to="/reports" className="card dash-panel goal-card">
+            <div className="panel-head">
+              <div>
+                <h3>Reports</h3>
+                <p>Activity captured for date-range exports</p>
+              </div>
             </div>
-          </div>
-          <div className="goal-ring-wrap">
-            <GoalRing
-              value={stats.reportsSummary?.last7Days ?? 0}
-              goal={Math.max(stats.reportsSummary?.totalActivity ?? 1, 1)}
-              color="#e59033"
-            />
-          </div>
-          <p className="goal-caption">Last 7 days vs. all-time activity</p>
-          <p className="goal-subcaption">
-            {stats.reportsSummary?.totalActivity ?? 0} events logged in total
-          </p>
-          <PageLink to="/reports" className="btn btn-accent mt-14">
-            <FileBarChart size={15} /> Open Reporting & Data Export
-          </PageLink>
-        </ClickableCard>
-      </div>
+            <div className="goal-ring-wrap">
+              <GoalRing
+                value={stats.reportsSummary?.last7Days ?? 0}
+                goal={Math.max(stats.reportsSummary?.totalActivity ?? 1, 1)}
+                color="#e59033"
+              />
+            </div>
+            <p className="goal-caption">Last 7 days vs. all-time activity</p>
+            <p className="goal-subcaption">
+              {stats.reportsSummary?.totalActivity ?? 0} events logged in total
+            </p>
+            <PageLink to="/reports" className="btn btn-accent mt-14">
+              <FileBarChart size={15} /> Open Reporting & Data Export
+            </PageLink>
+          </ClickableCard>
+        </div>
       )}
 
       {/* <div className="dash-grid">

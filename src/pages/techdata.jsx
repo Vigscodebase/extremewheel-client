@@ -12,7 +12,7 @@ import {
   useImportTechDataCsv,
 } from "../hooks/queries/useAppGuide";
 import { useLogVehicleSearch } from "../hooks/queries/useActivity";
-import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
+// import { useTireOptionsQuery } from "../hooks/queries/useTireOptions"; // hidden: Tire Size Option feature is switched off
 import { useUpdateVehicleNote, useVehicleNotesQuery } from "../hooks/queries/useVehicleNotes";
 import { usePermissions } from "../context/permissioncontext";
 import { PERM } from "../utils/permissions";
@@ -80,7 +80,8 @@ export default function TechData() {
       <PageHeader
         eyebrow="Wheel fitment"
         title="Tech Data"
-        subtitle="Static fitment reference plus wheel offset lookups sourced from the Application Guide, Vehicle Notes and Tire Size Options."
+        // subtitle="Static fitment reference plus wheel offset lookups sourced from the Application Guide, Vehicle Notes and Tire Size Options." // hidden: Tire Size Option is switched off
+        subtitle="Static fitment reference plus wheel offset lookups sourced from the Application Guide and Vehicle Notes."
       />
 
       <div className="range-toggle mb-20">
@@ -231,7 +232,8 @@ function VehicleLookupTab() {
 
 function ManualReferenceTab() {
   const { data: vehicles, isLoading } = useVehicleNotesQuery();
-  const { data: tireOptions } = useTireOptionsQuery();
+  // Hidden: no Tire Size Option data is fetched or checked any more.
+  // const { data: tireOptions } = useTireOptionsQuery();
   const updateVehicle = useUpdateVehicleNote();
   const [selectedId, setSelectedId] = useState("");
   const [notes, setNotes] = useState("");
@@ -255,7 +257,10 @@ function ManualReferenceTab() {
 
   return (
     <div className="card">
+      {/* Hidden: "or tire preset" (Tire Size Option presets are switched off)
       <h3 className="mb-4">Reference an existing vehicle note or tire preset</h3>
+      */}
+      <h3 className="mb-4">Reference an existing vehicle note</h3>
       <p className="text-muted mb-16">
         For fitments not yet in the Application Guide dataset, record offset/backspacing reference notes directly against a Vehicle Note.
       </p>
@@ -278,6 +283,7 @@ function ManualReferenceTab() {
             <span className="badge badge-model">{vehicle.type}</span>
           </div>
 
+          {/* Hidden: "Related tire size preset" (Tire Size Option presets are switched off)
           <div className="field field-mb">
             <label>Related tire size preset (reference only)</label>
             <select defaultValue="">
@@ -287,6 +293,7 @@ function ManualReferenceTab() {
               ))}
             </select>
           </div>
+          */}
 
           <div className="field field-mb-lg">
             <label>Wheel offset / fitment notes</label>

@@ -27,6 +27,16 @@ const EMPTY_USERS = [];
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
 
+  // Admin accounts are the master accounts, so — enforced by the server, mirrored
+  // here so nobody is offered a button that can only fail — only an admin can
+  // create, edit or delete one or make someone an admin, and nobody can change
+  // their own role. (The signed-in user is identified by email: the session
+  // only carries name / email / role.)
+  const actorIsAdmin = currentUser?.role === "admin";
+  const roleOptions = actorIsAdmin ? ROLES : ROLES.filter((r) => r !== "admin");
+  const isSelf = (u) => !!currentUser?.email && u?.email?.toLowerCase() === currentUser.email.toLowerCase();
+  const isLockedAdmin = (u) => u?.role === "admin" && !actorIsAdmin;
+
   const [tab, setTab] = useState("users");
   const [query, setQuery] = useState("");
   const [queryExact, setQueryExact] = useState(false); // true once a suggestion was picked
@@ -267,15 +277,27 @@ export default function UserManagement() {
                             >
                               <ShieldCheck size={15} />
                             </button>
-                            <button type="button" className="icon-btn" onClick={() => openEdit(u)} title="Edit">
+                            <button
+                              type="button"
+                              className="icon-btn"
+                              onClick={() => openEdit(u)}
+                              title={isLockedAdmin(u) ? "Only an admin can change an admin account" : "Edit"}
+                              disabled={isLockedAdmin(u)}
+                            >
                               <Pencil size={15} />
                             </button>
                             <button
                               type="button"
                               className="icon-btn danger"
                               onClick={() => setDeleteTarget(u)}
-                              title="Delete"
-                              disabled={u._id === currentUser?._id}
+                              title={
+                                isSelf(u)
+                                  ? "You can't delete your own account"
+                                  : isLockedAdmin(u)
+                                    ? "Only an admin can delete an admin account"
+                                    : "Delete"
+                              }
+                              disabled={isSelf(u) || isLockedAdmin(u)}
                             >
                               <Trash2 size={15} />
                             </button>
@@ -385,8 +407,14 @@ export default function UserManagement() {
           </div>
           <div className="field field-mb-lg">
             <label htmlFor="uRole">Role</label>
-            <select id="uRole" name="role" value={form.role} onChange={onFormChange}>
-              {ROLES.map((r) => (
+            <select
+              id="uRole"
+              name="role"
+              value={form.role}
+              onChange={onFormChange}
+              disabled={!!editing && isSelf(editing)}
+            >
+              {roleOptions.map((r) => (
                 <option key={r} value={r}>
                   {r.charAt(0).toUpperCase() + r.slice(1)}
                 </option>
@@ -394,6 +422,8 @@ export default function UserManagement() {
             </select>
             <p className="field-hint">
               Admin has full access. For Staff and Guest, what they can open and do is set per user in the Permissions tab.
+              {editing && isSelf(editing) && " You can't change your own role."}
+              {!actorIsAdmin && " Only an admin can create or change admin accounts."}
             </p>
           </div>
           <div className="flex-end gap-10">

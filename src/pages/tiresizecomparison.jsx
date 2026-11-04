@@ -9,7 +9,7 @@ import TireSuggestions from "../components/TireSuggestions";
 import { useLogTireComparison } from "../hooks/queries/useActivity";
 import { usePermissions } from "../context/permissioncontext";
 import { PERM } from "../utils/permissions";
-import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
+// import { useTireOptionsQuery } from "../hooks/queries/useTireOptions"; // hidden: Tire Size Option feature is switched off
 import {
   speedoDifferencePct,
   // tireCircumferenceMm, // hidden: Circumference row is commented out below
@@ -17,22 +17,25 @@ import {
   treadWidthInches,
 } from "../utils/tireMath";
 
-const MOCK_PRESETS = [
-  { _id: "t1", label: "Factory Standard", width: 225, aspect: 65, rim: 17 },
-  { _id: "t2", label: "Off-Road Package", width: 265, aspect: 70, rim: 17 },
-  { _id: "t3", label: "Highway Comfort", width: 215, aspect: 60, rim: 16 },
-];
+// Hidden: Tire Size Option presets are switched off, so no preset (or mock preset) data is used here.
+// const MOCK_PRESETS = [
+//   { _id: "t1", label: "Factory Standard", width: 225, aspect: 65, rim: 17 },
+//   { _id: "t2", label: "Off-Road Package", width: 265, aspect: 70, rim: 17 },
+//   { _id: "t3", label: "Highway Comfort", width: 215, aspect: 60, rim: 16 },
+// ];
 
-function TireForm({ title, value, onChange, presets }) {
-  const applyPreset = (id) => {
-    const preset = presets.find((p) => p._id === id);
-    if (preset) onChange({ width: preset.width, aspect: preset.aspect, rim: preset.rim });
-  };
+function TireForm({ title, value, onChange /*, presets // hidden: Tire Size Option presets are switched off */ }) {
+  // Hidden: "Load a saved preset" is switched off.
+  // const applyPreset = (id) => {
+  //   const preset = presets.find((p) => p._id === id);
+  //   if (preset) onChange({ width: preset.width, aspect: preset.aspect, rim: preset.rim });
+  // };
 
   return (
     <div className="card tire-form">
       <h3>{title}</h3>
-      {/* Reused existing global class: field-mb */}
+      {/* Hidden: "Load a saved preset" (Tire Size Option presets are switched off)
+      Reused existing global class: field-mb
       <div className="field field-mb">
         <label>Load a saved preset</label>
         <select onChange={(e) => e.target.value && applyPreset(e.target.value)} defaultValue="">
@@ -44,6 +47,7 @@ function TireForm({ title, value, onChange, presets }) {
           ))}
         </select>
       </div>
+      */}
       <div className="tire-input-grid">
         <div className="field">
           <label>Width</label>
@@ -68,8 +72,9 @@ function TireForm({ title, value, onChange, presets }) {
 export default function TireSizeComparison() {
   const location = useLocation();
   const prefill = location.state?.prefillComparison;
-  const { data: fetchedPresets, isError: presetsError } = useTireOptionsQuery();
-  const presets = presetsError || !fetchedPresets?.length ? MOCK_PRESETS : fetchedPresets;
+  // Hidden: no Tire Size Option data is fetched or checked any more.
+  // const { data: fetchedPresets, isError: presetsError } = useTireOptionsQuery();
+  // const presets = presetsError || !fetchedPresets?.length ? MOCK_PRESETS : fetchedPresets;
   const [tireA, setTireA] = useState(prefill?.tireA || { width: 225, aspect: 65, rim: 17 });
   const [tireB, setTireB] = useState(prefill?.tireB || { width: 265, aspect: 70, rim: 17 });
 
@@ -146,11 +151,11 @@ export default function TireSizeComparison() {
       )}
 
       <div className="compare-grid">
-        <TireForm key={`a-${applyKey}`} title="Tire A" value={tireA} onChange={update(setTireA)} presets={presets} />
+        <TireForm key={`a-${applyKey}`} title="Tire A" value={tireA} onChange={update(setTireA)} /* presets={presets} // hidden: Tire Size Option presets are switched off */ />
         <div className="compare-arrow">
           <ArrowRightLeft size={18} />
         </div>
-        <TireForm key={`b-${applyKey}`} title="Tire B" value={tireB} onChange={update(setTireB)} presets={presets} />
+        <TireForm key={`b-${applyKey}`} title="Tire B" value={tireB} onChange={update(setTireB)} /* presets={presets} // hidden: Tire Size Option presets are switched off */ />
       </div>
 
       <div className="card compare-result-card">

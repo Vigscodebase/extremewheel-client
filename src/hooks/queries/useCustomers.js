@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as customersApi from "../../api/customersApi";
 import { savedComparisonsKey } from "./useSavedComparisons";
-import { tireOptionsKey } from "./useTireOptions";
+// import { tireOptionsKey } from "./useTireOptions"; // hidden: Tire Size Option feature is switched off
 import { vehicleNotesKey } from "./useVehicleNotes";
 
 export const customersKey = ["customers"];
@@ -27,7 +27,7 @@ function useCustomerMutation(mutationFn) {
       queryClient.invalidateQueries({ queryKey: customersKey });
       queryClient.invalidateQueries({ queryKey: vehicleNotesKey });
       queryClient.invalidateQueries({ queryKey: savedComparisonsKey });
-      queryClient.invalidateQueries({ queryKey: tireOptionsKey });
+      // queryClient.invalidateQueries({ queryKey: tireOptionsKey }); // hidden: Tire Size Option feature is switched off
     },
   });
 }

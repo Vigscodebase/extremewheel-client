@@ -8,7 +8,7 @@ import TireSuggestions from "../components/TireSuggestions";
 import { usePermissions } from "../context/permissioncontext";
 import { PERM } from "../utils/permissions";
 import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
-import { useTireOptionsQuery } from "../hooks/queries/useTireOptions";
+// import { useTireOptionsQuery } from "../hooks/queries/useTireOptions"; // hidden: Tire Size Option feature is switched off
 import {
   useDownloadOeTireSizeXlsx,
   useImportOeTireSizeXlsx,
@@ -304,7 +304,8 @@ export default function PlusSizeOptions() {
   const { can } = usePermissions();
   const canDownloadOe = can(PERM.PLUS_SIZE_DOWNLOAD);
   const canUploadOe = can(PERM.PLUS_SIZE_UPLOAD);
-  const { data: presets } = useTireOptionsQuery();
+  // Hidden: no Tire Size Option data is fetched or checked any more.
+  // const { data: presets } = useTireOptionsQuery();
   const searchMutation = usePlusSizeSearch();
   const saveMutation = useSavePlusSizeMatch();
   const importOeMutation = useImportOeTireSizeXlsx();
@@ -348,10 +349,11 @@ export default function PlusSizeOptions() {
   // const [treadTolerancePct, setTreadTolerancePct] = useState(PLUS_SIZE_TREAD_TOLERANCE_PCT * 100);
   // const [sortBy, setSortBy] = useState("combined");
 
-  const applyPreset = (id) => {
-    const preset = (presets || []).find((p) => p._id === id);
-    if (preset) setOe((prev) => ({ ...prev, width: preset.width, aspect: preset.aspect, rim: preset.rim }));
-  };
+  // Hidden: "Load a saved preset" is switched off.
+  // const applyPreset = (id) => {
+  //   const preset = (presets || []).find((p) => p._id === id);
+  //   if (preset) setOe((prev) => ({ ...prev, width: preset.width, aspect: preset.aspect, rim: preset.rim }));
+  // };
 
   const runSearch = async (e) => {
     e.preventDefault();
@@ -458,6 +460,7 @@ export default function PlusSizeOptions() {
           </div>
         )}
 
+        {/* Hidden: "Load a saved preset" (Tire Size Option presets are switched off)
         <div className="field field-mb">
           <label>Load a saved preset</label>
           <select onChange={(e) => e.target.value && applyPreset(e.target.value)} defaultValue="">
@@ -469,6 +472,7 @@ export default function PlusSizeOptions() {
             ))}
           </select>
         </div>
+        */}
 
         <div className="tire-input-grid">
           <div className="field">
@@ -587,8 +591,11 @@ export default function PlusSizeOptions() {
 
           {results.length === 0 ? (
             <div className="empty-state-card">
+              {/* Hidden: pointer to the Tire Size Option page (switched off)
               No saved tire sizes fall within tolerance. Add more sizes on the Tire Size Option page, or widen your target rim /
               tolerances above.
+              */}
+              No saved tire sizes fall within tolerance. Try widening your target rim / tolerances above.
             </div>
           ) : (
             <div className="table-responsive">

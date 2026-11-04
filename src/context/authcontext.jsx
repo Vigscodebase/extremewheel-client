@@ -191,9 +191,15 @@ export const AuthProvider = ({ children }) => {
           role,
         });
 
-        await fetchMe();
-      } catch {
-        clearSession();
+        // The token only says who signed in. The server's answer is the current
+        // truth (the role may have changed since), so it wins.
+        const me = await fetchMe();
+        if (me) updateUser({ name: me.name, email: me.email, role: me.role });
+      } catch (err) {
+        // Only a dead or garbled token ends the session (a 401 is already
+        // handled by the axios interceptor). A network blip or a 5xx while the
+        // page loads must not sign the person out.
+        if (!err?.isAxiosError) clearSession();
       } finally {
         setInitializing(false);
       }

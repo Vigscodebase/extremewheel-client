@@ -9,7 +9,7 @@ const KIND_LABEL = {
   year: "Year",
   customer: "Customer",
   size: "Tire size",
-  preset: "Preset",
+  // preset: "Preset", // hidden: Tire Size Option presets are switched off
   name: "Name",
   email: "Email",
 };

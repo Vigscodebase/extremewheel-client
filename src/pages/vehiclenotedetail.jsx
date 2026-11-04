@@ -1,6 +1,7 @@
 import { ArrowLeft, Camera, Car, CircleAlert, FileText, Images, MessageSquare, Wrench } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import AuthImage from "../components/AuthImage";
 import Lightbox from "../components/lightbox";
 import PageHeader from "../components/pageheader";
 import { useAuth } from "../context/authcontext";
@@ -72,7 +73,7 @@ function PhotoTile({ src, alt, onOpen, emptyLabel }) {
   }
   return (
     <button type="button" className="vnd-photo" onClick={onOpen} aria-label={`View ${alt} full size`}>
-      <img src={src} alt={alt} loading="lazy" />
+      <AuthImage src={src} alt={alt} loading="lazy" />
     </button>
   );
 }
@@ -163,7 +164,7 @@ export default function VehicleNoteDetail() {
           <div className="vnd-overview">
             {heroSrc ? (
               <button type="button" className="vnd-hero" onClick={() => openPhoto(heroKey)} aria-label="View main photo full size">
-                <img src={heroSrc} alt={vehicle.name} />
+                <AuthImage src={heroSrc} alt={vehicle.name} />
               </button>
             ) : (
               <div className="vnd-hero is-empty" aria-hidden="true">

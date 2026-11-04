@@ -5827,3 +5827,9 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
         width: auto;
     }
 }
+/* Photos fetched with the login token (components/AuthImage.jsx): a soft
+   placeholder while the image is on its way. */
+img[data-image-state="loading"] {
+    background: var(--color-border);
+    opacity: 0.45;
+}
