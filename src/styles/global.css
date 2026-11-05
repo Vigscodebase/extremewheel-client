@@ -927,6 +927,28 @@ input[type="password"]::-ms-clear {
     display: none;
 }
 
+.comparison-tire-ab {
+    text-align: center;
+    width: fit-content;
+    color: #ffffff;
+    background-color: #A31621;
+    border-radius: 0 22px 22px 0;
+    padding: 10px 20px;
+    margin: auto;
+    position: absolute;
+    top: 0%;
+    left: -1%;
+}
+
+.tiresize-comparison-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.input-tire-size {
+    padding-top: 35px;
+}
+
 @media only screen and (min-width:320px) and (max-width:767px) {
     .btn-responsive {
         display: block;
@@ -1889,6 +1911,7 @@ input[type="password"]::-ms-clear {
 .tire-form h3 {
     font-size: 16px;
     margin-bottom: 18px;
+    text-transform: capitalize;
 }
 
 .tire-form select {
@@ -1932,6 +1955,13 @@ input[type="password"]::-ms-clear {
     max-width: 800px;
 }
 
+.calculator-tire-input-grid {
+    display: grid;
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    max-width: 800px;
+}
+
 .tire-input-grid-tirecalculator {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1954,7 +1984,7 @@ input[type="password"]::-ms-clear {
 }
 
 .tire-size-string {
-    margin-top: 16px;
+    /* margin-top: 16px; */
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 17px;
@@ -5827,9 +5857,847 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
         width: auto;
     }
 }
+
 /* Photos fetched with the login token (components/AuthImage.jsx): a soft
    placeholder while the image is on its way. */
 img[data-image-state="loading"] {
     background: var(--color-border);
     opacity: 0.45;
+}
+
+/* =====================================================================
+   Tire Size Calculator 2026 Enhanced Styling Variations
+   ===================================================================== */
+
+.tire-calculator-dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Main Two-Panel Layout */
+.main-calculator-container {
+    display: grid !important;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 40px;
+    padding: 36px !important;
+    background: #FFFFFF !important;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+.calculator-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.calculator-section.input-panel {
+    border-right: 1px solid var(--color-border);
+    padding-right: 40px;
+}
+
+/* Section Header Styles */
+.section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+.section-badge {
+    background: var(--color-pink-soft);
+    color: var(--color-pink);
+    font-size: 11px;
+    font-weight: 800;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(163, 22, 33, 0.15);
+}
+
+.section-title {
+    font-size: 18px !important;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    margin: 0 !important;
+}
+
+/* Interactive Numeric Control (Stepper) */
+.stepper-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.stepper-card {
+    background: #FAF6F0;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.stepper-card:focus-within {
+    border-color: var(--color-pink);
+    box-shadow: 0 0 0 4px var(--color-pink-soft);
+}
+
+.stepper-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--color-muted);
+}
+
+.stepper-input-group {
+    display: flex;
+    align-items: center;
+    background: #FFFFFF;
+    border: 1.5px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.step-btn {
+    border: none;
+    background: transparent;
+    width: 34px;
+    height: 38px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-ink);
+    transition: background-color 0.15s;
+    user-select: none;
+}
+
+.step-btn:hover {
+    background-color: var(--color-pink-soft);
+    color: var(--color-pink);
+}
+
+.step-btn:active {
+    background-color: #E6DCD2;
+}
+
+.step-input {
+    flex: 1;
+    width: 100%;
+    border: none !important;
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--color-ink);
+    background: transparent;
+    padding: 0 !important;
+    margin: 0;
+}
+
+.step-input::-webkit-outer-spin-button,
+.step-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.step-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* Custom Range Sliders */
+.custom-range-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-border);
+    outline: none;
+    margin-top: 4px;
+}
+
+.custom-range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--color-pink);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.custom-range-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+/* 3D Model Display Base */
+.visualization-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #FAF6F0;
+    border-radius: var(--radius-lg);
+    border: 1.5px solid var(--color-border);
+    padding: 24px;
+    margin-top: auto;
+}
+
+.visualizer-wrapper {
+    width: 100%;
+    max-width: 440px;
+}
+
+/* Feature Specification Overview Panels */
+.tire-headline-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    background: #FAF6F0;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+.tire-specification-tag {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    background: #FFFFFF;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+}
+
+.tire-specification-tag.highlight {
+    border-color: var(--color-pink);
+    background-color: var(--color-pink-soft);
+}
+
+.spec-display-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--color-muted);
+}
+
+.tire-specification-tag.highlight .spec-display-label {
+    color: var(--color-pink);
+}
+
+.tire-spec-number {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--color-ink);
+    margin-top: 4px;
+}
+
+.tire-inch-number {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--color-pink);
+    margin-top: 4px;
+}
+
+/* Metric toggle style */
+.unit-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.toggle-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-ink);
+}
+
+.compact-toggle {
+    margin-top: 0 !important;
+}
+
+/* Grid metric displays with visual icons instead of marking text overlaying 3D */
+.specifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: auto;
+}
+
+.spec-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: #FFFFFF;
+}
+
+.spec-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bg-warm-burgundy {
+    background: var(--color-pink-soft);
+    color: var(--color-pink);
+}
+
+.bg-warm-ochre {
+    background: var(--color-violet-soft);
+    color: #B26A12;
+}
+
+.bg-warm-brown {
+    background: #ECE3DB;
+    color: #5C4D3C;
+}
+
+.rot-90 {
+    transform: rotate(-90deg);
+}
+
+.rot-45 {
+    transform: rotate(-45deg);
+}
+
+.spec-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+.spec-lbl {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--color-muted);
+}
+
+.spec-val {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 850;
+    color: var(--color-ink);
+}
+
+/* Expandable Fitment/Comparison Layout Cards */
+.conversion-card {
+    border-radius: var(--radius-lg);
+    background: #FFFFFF !important;
+    padding: 0 !important;
+    overflow: hidden;
+    transition: box-shadow 0.25s;
+}
+
+.conversion-card.expanded {
+    box-shadow: 0 16px 36px -12px rgba(42, 33, 24, 0.15);
+}
+
+.conversion-header-row {
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FAF6F0;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.conversion-header-row:hover {
+    background: #F4EFE7;
+}
+
+.header-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-meta h3 {
+    font-size: 16px !important;
+    font-weight: 800;
+}
+
+.header-meta p {
+    font-size: 12.5px;
+    color: var(--color-muted);
+    margin-top: 2px;
+}
+
+.icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--color-pink-soft);
+    color: var(--color-pink);
+    display: grid;
+    place-items: center;
+}
+
+.spin-icon {
+    animation: rotate 12s linear infinite;
+}
+
+.btn-conversion-toggle {
+    background: #2A2118;
+    color: #FFFFFF;
+}
+
+.btn-conversion-toggle:hover {
+    background: #A31621;
+}
+
+/* Conversion expansion styles */
+.conversion-content-wrapper {
+    padding: 32px;
+    animation: slideDown 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.conversion-input-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+    align-items: center;
+    border-bottom: 1.5px solid var(--color-border);
+    padding-bottom: 24px;
+    margin-bottom: 28px;
+}
+
+.conversion-field label {
+    margin-bottom: 6px;
+}
+
+.conversion-stepper {
+    background: #FAF6F0;
+}
+
+.conversion-stepper input {
+    font-weight: 800;
+    font-size: 16px;
+}
+
+/* Banner fitment updates */
+.speedo-banner {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 0 !important;
+    border-left: 4px solid transparent;
+}
+
+.speedo-banner.ok {
+    border-left-color: var(--color-mint);
+    background: var(--color-mint-soft);
+}
+
+.speedo-banner.warn {
+    border-left-color: #E0A96D;
+    background: var(--color-amber-soft);
+}
+
+.banner-icon-container {
+    flex-shrink: 0;
+    display: flex;
+    margin-top: 2px;
+}
+
+.speedo-banner.ok .banner-icon-container {
+    color: var(--color-mint);
+}
+
+.speedo-banner.warn .banner-icon-container {
+    color: #B26A12;
+}
+
+.banner-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.banner-summary {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 800;
+    margin: 0 !important;
+}
+
+.banner-status-desc {
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: rgba(42, 33, 24, 0.85);
+}
+
+/* Comparison visual dual-tires */
+.dual-tire-view {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.tire-view-card {
+    background: #FAF6F0;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.tire-view-card.active-tire {
+    border-left-color: var(--color-pink);
+    border-left-width: 3px;
+}
+
+.tire-view-card.transformed-tire {
+    border-left-color: #E0A96D;
+    border-left-width: 3px;
+}
+
+.visualizer-tag {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.tag-current {
+    background: var(--color-pink-soft);
+    color: var(--color-pink);
+}
+
+.tag-converted {
+    background: var(--color-violet-soft);
+    color: #B26A12;
+}
+
+.quick-spec-overlay {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+}
+
+.quick-spec-overlay span {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-muted);
+    background: #FFFFFF;
+    border: 1.5px solid var(--color-border);
+    border-radius: 8px;
+    padding: 4px 10px;
+}
+
+/* Matrices configuration side-by-side */
+.comparison-matrices {
+    display: grid;
+    grid-template-columns: 1.1fr 1.3fr;
+    gap: 24px;
+}
+
+.matrix-table-card {
+    background: #FFFFFF;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+}
+
+.matrix-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.upgraded-styled-table {
+    border: none !important;
+}
+
+.upgraded-styled-table th {
+    font-weight: 800;
+    background: #FAF6F0;
+    padding: 10px 14px;
+    border-radius: 6px 6px 0 0;
+}
+
+.upgraded-styled-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.highlight-prop {
+    font-weight: 800;
+    color: var(--color-pink);
+}
+
+.speed-delta-cell {
+    font-family: var(--font-display);
+    font-weight: 850;
+    color: var(--color-ink);
+}
+
+.mph-tag {
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--color-muted);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Custom tablet & mobile responsiveness */
+@media screen and (max-width: 1024px) {
+    .main-calculator-container {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .calculator-section.input-panel {
+        border-right: none;
+        padding-right: 0;
+        border-bottom: 1.5px solid var(--color-border);
+        padding-bottom: 24px;
+    }
+
+    .comparison-matrices {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .stepper-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .conversion-input-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dual-tire-view {
+        grid-template-columns: 1fr;
+    }
+
+    .conversion-header-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .btn-conversion-toggle {
+        width: 100%;
+    }
+}
+
+.card.tire-calculator-form {
+    display: grid;
+    grid-template-columns: minmax(200px, 240px) minmax(0, 1fr) minmax(0, 1.25fr);
+    gap: 32px;
+    align-items: start;
+    padding: 32px 28px;
+}
+
+/* Cancels the old `width: 50%` that the breakpoints put on all three items */
+.card.tire-calculator-form>.calculator-form-item {
+    width: auto;
+    min-width: 0;
+}
+
+/* 3D tire sits in the vertical middle of the row */
+.card.tire-calculator-form>.calculator-form-item:nth-child(2) {
+    align-self: center;
+}
+
+/* Column 1: inputs.
+   The old rule had `grid-template-rows: repeat(4, ...)` for only 3 fields,
+   which left an empty 4th row and the blank gap at the bottom of the card. */
+.tire-calculator-form .calculator-tire-input-grid {
+    grid-template-rows: none;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    max-width: none;
+}
+
+/* Column 2: 3D tire. .wheel-viz is also used by the "Convert" section below
+   the card; scoping it to the form leaves that section untouched. */
+.tire-calculator-form .wheel-viz {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    padding: 0;
+}
+
+/* Column 3: size heading + specs table */
+.tire-calculator-form .formula-table-container {
+    flex: none;
+    max-width: none;
+}
+
+.tire-calculator-form .tire-size-string {
+    margin: 0 0 14px;
+    font-size: 17px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.tire-calculator-form .compare-table th,
+.tire-calculator-form .compare-table td {
+    padding: 12px 14px;
+}
+
+.tire-calculator-form .compare-table th:first-child,
+.tire-calculator-form .compare-table td:first-child {
+    width: 48%;
+}
+
+
+/* ---------- 2-up: 767-1023px (sidebar unpinned) ----------
+   and 1024-1279px when the sidebar is pinned */
+
+@media only screen and (min-width: 767px) and (max-width: 1023px) {
+    .card.tire-calculator-form {
+        grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+        gap: 24px 28px;
+        padding: 28px 22px;
+    }
+
+    .card.tire-calculator-form>.calculator-form-item:nth-child(3) {
+        grid-column: 1 / -1;
+    }
+
+    .tire-calculator-form .formula-table-container {
+        max-width: none;
+    }
+}
+
+@media only screen and (min-width: 1024px) and (max-width: 1279px) {
+    .dashboard-layout:has(.sidebar.pinned) .card.tire-calculator-form {
+        grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+        gap: 24px 28px;
+        padding: 28px 22px;
+    }
+
+    .dashboard-layout:has(.sidebar.pinned) .card.tire-calculator-form>.calculator-form-item:nth-child(3) {
+        grid-column: 1 / -1;
+    }
+
+    .dashboard-layout:has(.sidebar.pinned) .tire-calculator-form .formula-table-container {
+        max-width: none;
+    }
+}
+
+
+/* ---------- stack: tablet with the sidebar pinned (767-1023px) ----------
+   Only about 370px is left for the card, so a second column is too tight. */
+
+@media only screen and (min-width: 767px) and (max-width: 1023px) {
+    .dashboard-layout:has(.sidebar.pinned) .card.tire-calculator-form {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 22px;
+        padding: 20px 16px;
+    }
+
+    .dashboard-layout:has(.sidebar.pinned) .tire-calculator-form .calculator-tire-input-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+}
+
+
+/* ---------- stack: mobile, up to 766px ---------- */
+
+@media only screen and (max-width: 766px) {
+    .card.tire-calculator-form {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 22px;
+        padding: 16px;
+    }
+
+    /* Width / Aspect / Rim in one row instead of three tall stacked fields */
+    .tire-calculator-form .calculator-tire-input-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .tire-calculator-form .formula-table-container {
+        max-width: none;
+    }
+
+    .tire-calculator-form .tire-size-string {
+        font-size: 15.5px;
+    }
+
+    .tire-calculator-form .compare-table th,
+    .tire-calculator-form .compare-table td {
+        padding: 10px;
+    }
+}
+
+/* Small phones: three fields no longer fit on one line.
+   520px is already used by .save-tray in this file. */
+@media only screen and (max-width: 520px) {
+    .tire-calculator-form .calculator-tire-input-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+
+/* =====================================================================
+   OPTIONAL: Convert-section banner fix (not part of the screenshot)
+ 
+   The "Tire Size Calculator 2026 Enhanced Styling" block later in this file
+   redefines .speedo-banner as `display: flex; gap: 16px`. The calculator's
+   banner is plain text with a <strong> inside, so every text run becomes
+   its own flex item and is spaced 16px apart. This reverts only banners
+   that do NOT use the new .banner-content markup.
+   ===================================================================== */
+
+.speedo-banner:not(:has(.banner-content)) {
+    display: block;
+    margin-bottom: 20px !important;
 }

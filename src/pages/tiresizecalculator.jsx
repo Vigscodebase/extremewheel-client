@@ -125,31 +125,36 @@ export default function TireSizeCalculator() {
             </select>
           </div>
           */}
-          <div className="tire-input-grid">
+          <div className="calculator-tire-input-grid">
             <div className="field">
-              <label>Width (mm)</label>
+              <label>Width</label>
               <input type="number" value={tire.width} onChange={(e) => { setTire((t) => ({ ...t, width: Number(e.target.value) })); setLogged(false); }} />
             </div>
             <div className="field">
-              <label>Aspect (%)</label>
+              <label>Aspect</label>
               <input type="number" value={tire.aspect} onChange={(e) => { setTire((t) => ({ ...t, aspect: Number(e.target.value) })); setLogged(false); }} />
             </div>
             <div className="field">
-              <label>Rim (in)</label>
+              <label>Rim</label>
               <input type="number" value={tire.rim} onChange={(e) => { setTire((t) => ({ ...t, rim: Number(e.target.value) })); setLogged(false); }} />
             </div>
           </div>
-          <p className="tire-size-string">
-            {tire.width}/{tire.aspect} R{tire.rim} · equivalent inch size ≈ {equivalentInchSize(tire)}
-          </p>
 
           {/* <div className="range-toggle mt-10">
             <button type="button" className={unit === "in" ? "active" : ""} onClick={() => setUnit("in")}>inches</button>
             <button type="button" className={unit === "mm" ? "active" : ""} onClick={() => setUnit("mm")}>mm</button>
           </div> */}
         </div>
+        <div className="calculator-form-item">
+          <div className="wheel-viz">
+            <Tire3DVisualizer tire={tire} label={`${tire.width}/${tire.aspect}R${tire.rim}`} accent="#FF6F91" height={240} variant="calculator" />
+          </div>
+        </div>
         <div className="calculator-form-item formula-table-container">
-          <div class="table-responsive">
+          {/* <p className="tire-size-string">
+            {tire.width}/{tire.aspect} R{tire.rim} · equivalent inch size ≈ {equivalentInchSize(tire)}
+          </p> */}
+          {/* <div class="table-responsive">
             <table class="compare-table formula-table">
               <thead>
                 <tr>
@@ -162,12 +167,12 @@ export default function TireSizeCalculator() {
                   <td class="compare-table-label">Overall Height</td>
                   <td class="compare-table-value">(sidewall height × 2) + diameter</td>
                 </tr>
-                {/* Hidden for now:
+                Hidden for now:
                 <tr>
                   <td class="compare-table-label">Diameter</td>
                   <td class="compare-table-value">rim + 2 × sidewall height</td>
                 </tr>
-                */}
+               
                 <tr>
                   <td class="compare-table-label">Width</td>
                   <td class="compare-table-value">width (mm) ÷ 25.4</td>
@@ -176,7 +181,7 @@ export default function TireSizeCalculator() {
                   <td class="compare-table-label">Sidewall</td>
                   <td class="compare-table-value">(width × aspect ÷ 100) ÷ 25.4</td>
                 </tr>
-                {/* Hidden for now:
+                Hidden for now:
                 <tr>
                   <td class="compare-table-label">Circumference</td>
                   <td class="compare-table-value">π × diameter</td>
@@ -185,14 +190,36 @@ export default function TireSizeCalculator() {
                   <td class="compare-table-label">Revs / mile</td>
                   <td class="compare-table-value">1 ÷ (circumference in miles)</td>
                 </tr>
-                */}
+               
+              </tbody>
+            </table>
+          </div> */}
+          <div className="table-responsive">
+            <table className="compare-table">
+              <thead>
+                <tr>
+                  <th>Spec</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td className="compare-table-label">Overall Height</td><td className="compare-table-value">{fmt(spec.overallHeight)}</td></tr>
+                {/* Hidden for now:
+              <tr><td className="compare-table-label">Diameter</td><td className="compare-table-value">{fmt(spec.diameter)}</td></tr>
+              */}
+                <tr><td className="compare-table-label">Width</td><td className="compare-table-value">{fmt(spec.width)}</td></tr>
+                <tr><td className="compare-table-label">Sidewall</td><td className="compare-table-value">{fmt(spec.sidewall)}</td></tr>
+                {/* Hidden for now:
+              <tr><td className="compare-table-label">Circumference</td><td className="compare-table-value">{fmt(spec.circumference)}</td></tr>
+              <tr><td className="compare-table-label">Revs / mile</td><td className="compare-table-value">{spec.revsPerMile.toFixed(0)}</td></tr>
+              */}
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <div className="card compare-result-card">
+      {/* <div className="card compare-result-card">
         <div className="wheel-viz">
           <Tire3DVisualizer tire={tire} label={`${tire.width}/${tire.aspect}R${tire.rim}`} accent="#FF6F91" height={240} variant="calculator" />
         </div>
@@ -207,21 +234,21 @@ export default function TireSizeCalculator() {
             </thead>
             <tbody>
               <tr><td className="compare-table-label">Overall Height</td><td className="compare-table-value">{fmt(spec.overallHeight)}</td></tr>
-              {/* Hidden for now:
+              Hidden for now:
               <tr><td className="compare-table-label">Diameter</td><td className="compare-table-value">{fmt(spec.diameter)}</td></tr>
-              */}
+             
               <tr><td className="compare-table-label">Width</td><td className="compare-table-value">{fmt(spec.width)}</td></tr>
               <tr><td className="compare-table-label">Sidewall</td><td className="compare-table-value">{fmt(spec.sidewall)}</td></tr>
-              {/* Hidden for now:
+              Hidden for now:
               <tr><td className="compare-table-label">Circumference</td><td className="compare-table-value">{fmt(spec.circumference)}</td></tr>
               <tr><td className="compare-table-label">Revs / mile</td><td className="compare-table-value">{spec.revsPerMile.toFixed(0)}</td></tr>
-              */}
+             
             </tbody>
           </table>
         </div>
 
-        {/* <TireSuggestions tire={tire} /> */}
-      </div>
+        <TireSuggestions tire={tire} />
+      </div> */}
 
       <div className="card">
         <div className={`section-title-row${convertOpen ? "" : " tight"}`}>

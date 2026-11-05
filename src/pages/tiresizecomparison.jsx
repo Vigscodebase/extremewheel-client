@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Save } from "lucide-react";
+import { ArrowRightLeft, Save, Calculator } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PageHeader from "../components/pageheader";
@@ -32,8 +32,12 @@ function TireForm({ title, value, onChange /*, presets // hidden: Tire Size Opti
   // };
 
   return (
-    <div className="card tire-form">
-      <h3>{title}</h3>
+    <div className="card tiresize-comparison-card tire-form">
+      <h3 className="comparison-tire-ab">{title}</h3>
+      <h3 className="input-tire-size">
+        <Calculator size={16} className="icon-inline" />
+        Input Tire Size
+      </h3>
       {/* Hidden: "Load a saved preset" (Tire Size Option presets are switched off)
       Reused existing global class: field-mb
       <div className="field field-mb">
@@ -151,11 +155,11 @@ export default function TireSizeComparison() {
       )}
 
       <div className="compare-grid">
-        <TireForm key={`a-${applyKey}`} title="Tire A" value={tireA} onChange={update(setTireA)} /* presets={presets} // hidden: Tire Size Option presets are switched off */ />
+        <TireForm key={`a-${applyKey}`} title="Tire size A" value={tireA} onChange={update(setTireA)} /* presets={presets} // hidden: Tire Size Option presets are switched off */ />
         <div className="compare-arrow">
           <ArrowRightLeft size={18} />
         </div>
-        <TireForm key={`b-${applyKey}`} title="Tire B" value={tireB} onChange={update(setTireB)} /* presets={presets} // hidden: Tire Size Option presets are switched off */ />
+        <TireForm key={`b-${applyKey}`} title="Tire size B" value={tireB} onChange={update(setTireB)} /* presets={presets} // hidden: Tire Size Option presets are switched off */ />
       </div>
 
       <div className="card compare-result-card">
@@ -208,10 +212,10 @@ export default function TireSizeComparison() {
       </div>
 
       {/* Details listing of every saved comparison, with search + filters (same as Vehicle Notes) and an Apply button per row. */}
-      <SavedComparisonsList onApply={applySavedComparison} />
+      {/* <SavedComparisonsList onApply={applySavedComparison} /> */}
 
       {/* Mounted only while open so every "Save comparison" starts a fresh form. */}
-      {saveModalOpen && (
+      {/* {saveModalOpen && (
         <SaveComparisonModal
           tireA={tireA}
           tireB={tireB}
@@ -219,7 +223,7 @@ export default function TireSizeComparison() {
           onClose={() => setSaveModalOpen(false)}
           onSaveComparison={logToRecentActivity}
         />
-      )}
+      )} */}
     </div>
   );
 }
