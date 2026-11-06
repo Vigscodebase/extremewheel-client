@@ -560,32 +560,32 @@ export default function Dashboard() {
           }
 
           {/* <div className="card dash-panel">
-          <div className="panel-head">
-            <div>
-              <h3>Team on duty</h3>
-              <p>Reach a teammate directly</p>
+            <div className="panel-head">
+              <div>
+                <h3>Team on duty</h3>
+                <p>Reach a teammate directly</p>
+              </div>
+              <span className="badge badge-live">
+                <Activity size={13} />
+              </span>
             </div>
-            <span className="badge badge-live">
-              <Activity size={13} />
-            </span>
-          </div>
-          <div className="recent-list">
-            {stats.teamContacts.map((c) => (
-              <ContactRow key={c.name} {...c} />
-            ))}
-          </div>
-        </div> */}
+            <div className="recent-list">
+              {stats.teamContacts.map((c) => (
+                <ContactRow key={c.name} {...c} />
+              ))}
+            </div>
+          </div> */}
         </div>
       )}
 
-      {(can(PERM.TILE_RECENT_COMPARISONS) || can(PERM.TILE_RECENT_VEHICLE_SEARCHES)) && (
+      {/* {(can(PERM.TILE_RECENT_COMPARISONS) || can(PERM.TILE_RECENT_VEHICLE_SEARCHES)) && (
         <div className="dash-grid">
           {can(PERM.TILE_RECENT_COMPARISONS) && (
             <ClickableCard to="/tire-comparison" className="card dash-panel">
               <div className="panel-head">
                 <div>
                   <h3>Recent tire comparisons</h3>
-                  {/* <p>Last few tire sizes un through the calculator</p> */}
+                  <p>Last few tire sizes un through the calculator</p>
                 </div>
                 <PageLink to="/tire-comparison" className="see-all-link">
                   Open comparison <ChevronRight size={14} />
@@ -642,7 +642,7 @@ export default function Dashboard() {
           )}
 
         </div>
-      )}
+      )} */}
 
       {/* {can(PERM.TILE_RECENT_PLUS_SIZE) && (
       <div className="dash-grid">

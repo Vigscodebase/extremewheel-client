@@ -1,5 +1,6 @@
 import { Car, Download, FileBarChart, Scale, /* SlidersHorizontal, // hidden: only used by the "Tire presets added" report */ Search } from "lucide-react";
 import { useState } from "react";
+import DataTransferPanel from "../components/DataTransferPanel";
 import PageHeader from "../components/pageheader";
 import { useDownloadReportCsv, useReportsSummary } from "../hooks/queries/useReports";
 import { usePermissions } from "../context/permissioncontext";
@@ -7,7 +8,7 @@ import { PERM } from "../utils/permissions";
 
 const REPORT_TYPES = [
   { type: "vehicles", label: "Vehicles added", icon: Car, tint: { soft: "var(--color-amber-dark)", solid: "var(--color-pink-soft)" } },
-  { type: "tire-comparisons", label: "Tire comparisons", icon: Scale, tint: { soft: "var(--color-sidebar)", solid: "var(--color-pink-soft)" } },
+  // { type: "tire-comparisons", label: "Tire comparisons", icon: Scale, tint: { soft: "var(--color-sidebar)", solid: "var(--color-pink-soft)" } },
   { type: "vehicle-searches", label: "Vehicle searches", icon: Search, tint: { soft: "var(--color-muted)", solid: "var(--color-pink-soft)" } },
   // { type: "tire-options", label: "Tire presets added", icon: SlidersHorizontal, tint: { soft: "var(--color-pink)", solid: "var(--color-pink-soft)" } }, // hidden: Tire Size Option is switched off
 ];
@@ -59,7 +60,7 @@ export default function Reports() {
       <PageHeader
         eyebrow="Reporting"
         title="Reporting & Data Export"
-        subtitle="Pick a date range, review activity, and export any category to CSV."
+        subtitle="Pick a date range, review activity, export any category to CSV, and import or export your data libraries."
       />
 
       <div className="card tire-form mb-20">
@@ -147,6 +148,8 @@ export default function Reports() {
           ))}
         </div>
       </div>
+
+      <DataTransferPanel />
     </div>
   );
 }

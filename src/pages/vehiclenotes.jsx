@@ -1,5 +1,5 @@
-import { Camera, Car, Download, Eye, FileSpreadsheet, FilterX, ImagePlus, Images, Loader2, MessageSquare, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Camera, Car, Eye, FilterX, ImagePlus, Images, Loader2, MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthImage from "../components/AuthImage";
 import ConfirmDialog from "../components/confirmdialog";
@@ -33,8 +33,6 @@ import {
   useDeleteVehicleLookupModel,
   useDeleteVehicleLookupType,
   useDeleteVehicleLookupYear,
-  useDownloadVehicleLookupXlsx,
-  useImportVehicleLookupXlsx,
   useQuickAddVehicleLookup,
   useQuickAddVehicleLookupYear,
   useVehicleLookupMakes,
@@ -131,9 +129,6 @@ export default function VehicleNotes() {
   const canAdd = can(PERM.VEHICLE_ADD);
   const canEdit = can(PERM.VEHICLE_EDIT);
   const canDelete = can(PERM.VEHICLE_DELETE);
-  const canSeeDatabase = can(PERM.VEHICLE_DATABASE);
-  const canDownloadDatabase = can(PERM.VEHICLE_DATABASE_DOWNLOAD);
-  const canUploadDatabase = can(PERM.VEHICLE_DATABASE_UPLOAD);
   const navigate = useNavigate();
   // Who can grow/prune the predefined dropdown lists (the server enforces the
   // same rule): staff and admin, for all four of Make, Model, Type and Year.
@@ -206,7 +201,7 @@ export default function VehicleNotes() {
   const [lightboxIndex, setLightboxIndex] = useState(null);
 
   // Predefined Make/Model/Type dropdown data (cascading) — sourced from the
-  // "Vehicle Notes database" (see database card below). Model options
+  // "Vehicle Notes database" (downloaded / uploaded from Reporting & Data Export). Model options
   // depend on the selected Make, Type options depend on Make + Model. Year
   // is independent (see models/VehicleLookupYear.js) but is otherwise the
   // same kind of list. All four support typing a brand new value via
@@ -237,14 +232,6 @@ export default function VehicleNotes() {
     deleteLookupModel.isPending ||
     deleteLookupType.isPending ||
     deleteLookupYear.isPending;
-
-  // Vehicle Notes database (Make/Model/Type master list) upload/download —
-  // same round-trip pattern as the Tech Data CSV tab, just for .xlsx.
-  const downloadLookup = useDownloadVehicleLookupXlsx();
-  const importLookup = useImportVehicleLookupXlsx();
-  const [dbImportResult, setDbImportResult] = useState(null);
-  const [dbImportError, setDbImportError] = useState("");
-  const dbFileInputRef = useRef(null);
 
   // Grid filters — Make, Model (cascades from Make) and a yearly Date Range.
   // Year options are derived from the vehicles actually on file, so a newly
@@ -329,22 +316,6 @@ export default function VehicleNotes() {
       .filter((j) => j.kind === "update" && (j.status === "sending" || j.status === "queued" || j.status === "processing"))
       .map((j) => j.editId)
   );
-
-  // --- Vehicle Notes database (Make/Model/Type master list) upload ---
-  const onDbFileChosen = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setDbImportError("");
-    setDbImportResult(null);
-    try {
-      const result = await importLookup.mutateAsync(file);
-      setDbImportResult(result);
-    } catch (err) {
-      setDbImportError(err?.response?.data?.message || "Import failed. Check the file format and try again.");
-    } finally {
-      e.target.value = "";
-    }
-  };
 
   const openAdd = () => {
     setEditing(null);
@@ -652,52 +623,6 @@ export default function VehicleNotes() {
         }
       />
 
-      {canSeeDatabase && (
-        <div className="card vehicle-db-card mb-20">
-          <h3 className="mb-24">
-            <FileSpreadsheet size={16} className="icon-inline" />
-            Vehicle Notes database
-          </h3>
-          {/* <p className="text-muted mb-16">
-            Download the current Make / Model / Type reference table as .xlsx, edit it, and re-upload — the Add / Edit vehicle
-            dropdowns above stay in sync automatically.
-          </p> */}
-          <div className="modal-actions modal-actions-start gap-12">
-            {canDownloadDatabase && (
-              <button
-                type="button"
-                className="btn btn-accent"
-                onClick={() => downloadLookup.mutate()}
-                disabled={downloadLookup.isPending}
-              >
-                <Download size={16} /> {downloadLookup.isPending ? "Preparing…" : "Download database"}
-              </button>
-            )}
-            {canUploadDatabase && (
-              <>
-                <button type="button" className="btn btn-ghost" onClick={() => dbFileInputRef.current?.click()} disabled={importLookup.isPending}>
-                  <Upload size={16} /> {importLookup.isPending ? "Uploading…" : "Upload database"}
-                </button>
-                <input
-                  ref={dbFileInputRef}
-                  type="file"
-                  accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                  hidden
-                  onChange={onDbFileChosen}
-                />
-              </>
-            )}
-          </div>
-          {dbImportError && <div className="alert-error mt-16">{dbImportError}</div>}
-          {dbImportResult && (
-            <div className="card empty-state-card mt-16 text-left">
-              Imported {dbImportResult.processed} row(s), skipped {dbImportResult.skipped} incomplete row(s), out of{" "}
-              {dbImportResult.total} total.
-            </div>
-          )}
-        </div>
-      )}
-
       <div className="card vehicle-filter-bar mb-20">
         <SearchAutocomplete
           value={filters.search}
@@ -903,7 +828,7 @@ export default function VehicleNotes() {
           </div>
 
           {/* Make -> Model -> Type: cascading, predefined dropdowns sourced from
-              the Vehicle Notes database (see the database card above the grid).
+              the Vehicle Notes database (managed from Reporting & Data Export).
               Staff and admin get a "+ Add new…" option for values not in the
               list yet and a delete button on every option; everyone else picks
               from the list only. */}

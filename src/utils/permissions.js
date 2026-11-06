@@ -6,10 +6,9 @@
 //   - PAGE keys     "vehicle-notes"        may open the page
 //   - ELEMENT keys  "vehicle-notes.edit"   may use one control on that page
 //
-// Element keys sit under their page (the Vehicle Notes database buttons sit
-// under the database card), and a key only counts when every ancestor is also
-// granted. The server enforces all of this; the client only uses it to decide
-// what to show.
+// Element keys sit under their page, and a key only counts when every ancestor
+// is also granted. The server enforces all of this; the client only uses it to
+// decide what to show.
 //
 // Keep this file and the server catalog in step — add a key in both, then guard
 // the route (server) and the control (client).
@@ -43,6 +42,9 @@ export const PERM = {
 
   COMPARISON_SAVE: 'tire-comparison.save',
 
+  // The five data import / export controls below all live on the Reporting &
+  // Data Export page now, so they sit under the "reports" page (see
+  // ELEMENT_PERMISSIONS). The key names are unchanged so existing grants stay valid.
   PLUS_SIZE_DOWNLOAD: 'plus-size.download',
   PLUS_SIZE_UPLOAD: 'plus-size.upload',
 
@@ -51,7 +53,7 @@ export const PERM = {
   VEHICLE_ADD: 'vehicle-notes.add',
   VEHICLE_EDIT: 'vehicle-notes.edit',
   VEHICLE_DELETE: 'vehicle-notes.delete',
-  VEHICLE_DATABASE: 'vehicle-notes.database',
+  VEHICLE_DATABASE: 'vehicle-notes.database', // hidden: the database card moved to Reporting & Data Export
   VEHICLE_DATABASE_DOWNLOAD: 'vehicle-notes.database.download',
   VEHICLE_DATABASE_UPLOAD: 'vehicle-notes.database.upload',
 
@@ -76,19 +78,17 @@ export const ELEMENT_PERMISSIONS = [
 
   el(PERM.COMPARISON_SAVE, 'Save comparison button', 'tire-comparison'),
 
-  el(PERM.PLUS_SIZE_DOWNLOAD, 'Download OE library button', 'plus-size'),
-  el(PERM.PLUS_SIZE_UPLOAD, 'Upload OE sizes button', 'plus-size'),
-
-  el(PERM.TECH_DATA_CSV_TAB, 'CSV import / export tab', 'tech-data'),
-
   el(PERM.VEHICLE_ADD, 'Add vehicle button', 'vehicle-notes'),
   el(PERM.VEHICLE_EDIT, 'Edit button (on each vehicle)', 'vehicle-notes'),
   el(PERM.VEHICLE_DELETE, 'Delete button (on each vehicle)', 'vehicle-notes'),
-  el(PERM.VEHICLE_DATABASE, 'Vehicle Notes database', 'vehicle-notes'),
-  el(PERM.VEHICLE_DATABASE_DOWNLOAD, 'Download database button', PERM.VEHICLE_DATABASE),
-  el(PERM.VEHICLE_DATABASE_UPLOAD, 'Upload database button', PERM.VEHICLE_DATABASE),
+  // el(PERM.VEHICLE_DATABASE, 'Vehicle Notes database', 'vehicle-notes'), // hidden: card moved to Reporting & Data Export
 
-  el(PERM.REPORTS_DOWNLOAD, 'Download CSV button', 'reports'),
+  el(PERM.REPORTS_DOWNLOAD, 'Download report CSV buttons', 'reports'),
+  el(PERM.PLUS_SIZE_DOWNLOAD, 'Download OE library button', 'reports'),
+  el(PERM.PLUS_SIZE_UPLOAD, 'Upload OE sizes button', 'reports'),
+  el(PERM.TECH_DATA_CSV_TAB, 'Tech Data CSV download / upload buttons', 'reports'),
+  el(PERM.VEHICLE_DATABASE_DOWNLOAD, 'Download database button', 'reports'),
+  el(PERM.VEHICLE_DATABASE_UPLOAD, 'Upload database button', 'reports'),
 ];
 
 const PARENT_OF = new Map([

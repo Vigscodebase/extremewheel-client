@@ -6701,3 +6701,529 @@ img[data-image-state="loading"] {
     display: block;
     margin-bottom: 20px !important;
 }
+
+/* =====================================================================
+   Tech Data — Vehicle lookup (Tire Size Calculator layout)
+
+   One card holds everything: the Year/Make/Model/Type inputs (column 1),
+   the 3D tire (column 2) and the spec tables (column 3), with the plus-size
+   recommendations (single + staggered) and the fitment note underneath — so
+   a whole Application Guide record is visible on a laptop/desktop screen
+   without scrolling. Phones stack the sections and scroll.
+
+   Breakpoints are container queries on the card itself (not the viewport),
+   so the layout adapts the same way whether the sidebar is pinned or not.
+   ===================================================================== */
+
+.techdata-page .page-header {
+    margin-bottom: 14px;
+}
+
+.techdata-page .range-toggle {
+    margin-top: 0;
+    margin-bottom: 14px;
+}
+
+.card.techdata-card {
+    container: techdata / inline-size;
+    padding: 24px 28px;
+    margin-bottom: 0;
+}
+
+.techdata-grid {
+    display: grid;
+    grid-template-columns: minmax(210px, 260px) minmax(200px, 250px) minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto auto;
+    grid-template-areas:
+        "select tire heading"
+        "select tire specs"
+        "fit    fit  fit"
+        "foot   foot foot";
+    column-gap: 30px;
+    row-gap: 16px;
+    align-items: start;
+}
+
+/* Nothing to show yet (no vehicle picked / loading / no data): just the
+   inputs plus a message in the space the results will take. */
+.techdata-grid--empty {
+    grid-template-rows: auto;
+    grid-template-areas: "select empty empty";
+}
+
+.techdata-select {
+    grid-area: select;
+    min-width: 0;
+}
+
+.techdata-tire {
+    grid-area: tire;
+    align-self: center;
+    min-width: 0;
+}
+
+.techdata-heading {
+    grid-area: heading;
+    min-width: 0;
+}
+
+.techdata-specs {
+    grid-area: specs;
+    min-width: 0;
+    container: techspecs / inline-size;
+}
+
+.techdata-fit {
+    grid-area: fit;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 16px 30px;
+    align-items: start;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+}
+
+.techdata-foot {
+    grid-area: foot;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 20px;
+}
+
+.techdata-grid>.techdata-empty {
+    grid-area: empty;
+}
+
+.techdata-select h3,
+.techdata-heading h3 {
+    font-size: 16px;
+    line-height: 1.35;
+    margin: 0 0 14px;
+    overflow-wrap: anywhere;
+}
+
+.techdata-heading h3 {
+    margin-bottom: 10px;
+}
+
+.techdata-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+}
+
+.techdata-card .field input,
+.techdata-card .field select {
+    padding-top: 9px;
+    padding-bottom: 9px;
+}
+
+.techdata-card .field select {
+    max-width: none;
+}
+
+.techdata-page .techdata-records {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 0 10px;
+}
+
+.techdata-records button {
+    padding: 5px 12px;
+    font-size: 12.5px;
+}
+
+.techdata-empty {
+    align-self: stretch;
+    min-height: 240px;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    text-align: center;
+    color: var(--color-muted);
+    font-size: 14px;
+    border: 1.5px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+.techdata-empty--small {
+    min-height: 150px;
+    font-size: 13px;
+}
+
+/* 3D tire: height follows the screen so short laptop screens get a smaller
+   tire instead of a scrollbar. */
+.techdata-card .tire3d-canvas-box {
+    height: clamp(130px, 24vh, 200px);
+    max-width: 280px;
+}
+
+.techdata-tire-hint {
+    margin: 2px 0 0;
+    font-size: 11.5px;
+    color: var(--color-muted);
+    text-align: center;
+}
+
+/* Spec tables (Tire | Wheel) */
+.techdata-spec-tables {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    align-items: start;
+}
+
+.techdata-table th,
+.techdata-table td {
+    padding: 8px 12px;
+    line-height: 1.35;
+}
+
+.techdata-table th:first-child,
+.techdata-table td:first-child {
+    width: 54%;
+    white-space: nowrap;
+}
+
+.techdata-stag-table th:first-child,
+.techdata-stag-table td:first-child {
+    width: 24%;
+}
+
+.techdata-stag-table td {
+    white-space: nowrap;
+}
+
+/* Clickable sizes (preview in the 3D view) */
+.techdata-size {
+    display: inline;
+    padding: 2px 6px;
+    margin: -2px -6px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.techdata-size:hover {
+    background: var(--color-pink-soft);
+}
+
+.techdata-size:focus-visible {
+    outline: 2px solid var(--color-pink);
+    outline-offset: 1px;
+}
+
+.techdata-size.is-active {
+    background: var(--color-pink-soft);
+    color: var(--color-pink);
+}
+
+.techdata-rating {
+    margin-left: 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--color-muted);
+}
+
+/* Plus-size recommendation chips */
+.techdata-panel {
+    min-width: 0;
+}
+
+.techdata-panel h4 {
+    margin: 0 0 8px;
+    font-family: var(--font-body, inherit);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+
+.techdata-none {
+    margin: 0;
+    font-size: 13px;
+    color: var(--color-muted);
+}
+
+.techdata-plus-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+}
+
+.techdata-plus {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    width: 100%;
+    margin: 0;
+    padding: 6px 8px;
+    text-align: left;
+    background: #fff;
+    border: 1.5px solid var(--color-border);
+    border-radius: 10px;
+}
+
+.techdata-plus.is-active {
+    border-color: var(--color-pink);
+}
+
+.techdata-plus-dia {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--color-muted);
+}
+
+.techdata-plus-dia em {
+    font-style: normal;
+    font-size: 9.5px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--color-mint-soft);
+    color: var(--color-mint);
+}
+
+.techdata-plus-size {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--color-ink);
+    white-space: nowrap;
+}
+
+.techdata-plus.is-active .techdata-plus-size {
+    color: var(--color-pink);
+}
+
+/* Fitment note + reference IDs */
+.techdata-note {
+    flex: 1 1 420px;
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--color-amber-soft);
+    color: #A05D0F;
+    font-size: 12.5px;
+    line-height: 1.4;
+}
+
+.techdata-note svg {
+    flex: none;
+    margin-top: 1px;
+}
+
+.techdata-refs {
+    margin: 0 0 0 auto;
+    font-size: 11.5px;
+    color: var(--color-muted);
+}
+
+/* ---- Container breakpoints (card content width) ---- */
+
+/* Spec tables: stack when the specs column is narrow */
+@container techspecs (max-width: 519px) {
+    .techdata-spec-tables {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Tablet / pinned sidebar: inputs + tire on one row, everything else full width */
+@container techdata (max-width: 899px) {
+    .techdata-grid {
+        grid-template-columns: minmax(190px, 260px) minmax(0, 1fr);
+        grid-template-rows: auto;
+        grid-template-areas:
+            "select tire"
+            "heading heading"
+            "specs specs"
+            "fit fit"
+            "foot foot";
+        column-gap: 28px;
+    }
+
+    .techdata-grid--empty {
+        grid-template-areas: "select empty";
+    }
+
+    .techdata-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@container techdata (max-width: 759px) {
+    .techdata-fit {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Phone: single column, scrolls */
+@container techdata (max-width: 599px) {
+    .techdata-grid,
+    .techdata-grid--empty {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "select"
+            "empty"
+            "tire"
+            "heading"
+            "specs"
+            "fit"
+            "foot";
+        row-gap: 18px;
+    }
+
+    /* Year/Make and Model/Type side by side instead of four tall rows */
+    .techdata-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .techdata-empty {
+        min-height: 110px;
+    }
+
+    .techdata-card .tire3d-canvas-box {
+        height: 190px;
+    }
+
+    .techdata-refs {
+        margin-left: 0;
+    }
+}
+
+@container techdata (max-width: 419px) {
+    .techdata-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Short laptop screens (e.g. 1366x768): tighten vertical spacing so the whole
+   record still fits without scrolling. */
+@media only screen and (min-width: 900px) and (max-height: 820px) {
+    .page-main:has(.techdata-page) {
+        padding-top: 18px;
+    }
+
+    .techdata-page .page-header,
+    .techdata-page .range-toggle {
+        margin-bottom: 10px;
+    }
+
+    .card.techdata-card {
+        padding: 16px 24px;
+    }
+
+    .techdata-grid {
+        row-gap: 10px;
+    }
+
+    .techdata-select h3,
+    .techdata-heading h3 {
+        margin-bottom: 8px;
+    }
+
+    .techdata-fields {
+        gap: 8px;
+    }
+
+    .techdata-fields .field {
+        gap: 4px;
+    }
+
+    .techdata-card .field input,
+    .techdata-card .field select {
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+
+    .techdata-table th,
+    .techdata-table td {
+        padding: 5px 12px;
+    }
+
+    .techdata-fit {
+        padding-top: 10px;
+        gap: 10px 30px;
+    }
+
+    .techdata-plus {
+        padding: 4px 8px;
+    }
+
+    .techdata-note {
+        padding: 5px 12px;
+    }
+
+    .techdata-empty {
+        min-height: 180px;
+    }
+}
+
+
+/* Very short screens (a 1366x768 laptop leaves roughly 650px of page): squeeze
+   the page chrome around the card as well. */
+@media only screen and (min-width: 900px) and (max-height: 700px) {
+    .page-main:has(.techdata-page) {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    .techdata-page .page-title {
+        font-size: 22px;
+        margin-top: 0;
+    }
+
+    .techdata-page .page-header,
+    .techdata-page .range-toggle {
+        margin-bottom: 8px;
+    }
+
+    .techdata-page .range-toggle {
+        padding: 4px;
+    }
+
+    .techdata-page .range-toggle button {
+        padding: 4px 14px;
+    }
+
+    .card.techdata-card {
+        padding: 12px 22px;
+    }
+
+    .techdata-grid {
+        row-gap: 8px;
+    }
+
+    .techdata-table th,
+    .techdata-table td {
+        padding: 4px 12px;
+    }
+
+    .techdata-fit {
+        padding-top: 8px;
+    }
+
+    .techdata-panel h4 {
+        margin-bottom: 6px;
+    }
+
+    .techdata-plus {
+        padding: 3px 8px;
+    }
+}

@@ -25,6 +25,29 @@ export function treadWidthInches({ width }) {
   return width / 25.4;
 }
 
+// Results block for the Tire Size Comparison page (all values in inches, 2dp).
+//   Tread Width     = Width ÷ 25.4
+//   Sidewall Height = Tread Width × Aspect Ratio   (aspect as a fraction, 60 -> 0.60)
+//   Overall Height  = (Sidewall Height × 2) + Diameter   (Diameter = rim)
+// Values are rounded to 2dp here so the numbers on screen and the difference
+// between them always agree when someone subtracts them by hand.
+export function tireComparisonMetrics(tire) {
+  const round2 = (n) => Math.round(n * 100) / 100;
+  return {
+    overallHeight: round2(tireOverallHeightInches(tire)),
+    treadWidth: round2(treadWidthInches(tire)),
+    sidewallHeight: round2(sidewallHeightInches(tire)),
+  };
+}
+
+// Overall-height difference across the two entries. Each tire shows its own
+// height minus the other tire's: A = A - B, B = B - A (so they're equal and opposite).
+export function overallHeightDifference(tire, otherTire) {
+  const own = tireComparisonMetrics(tire).overallHeight;
+  const other = tireComparisonMetrics(otherTire).overallHeight;
+  return Math.round((own - other) * 100) / 100;
+}
+
 export function tireCircumferenceMm({ width, aspect, rim }) {
   const diameterIn = tireDiameterInches({ width, aspect, rim });
   const diameterMm = diameterIn * 25.4;

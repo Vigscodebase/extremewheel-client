@@ -1,20 +1,13 @@
-import { Download, Eye, Layers, Save, Search, TrendingUp, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { Eye, Layers, Save, Search, TrendingUp } from "lucide-react";
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import PageHeader from "../components/pageheader";
 import Modal from "../components/modal";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
-import { usePermissions } from "../context/permissioncontext";
-import { PERM } from "../utils/permissions";
 import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
 // import { useTireOptionsQuery } from "../hooks/queries/useTireOptions"; // hidden: Tire Size Option feature is switched off
-import {
-  useDownloadOeTireSizeXlsx,
-  useImportOeTireSizeXlsx,
-  usePlusSizeSearch,
-  useSavePlusSizeMatch,
-} from "../hooks/queries/usePlusSize";
+import { usePlusSizeSearch, useSavePlusSizeMatch } from "../hooks/queries/usePlusSize";
 import {
   useAppGuideFitment,
   useAppGuideMakes,
@@ -300,17 +293,10 @@ function OeToleranceWindow({ oe, tolerances }) {
 
 export default function PlusSizeOptions() {
   const location = useLocation();
-  // Download and upload are separate per-user permissions (no longer tied to role).
-  const { can } = usePermissions();
-  const canDownloadOe = can(PERM.PLUS_SIZE_DOWNLOAD);
-  const canUploadOe = can(PERM.PLUS_SIZE_UPLOAD);
   // Hidden: no Tire Size Option data is fetched or checked any more.
   // const { data: presets } = useTireOptionsQuery();
   const searchMutation = usePlusSizeSearch();
   const saveMutation = useSavePlusSizeMatch();
-  const importOeMutation = useImportOeTireSizeXlsx();
-  const downloadOeMutation = useDownloadOeTireSizeXlsx();
-  const oeFileInputRef = useRef(null);
 
   // Arrived here via a "Saved plus-size match" suggestion chip elsewhere in
   // the app — load that OE size (and target rim) straight into the form.
@@ -394,13 +380,6 @@ export default function PlusSizeOptions() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const onOeFileSelected = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // allow re-selecting the same file next time
-    if (!file) return;
-    await importOeMutation.mutateAsync(file);
-  };
-
   return (
     <div>
       <PageHeader
@@ -410,55 +389,8 @@ export default function PlusSizeOptions() {
       />
 
       <form className="card tire-plus-form" onSubmit={runSearch}>
-        <div className="oe-library-header mb-16">
-          <h3 className="mb-0">OE (original equipment) size</h3>
-          <div className="oe-library-actions">
-            {canDownloadOe && (
-              <button
-                type="button"
-                className="btn btn-ghost"
-                disabled={downloadOeMutation.isPending}
-                onClick={() => downloadOeMutation.mutate()}
-                title="Download the OE tire size library as .xlsx"
-              >
-                <Download size={14} /> {downloadOeMutation.isPending ? "Downloading…" : "Download OE library"}
-              </button>
-            )}
-            {canUploadOe && (
-              <>
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  disabled={importOeMutation.isPending}
-                  onClick={() => oeFileInputRef.current?.click()}
-                  title="Upload a Width / Aspect / Rim .xlsx to append to the OE tire size library"
-                >
-                  <Upload size={14} /> {importOeMutation.isPending ? "Uploading…" : "Upload OE sizes"}
-                </button>
-                <input
-                  ref={oeFileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls"
-                  style={{ display: "none" }}
-                  onChange={onOeFileSelected}
-                />
-              </>
-            )}
-          </div>
-        </div>
-
-        {importOeMutation.isSuccess && (
-          <div className="speedo-banner ok">
-            Added {importOeMutation.data.inserted} new size{importOeMutation.data.inserted === 1 ? "" : "s"} to the OE library
-            {importOeMutation.data.duplicates ? ` (${importOeMutation.data.duplicates} already on file, skipped)` : ""}
-            {importOeMutation.data.skipped ? `, ${importOeMutation.data.skipped} row${importOeMutation.data.skipped === 1 ? "" : "s"} couldn't be read` : ""}.
-          </div>
-        )}
-        {importOeMutation.isError && (
-          <div className="alert-error mb-16">
-            {importOeMutation.error?.response?.data?.message || "Upload failed. Please check the file and try again."}
-          </div>
-        )}
+        {/* The OE library download / upload buttons now live on the Reporting & Data Export page. */}
+        <h3 className="mb-16">OE (original equipment) size</h3>
 
         {/* Hidden: "Load a saved preset" (Tire Size Option presets are switched off)
         <div className="field field-mb">

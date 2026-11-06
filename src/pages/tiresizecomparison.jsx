@@ -1,5 +1,5 @@
 import { ArrowRightLeft, Save, Calculator } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PageHeader from "../components/pageheader";
 import SaveComparisonModal from "../components/SaveComparisonModal";
@@ -11,11 +11,23 @@ import { usePermissions } from "../context/permissioncontext";
 import { PERM } from "../utils/permissions";
 // import { useTireOptionsQuery } from "../hooks/queries/useTireOptions"; // hidden: Tire Size Option feature is switched off
 import {
+  sidewallHeightInches,
   speedoDifferencePct,
   // tireCircumferenceMm, // hidden: Circumference row is commented out below
   tireDiameterInches,
   treadWidthInches,
 } from "../utils/tireMath";
+
+// Overall height as the client's worksheet works it out: Tread Width (Width ÷ 25.4) is
+// rounded to 2dp first, then Sidewall Height = Tread Width × Aspect Ratio and
+// Overall Height = (Sidewall Height × 2) + Diameter, rounded to 2dp at the end.
+// Done in hundredths of an inch so ties round up (e.g. 26.755 -> 26.76) without
+// floating-point surprises. 225/60 R16 -> 26.63", 245/35 R20 -> 26.76".
+function worksheetOverallHeight({ width, aspect, rim }) {
+  const treadHundredths = Math.round((width / 25.4) * 100);
+  const overallHundredths = Math.round((2 * treadHundredths * aspect) / 100 + rim * 100);
+  return overallHundredths / 100;
+}
 
 // Hidden: Tire Size Option presets are switched off, so no preset (or mock preset) data is used here.
 // const MOCK_PRESETS = [
@@ -24,7 +36,22 @@ import {
 //   { _id: "t3", label: "Highway Comfort", width: 215, aspect: 60, rim: 16 },
 // ];
 
-function TireForm({ title, value, onChange /*, presets // hidden: Tire Size Option presets are switched off */ }) {
+function TireForm({ title, tag, accent, value, otherValue, onChange /*, presets // hidden: Tire Size Option presets are switched off */ }) {
+  // Results for this tire (shown under its own 3D preview).
+  // Difference = this tire's overall height minus the other tire's (A = A - B, B = B - A).
+  const overallHeight = worksheetOverallHeight(value);
+  const heightDiff = Number((overallHeight - worksheetOverallHeight(otherValue)).toFixed(2));
+  const rows = [
+    // Overall Height = (Sidewall Height × 2) + Diameter
+    { label: "Overall height", value: `${overallHeight.toFixed(2)}"` },
+    // Tread Width = Width ÷ 25.4
+    { label: "Tread width", value: `${treadWidthInches(value).toFixed(2)}"` },
+    // Sidewall Height = Tread Width × Aspect Ratio
+    { label: "Sidewall height", value: `${sidewallHeightInches(value).toFixed(2)}"` },
+    // Difference comparison across entries
+    { label: "Difference", value: `${heightDiff.toFixed(2)}"`, diff: true },
+  ];
+
   // Hidden: "Load a saved preset" is switched off.
   // const applyPreset = (id) => {
   //   const preset = presets.find((p) => p._id === id);
@@ -66,9 +93,34 @@ function TireForm({ title, value, onChange /*, presets // hidden: Tire Size Opti
           <input type="number" value={value.rim} onChange={(e) => onChange({ rim: Number(e.target.value) })} />
         </div>
       </div>
-      <p className="tire-size-string">
+      {/* <p className="tire-size-string">
         {value.width}/{value.aspect} R{value.rim}
-      </p>
+      </p> */}
+
+      {/* Same pairing as the Tire Size Calculator: 3D tire next to its specs table. */}
+      <div className="tire-form-results">
+        <div className="tire-form-viz">
+          <Tire3DVisualizer tire={value} label={`${tag} · ${tireDiameterInches(value).toFixed(1)}"`} accent={accent} height={230} variant="compare" />
+        </div>
+        <div className="table-responsive">
+          <table className="compare-table">
+            <thead>
+              <tr>
+                <th>Spec</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.label}>
+                  <td className="compare-table-label">{r.label}</td>
+                  <td className={`compare-table-value${r.diff ? " compare-table-diff" : ""}`}>{r.value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
@@ -127,22 +179,8 @@ export default function TireSizeComparison() {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const diameterA = tireDiameterInches(tireA);
-  const diameterB = tireDiameterInches(tireB);
   const diffPct = speedoDifferencePct(tireA, tireB);
   const roundedDiffPct = Number(diffPct.toFixed(2));
-
-  const rows = useMemo(
-    () => [
-      { label: "Overall diameter", a: `${diameterA.toFixed(2)}"`, b: `${diameterB.toFixed(2)}"` },
-      // Tread Width = Width ÷ 25.4
-      { label: "Tread width", a: `${treadWidthInches(tireA).toFixed(2)}"`, b: `${treadWidthInches(tireB).toFixed(2)}"` },
-      // Hidden for now:
-      // { label: "Circumference", a: `${tireCircumferenceMm(tireA).toFixed(0)} mm`, b: `${tireCircumferenceMm(tireB).toFixed(0)} mm` },
-      // { label: "Sidewall height", a: `${((tireA.width * tireA.aspect) / 100 / 25.4).toFixed(2)}"`, b: `${((tireB.width * tireB.aspect) / 100 / 25.4).toFixed(2)}"` },
-    ],
-    [tireA, tireB, diameterA, diameterB]
-  );
 
   return (
     <div ref={topRef}>
@@ -155,61 +193,33 @@ export default function TireSizeComparison() {
       )}
 
       <div className="compare-grid">
-        <TireForm key={`a-${applyKey}`} title="Tire size A" value={tireA} onChange={update(setTireA)} /* presets={presets} // hidden: Tire Size Option presets are switched off */ />
+        <TireForm key={`a-${applyKey}`} title="Tire size A" tag="Tire A" accent="#FF6F91" value={tireA} otherValue={tireB} onChange={update(setTireA)} /* presets={presets} // hidden: Tire Size Option presets are switched off */ />
         <div className="compare-arrow">
           <ArrowRightLeft size={18} />
         </div>
-        <TireForm key={`b-${applyKey}`} title="Tire size B" value={tireB} onChange={update(setTireB)} /* presets={presets} // hidden: Tire Size Option presets are switched off */ />
+        <TireForm key={`b-${applyKey}`} title="Tire size B" tag="Tire B" accent="#8B7CF6" value={tireB} otherValue={tireA} onChange={update(setTireB)} /* presets={presets} // hidden: Tire Size Option presets are switched off */ />
       </div>
 
-      <div className="card compare-result-card">
-        <div className="section-title-row mb-4">
-          <div />
-          {can(PERM.COMPARISON_SAVE) && (
-            <button type="button" className="btn btn-ghost" onClick={() => setSaveModalOpen(true)} disabled={logComparison.isPending}>
-              <Save size={14} /> {saved ? "Saved!" : logComparison.isPending ? "Saving…" : "Save comparison"}
-            </button>
-          )}
-        </div>
-        <div className="wheel-viz">
-          <div className="wheel-col">
-            <Tire3DVisualizer tire={tireA} label={`Tire A · ${diameterA.toFixed(1)}"`} accent="#FF6F91" height={230} variant="compare" />
-          </div>
-          <div className="wheel-col">
-            <Tire3DVisualizer tire={tireB} label={`Tire B · ${diameterB.toFixed(1)}"`} accent="#8B7CF6" height={230} variant="compare" />
-          </div>
-        </div>
-
-        <div className={`speedo-banner ${Math.abs(diffPct) > 3 ? "warn" : "ok"}`}>
-          Tire B changes overall diameter by <strong>{diffPct >= 0 ? "+" : ""}{diffPct.toFixed(2)}%</strong> vs. Tire A —
-          {" "}
-          {Math.abs(diffPct) > 3
-            ? " outside the ±3% range generally considered safe for speedometer accuracy."
-            : " within the typical ±3% safe range for speedometer accuracy."}
-        </div>
-
-        <table className="compare-table">
-          <thead>
-            <tr>
-              <th>Spec</th>
-              <th>Tire A</th>
-              <th>Tire B</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.label}>
-                <td className="compare-table-label">{r.label}</td>
-                <td className="compare-table-value">{r.a}</td>
-                <td className="compare-table-value">{r.b}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* <TireSuggestions tire={tireA} label="Tire A" />
-        <TireSuggestions tire={tireB} label="Tire B" /> */}
+      {/* Speedometer note sits right below the two Tire boxes. */}
+      <div className={`speedo-banner ${Math.abs(diffPct) > 3 ? "warn" : "ok"}`}>
+        Tire B changes overall diameter by <strong>{diffPct >= 0 ? "+" : ""}{diffPct.toFixed(2)}%</strong> vs. Tire A —
+        {" "}
+        {Math.abs(diffPct) > 3
+          ? " outside the ±3% range generally considered safe for speedometer accuracy."
+          : " within the typical ±3% safe range for speedometer accuracy."}
       </div>
+
+      <div className="section-title-row mb-4">
+        <div />
+        {/* {can(PERM.COMPARISON_SAVE) && (
+          <button type="button" className="btn btn-ghost" onClick={() => setSaveModalOpen(true)} disabled={logComparison.isPending}>
+            <Save size={14} /> {saved ? "Saved!" : logComparison.isPending ? "Saving…" : "Save comparison"}
+          </button>
+        )} */}
+      </div>
+
+      {/* <TireSuggestions tire={tireA} label="Tire A" />
+      <TireSuggestions tire={tireB} label="Tire B" /> */}
 
       {/* Details listing of every saved comparison, with search + filters (same as Vehicle Notes) and an Apply button per row. */}
       {/* <SavedComparisonsList onApply={applySavedComparison} /> */}
