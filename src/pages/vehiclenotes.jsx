@@ -307,10 +307,10 @@ export default function VehicleNotes() {
   const pendingCreates = filtersActive
     ? []
     : saveJobs.saves.filter(
-        (j) =>
-          j.kind === "create" && !j.hidden && j.status !== "failed" &&
-          !filteredVehicles.some((v) => v._id === j.vehicleId)
-      );
+      (j) =>
+        j.kind === "create" && !j.hidden && j.status !== "failed" &&
+        !filteredVehicles.some((v) => v._id === j.vehicleId)
+    );
   const savingVehicleIds = new Set(
     saveJobs.saves
       .filter((j) => j.kind === "update" && (j.status === "sending" || j.status === "queued" || j.status === "processing"))
@@ -693,112 +693,112 @@ export default function VehicleNotes() {
         </div>
       ) : (
         <>
-        {pager.searchMode === "text" && (
-          <p className="text-muted fs-11 search-note">No exact matches — showing related results.</p>
-        )}
-        <div className={`vehicle-grid${isPageChanging ? " list-updating" : ""}`}>
-          {pendingCreates.map((j) => (
-            <div key={j.clientRef} className="card vehicle-card vehicle-card-pending" aria-busy="true">
-              <div className="vehicle-image" />
-              <div className="vehicle-body">
-                <p className="vehicle-name">{j.label}</p>
-                <p className="vehicle-pending-note">
-                  {j.status === "done" ? "Saved" : <><Loader2 size={13} className="save-spin" /> Saving this vehicle…</>}
-                </p>
-              </div>
-            </div>
-          ))}
-          {filteredVehicles.map((v) => (
-            <div key={v._id} className={`card vehicle-card${savingVehicleIds.has(v._id) ? " is-saving" : ""}`}>
-              {savingVehicleIds.has(v._id) && (
-                <span className="vehicle-saving-tag"><Loader2 size={12} className="save-spin" /> Saving…</span>
-              )}
-              <div className="vehicle-image">
-                {v.image || v.beforeImage ? <AuthImage src={v.image || v.beforeImage} alt={v.name} /> : <Car size={30} color="#C6C9D6" />}
-              </div>
-              <div className="vehicle-body">
-                <p className="vehicle-name">{v.name}</p>
-                <div className="vehicle-tags">
-                  <span className="badge badge-live">{v.make}</span>
-                  <span className="badge badge-model">{v.model}</span>
-                  <span className="badge badge-model">{v.type}</span>
+          {pager.searchMode === "text" && (
+            <p className="text-muted fs-11 search-note">No exact matches — showing related results.</p>
+          )}
+          <div className={`vehicle-grid${isPageChanging ? " list-updating" : ""}`}>
+            {pendingCreates.map((j) => (
+              <div key={j.clientRef} className="card vehicle-card vehicle-card-pending" aria-busy="true">
+                <div className="vehicle-image" />
+                <div className="vehicle-body">
+                  <p className="vehicle-name">{j.label}</p>
+                  <p className="vehicle-pending-note">
+                    {j.status === "done" ? "Saved" : <><Loader2 size={13} className="save-spin" /> Saving this vehicle…</>}
+                  </p>
                 </div>
-                {v.customer && (
+              </div>
+            ))}
+            {filteredVehicles.map((v) => (
+              <div key={v._id} className={`card vehicle-card${savingVehicleIds.has(v._id) ? " is-saving" : ""}`}>
+                {savingVehicleIds.has(v._id) && (
+                  <span className="vehicle-saving-tag"><Loader2 size={12} className="save-spin" /> Saving…</span>
+                )}
+                <div className="vehicle-image">
+                  {v.image || v.beforeImage ? <AuthImage src={v.image || v.beforeImage} alt={v.name} /> : <Car size={30} color="#C6C9D6" />}
+                </div>
+                <div className="vehicle-body">
+                  <p className="vehicle-name">{v.name}</p>
+                  <div className="vehicle-tags">
+                    <span className="badge badge-live">{v.make}</span>
+                    <span className="badge badge-model">{v.model}</span>
+                    <span className="badge badge-model">{v.type}</span>
+                  </div>
+                  {/* {v.customer && (
                   <p className="vehicle-customer fs-11 mt-4">
                     <strong>{v.customer.fullName}</strong>
                     <span className="text-muted">{[v.customer.email, v.customer.phone].filter(Boolean).join(" · ")}</span>
                   </p>
-                )}
-                <p className="text-muted fs-11 mt-4">
-                  {v.year ? `Year: ${v.year}` : "No year set"}
-                  {" · "}
-                  {v.eventDate ? `Event date: ${new Date(v.eventDate).toLocaleDateString()}` : "No event date set"}
-                  {" · "}Added {new Date(v.createdAt).toLocaleDateString()}
-                </p>
-                {(v.existingSpec?.engine || v.existingSpec?.tyre?.width || v.upgradedSpec?.engine || v.upgradedSpec?.tyre?.width) && (
-                  <div className="spec-compare-grid compact">
-                    <div className="spec-compare-col">
-                      <p className="spec-compare-col-title">Existing</p>
-                      <p className="suggestion-spec-row"><span>Engine</span>{v.existingSpec?.engine || "—"}</p>
-                      <p className="suggestion-spec-row">
-                        <span>Tyre</span>
-                        {v.existingSpec?.tyre?.width ? `${v.existingSpec.tyre.width}/${v.existingSpec.tyre.aspect} R${v.existingSpec.tyre.rim}` : "—"}
-                      </p>
+                )} */}
+                  {/* <p className="text-muted fs-11 mt-4">
+                    {v.year ? `Year: ${v.year}` : "No year set"}
+                    {" · "}
+                    {v.eventDate ? `Event date: ${new Date(v.eventDate).toLocaleDateString()}` : "No event date set"}
+                    {" · "}Added {new Date(v.createdAt).toLocaleDateString()}
+                  </p> */}
+                  {(v.existingSpec?.engine || v.existingSpec?.tyre?.width || v.upgradedSpec?.engine || v.upgradedSpec?.tyre?.width) && (
+                    <div className="spec-compare-grid compact">
+                      <div className="spec-compare-col">
+                        <p className="spec-compare-col-title">Existing</p>
+                        <p className="suggestion-spec-row"><span>Engine</span>{v.existingSpec?.engine || "—"}</p>
+                        <p className="suggestion-spec-row">
+                          <span>Tyre</span>
+                          {v.existingSpec?.tyre?.width ? `${v.existingSpec.tyre.width}/${v.existingSpec.tyre.aspect} R${v.existingSpec.tyre.rim}` : "—"}
+                        </p>
+                      </div>
+                      <div className="spec-compare-col upgraded">
+                        <p className="spec-compare-col-title">Upgraded</p>
+                        <p className="suggestion-spec-row"><span>Engine</span>{v.upgradedSpec?.engine || "—"}</p>
+                        <p className="suggestion-spec-row">
+                          <span>Tyre</span>
+                          {v.upgradedSpec?.tyre?.width ? `${v.upgradedSpec.tyre.width}/${v.upgradedSpec.tyre.aspect} R${v.upgradedSpec.tyre.rim}` : "—"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="spec-compare-col upgraded">
-                      <p className="spec-compare-col-title">Upgraded</p>
-                      <p className="suggestion-spec-row"><span>Engine</span>{v.upgradedSpec?.engine || "—"}</p>
-                      <p className="suggestion-spec-row">
-                        <span>Tyre</span>
-                        {v.upgradedSpec?.tyre?.width ? `${v.upgradedSpec.tyre.width}/${v.upgradedSpec.tyre.aspect} R${v.upgradedSpec.tyre.rim}` : "—"}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {(v.gallery?.length > 0 || v.beforeImage || v.afterImage) && (
-                  <button type="button" className="vehicle-gallery-btn" onClick={() => openGallery(v)}>
-                    <Images size={13} />
-                    View gallery{v.gallery?.length ? ` (${v.gallery.length})` : ""}
-                  </button>
-                )}
-              </div>
-              <div className="vehicle-actions">
-                <button
-                  type="button"
-                  className="icon-btn"
-                  onClick={() => navigate(`/vehicle-notes/${v._id}`)}
-                  title="View details"
-                  aria-label={`View details for ${v.name}`}
-                >
-                  <Eye size={14} />
-                </button>
-                {canEdit && (
+                  )}
+                  {(v.gallery?.length > 0 || v.beforeImage || v.afterImage) && (
+                    <button type="button" className="vehicle-gallery-btn" onClick={() => openGallery(v)}>
+                      <Images size={13} />
+                      View gallery{v.gallery?.length ? ` (${v.gallery.length})` : ""}
+                    </button>
+                  )}
+                </div>
+                <div className="vehicle-actions">
                   <button
                     type="button"
                     className="icon-btn"
-                    onClick={() => openEdit(v)}
-                    title={savingVehicleIds.has(v._id) ? "Saving — available again in a moment" : "Edit"}
-                    disabled={savingVehicleIds.has(v._id)}
+                    onClick={() => navigate(`/vehicle-notes/${v._id}`)}
+                    title="View details"
+                    aria-label={`View details for ${v.name}`}
                   >
-                    <Pencil size={14} />
+                    <Eye size={14} />
                   </button>
-                )}
-                {canDelete && (
-                  <button
-                    type="button"
-                    className="icon-btn danger"
-                    onClick={() => setDeleteTarget(v)}
-                    title="Delete"
-                    disabled={savingVehicleIds.has(v._id)}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      onClick={() => openEdit(v)}
+                      title={savingVehicleIds.has(v._id) ? "Saving — available again in a moment" : "Edit"}
+                      disabled={savingVehicleIds.has(v._id)}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      type="button"
+                      className="icon-btn danger"
+                      onClick={() => setDeleteTarget(v)}
+                      title="Delete"
+                      disabled={savingVehicleIds.has(v._id)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-        {!vehiclesError && <CursorPager pager={pager} noun="vehicles" />}
+            ))}
+          </div>
+          {!vehiclesError && <CursorPager pager={pager} noun="vehicles" />}
         </>
       )}
 

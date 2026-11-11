@@ -192,7 +192,7 @@ ul {
     gap: 5px;
     padding: 5px 11px;
     border-radius: 20px;
-    font-size: 11.5px;
+    font-size: 9.5px;
     font-weight: 700;
     white-space: nowrap;
 }
@@ -2410,10 +2410,10 @@ input[type="password"]::-ms-clear {
 
 .vehicle-tags {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 10px;
     align-items: flex-start;
-    margin-bottom: 16px;
+    margin-bottom: 5px;
     width: 100%;
 }
 
@@ -4219,7 +4219,7 @@ input[type="password"]::-ms-clear {
 
     /* Results table scrolls inside .table-responsive instead of being clipped */
     .plus-results-table {
-        min-width: 560px;
+        min-width: 640px;
     }
 
     .plus-results-table .plus-size-col {
@@ -7075,6 +7075,7 @@ img[data-image-state="loading"] {
 
 /* Phone: single column, scrolls */
 @container techdata (max-width: 599px) {
+
     .techdata-grid,
     .techdata-grid--empty {
         grid-template-columns: minmax(0, 1fr);
@@ -7225,5 +7226,154 @@ img[data-image-state="loading"] {
 
     .techdata-plus {
         padding: 3px 8px;
+    }
+}
+
+/* ---------- Plus Size page: "Plus Size" (New rim) section inside the first box ---------- */
+.tire-plus-form .plus-size-section {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border, rgba(42, 33, 24, 0.12));
+}
+
+/* Top-3 table stays inside the box; scrolls (both ways) if it ever exceeds it. */
+.tire-plus-form .plus-size-results-scroll {
+    max-height: 300px;
+    overflow: auto;
+}
+
+/* ---------- Plus Size page: first box as one row — inputs | top-3 results ----------
+   Inputs stay narrow on the left; the results table takes the rest of the box and
+   scrolls inside it when it is taller/wider than the available space. */
+.tire-plus-form .plus-size-layout {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 32px;
+}
+
+.tire-plus-form .plus-size-inputs {
+    flex: 0 0 300px;
+    width: 300px;
+    max-width: 100%;
+}
+
+/* Width / Aspect / Rim side by side in the narrow column; New rim is one field */
+.tire-plus-form .plus-size-inputs .tire-input-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    max-width: none;
+}
+
+.tire-plus-form .plus-size-section .tire-input-grid {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.tire-plus-form .plus-size-section {
+    margin-top: 20px;
+    padding-top: 18px;
+}
+
+.tire-plus-form .plus-size-results-pane {
+    flex: 1 1 0;
+    min-width: 0;
+    max-height: 360px;
+    overflow: auto;
+}
+
+/* The pane itself scrolls, so the table doesn't need a second scroller */
+.tire-plus-form .plus-size-results-scroll {
+    max-height: none;
+    overflow: visible;
+}
+
+.tire-plus-form .plus-size-results-pane .plus-results-table {
+    min-width: 640px;
+}
+
+/* Narrow screens (and a pinned sidebar on mid-size ones): stack, still scrollable */
+@media only screen and (max-width: 860px) {
+    .tire-plus-form .plus-size-layout {
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .tire-plus-form .plus-size-inputs {
+        flex: none;
+        width: 100%;
+    }
+
+    .tire-plus-form .plus-size-results-pane {
+        flex: none;
+        width: 100%;
+    }
+}
+
+@media only screen and (min-width: 861px) and (max-width: 1100px) {
+    .dashboard-layout:has(.sidebar.pinned) .tire-plus-form .plus-size-layout {
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .dashboard-layout:has(.sidebar.pinned) .tire-plus-form .plus-size-inputs,
+    .dashboard-layout:has(.sidebar.pinned) .tire-plus-form .plus-size-results-pane {
+        flex: none;
+        width: 100%;
+    }
+}
+
+
+/* ---------- Plus Size page — tablet (iPad Mini 768px … 1023px) ----------
+   Both result tables (the "Plus Size matches" table and the closest-matches
+   table) keep every column at a readable width, show the Size on ONE line, and
+   scroll sideways inside their own container instead of squeezing/clipping.
+   The ≤766px mobile block above doesn't cover 767–768px, so this fills that gap
+   without touching any other breakpoint. */
+@media only screen and (min-width: 768px) and (max-width: 1023px) {
+
+    .plus-results-table,
+    .tire-plus-form .plus-size-results-pane .plus-results-table {
+        min-width: 700px;
+    }
+
+    /* Size on one line: "245 35 22", "label — 225 65 17" never wrap */
+    .plus-results-table th.plus-size-col,
+    .plus-results-table td.plus-size-col {
+        white-space: nowrap;
+    }
+
+    /* The two scrolling containers: top pane + closest-matches table wrapper */
+    .tire-plus-form .plus-size-results-pane,
+    .compare-result-card .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #c9bfb4 transparent;
+    }
+
+    /* Always-visible horizontal scrollbar so it's obvious the table scrolls */
+    .tire-plus-form .plus-size-results-pane::-webkit-scrollbar,
+    .compare-result-card .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .tire-plus-form .plus-size-results-pane::-webkit-scrollbar-track,
+    .compare-result-card .table-responsive::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .tire-plus-form .plus-size-results-pane::-webkit-scrollbar-thumb,
+    .compare-result-card .table-responsive::-webkit-scrollbar-thumb {
+        background: #c9bfb4;
+        border-radius: 8px;
+    }
+
+    /* Keep the 3D preview button reachable while the other columns scroll */
+    .plus-results-table th:last-child,
+    .plus-results-table td:last-child {
+        position: sticky;
+        right: 0;
+        background: #fff;
+        box-shadow: -6px 0 6px -6px rgba(42, 33, 24, 0.18);
     }
 }

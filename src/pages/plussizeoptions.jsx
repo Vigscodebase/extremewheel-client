@@ -6,6 +6,7 @@ import Modal from "../components/modal";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
+import { sidewallHeightInches } from "../utils/tireMath";
 // import { useTireOptionsQuery } from "../hooks/queries/useTireOptions"; // hidden: Tire Size Option feature is switched off
 import { usePlusSizeSearch, useSavePlusSizeMatch } from "../hooks/queries/usePlusSize";
 import {
@@ -21,6 +22,9 @@ import {
 // import { PLUS_SIZE_HEIGHT_TOLERANCE_PCT, PLUS_SIZE_TREAD_TOLERANCE_PCT } from "../utils/constants";
 
 const emptyOe = { width: 225, aspect: 65, rim: 17, targetRim: "" };
+
+// The Plus Size (New rim) table in the first box only lists the closest few matches.
+const PLUS_SIZE_MAX_RESULTS = 3;
 
 const SORT_OPTIONS = [
   { value: "combined", label: "Best overall match (height + tread)" },
@@ -296,6 +300,9 @@ export default function PlusSizeOptions() {
   // Hidden: no Tire Size Option data is fetched or checked any more.
   // const { data: presets } = useTireOptionsQuery();
   const searchMutation = usePlusSizeSearch();
+  // Separate mutation for the "Plus Size" (New rim) search, so its top-3 table
+  // never overwrites the OE closest-matches results below.
+  const plusMutation = usePlusSizeSearch();
   const saveMutation = useSavePlusSizeMatch();
 
   // Arrived here via a "Saved plus-size match" suggestion chip elsewhere in
@@ -312,7 +319,12 @@ export default function PlusSizeOptions() {
       : emptyOe
   );
   const [searched, setSearched] = useState(false);
-  const [previewResult, setPreviewResult] = useState(null);
+  // 3D preview target: { source: "oe" | "plus", row, oe } — `oe` is the OE size
+  // of the search that produced the row (not the live inputs), so editing the
+  // fields above never changes an open or later preview of an earlier result.
+  const [preview, setPreview] = useState(null);
+  const togglePreview = (source, row, searchOe) =>
+    setPreview((cur) => (cur && cur.source === source && cur.row._id === row._id ? null : { source, row, oe: searchOe }));
   const [savedIds, setSavedIds] = useState(new Set());
 
   // TEMPORARILY DISABLED — Target rim / Height tolerance / Tread width
@@ -344,7 +356,7 @@ export default function PlusSizeOptions() {
   const runSearch = async (e) => {
     e.preventDefault();
     setSearched(true);
-    setPreviewResult(null);
+    setPreview((cur) => (cur?.source === "oe" ? null : cur));
     setSavedIds(new Set());
     await searchMutation.mutateAsync({
       width: Number(oe.width),
@@ -362,8 +374,24 @@ export default function PlusSizeOptions() {
     });
   };
 
+  // "Plus Size" — same search/calculation as above, narrowed to the New rim,
+  // keeping only the top 3 closest matches.
+  const runPlusSearch = async (e) => {
+    e.preventDefault();
+    if (!oe.targetRim) return;
+    setPreview((cur) => (cur?.source === "plus" ? null : cur));
+    await plusMutation.mutateAsync({
+      width: Number(oe.width),
+      aspect: Number(oe.aspect),
+      rim: Number(oe.rim),
+      targetRim: Number(oe.targetRim),
+    });
+  };
+
   const data = searchMutation.data;
   const results = data?.results || [];
+  const plusData = plusMutation.data;
+  const plusResults = (plusData?.results || []).slice(0, PLUS_SIZE_MAX_RESULTS);
 
   const saveMatch = async (r) => {
     await saveMutation.mutateAsync({
@@ -388,7 +416,10 @@ export default function PlusSizeOptions() {
         subtitle="Find alternate tire sizes that stay within tolerance of the OE overall diameter and tread width."
       />
 
-      <form className="card tire-plus-form" onSubmit={runSearch}>
+      <div className="card tire-plus-form">
+      <div className="plus-size-layout">
+      <div className="plus-size-inputs">
+      <form onSubmit={runSearch}>
         {/* The OE library download / upload buttons now live on the Reporting & Data Export page. */}
         <h3 className="mb-16">OE (original equipment) size</h3>
 
@@ -502,6 +533,106 @@ export default function PlusSizeOptions() {
         </div>
       </form>
 
+      <form className="plus-size-section" onSubmit={runPlusSearch}>
+        <h3 className="mb-16">Plus Size</h3>
+        <div className="tire-input-grid">
+          <div className="field">
+            <label>New rim</label>
+            <input
+              {...NUMERIC_INPUT_PROPS}
+              maxLength={TIRE_MAX.rim}
+              required
+              placeholder="e.g. 18"
+              value={oe.targetRim}
+              onChange={(e) => setOe((f) => ({ ...f, targetRim: onlyDigits(e.target.value, TIRE_MAX.rim) }))}
+            />
+          </div>
+        </div>
+
+        <div className="modal-actions modal-actions-start mt-8">
+          <button type="submit" className="btn btn-accent" disabled={plusMutation.isPending}>
+            <Search size={16} /> {plusMutation.isPending ? "Searching…" : "Find matches"}
+          </button>
+        </div>
+      </form>
+      </div>
+
+      <div className="plus-size-results-pane">
+        <h3 className="mb-16">Plus Size matches</h3>
+        {plusMutation.isError && (
+          <div className="alert-error">
+            {plusMutation.error?.response?.data?.message || "Search failed. Please try again."}
+          </div>
+        )}
+
+        {plusData && (
+          <div className="plus-size-results">
+            <p className="text-muted fs-13 mb-8">
+              Top {PLUS_SIZE_MAX_RESULTS} plus-size matches for <strong>{plusData.oe.width}/{plusData.oe.aspect} R{plusData.oe.rim}</strong> on a{" "}
+              <strong>{plusMutation.variables?.targetRim}" rim</strong>.
+            </p>
+            {plusResults.length === 0 ? (
+              <div className="empty-state-card">
+                No saved tire sizes on a {plusMutation.variables?.targetRim}" rim fall within tolerance. Try a different new rim.
+              </div>
+            ) : (
+              <div className="table-responsive plus-size-results-scroll">
+                <table className="compare-table plus-results-table">
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th className="plus-size-col">Size</th>
+                      <th>Overall height</th>
+                      <th>Tread width</th>
+                      <th title="Sidewall Height = Tread Width × Aspect Ratio">Sidewall height</th>
+                      <th>Height diff</th>
+                      <th>Tread diff</th>
+                      <th>3D</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {plusResults.map((r) => (
+                      <tr key={r._id}>
+                        <td>
+                          <span className={`badge ${r.rank === 1 ? "badge-live" : "badge-model"}`}>{r.rank}</span>
+                        </td>
+                        <td className="compare-table-value plus-size-col">
+                          {r.label ? `${r.label} — ` : ""}{r.width} {r.aspect} {r.rim}
+                        </td>
+                        <td>{formatInches(r.overallHeightIn)}</td>
+                        <td>{formatInches(r.treadWidthIn)}</td>
+                        <td>{formatInches(sidewallHeightInches({ width: r.width, aspect: r.aspect }))}</td>
+                        <td className={Math.abs(r.heightDiffPct) < 0.01 ? "text-mint" : undefined}>
+                          {r.heightDiffPct >= 0 ? "+" : ""}{r.heightDiffPct}%
+                        </td>
+                        <td>{r.treadDiffPct >= 0 ? "+" : ""}{r.treadDiffPct}%</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="icon-btn"
+                            title="Preview in 3D"
+                            onClick={() => togglePreview("plus", r, plusData.oe)}
+                          >
+                            <Eye size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+        {!plusData && !plusMutation.isError && (
+          <div className="empty-state-card">
+            Enter a New rim and click Find matches to see the top {PLUS_SIZE_MAX_RESULTS} plus-size matches here.
+          </div>
+        )}
+      </div>
+      </div>
+      </div>
+
       {searchMutation.isError && (
         <div className="alert-error mt-16">
           {searchMutation.error?.response?.data?.message || "Search failed. Please try again."}
@@ -511,7 +642,7 @@ export default function PlusSizeOptions() {
       {data && (
         <div className="card compare-result-card mt-20">
           <div className="speedo-banner ok">
-            OE size <strong>{oe.width}/{oe.aspect} R{oe.rim}</strong> — overall height{" "}
+            OE size <strong>{data.oe.width}/{data.oe.aspect} R{data.oe.rim}</strong> — overall height{" "}
             <strong>{formatInches(data.oe.overallHeightIn)}"</strong>, tread width <strong>{formatInches(data.oe.treadWidthIn)}"</strong>. Showing matches
             within ±{data.tolerances.heightPct}% overall height (tread width is shown for reference, not used to filter), ranked by{" "}
             {SORT_OPTIONS.find((o) => o.value === data.sortBy || (data.sortBy || "").startsWith(o.value))?.label.toLowerCase() ||
@@ -538,6 +669,7 @@ export default function PlusSizeOptions() {
                   <th className="plus-size-col">Size</th>
                   <th>Overall height</th>
                   <th>Tread width</th>
+                  <th title="Sidewall Height = Tread Width × Aspect Ratio">Sidewall height</th>
                   <th>Height diff</th>
                   <th>Tread diff</th>
                   <th>3D</th>
@@ -555,6 +687,7 @@ export default function PlusSizeOptions() {
                     </td>
                     <td>{formatInches(r.overallHeightIn)}</td>
                     <td>{formatInches(r.treadWidthIn)}</td>
+                    <td>{formatInches(sidewallHeightInches({ width: r.width, aspect: r.aspect }))}</td>
                     <td className={Math.abs(r.heightDiffPct) < 0.01 ? "text-mint" : undefined}>
                       {r.heightDiffPct >= 0 ? "+" : ""}{r.heightDiffPct}%
                     </td>
@@ -564,7 +697,7 @@ export default function PlusSizeOptions() {
                         type="button"
                         className="icon-btn"
                         title="Preview in 3D"
-                        onClick={() => setPreviewResult(previewResult?._id === r._id ? null : r)}
+                        onClick={() => togglePreview("oe", r, data.oe)}
                       >
                         <Eye size={14} />
                       </button>
@@ -593,17 +726,17 @@ export default function PlusSizeOptions() {
       )}
 
       <Modal
-        open={!!previewResult}
-        onClose={() => setPreviewResult(null)}
-        title={previewResult ? `OE ${oe.width}/${oe.aspect}R${oe.rim} vs ${previewResult.width}/${previewResult.aspect}R${previewResult.rim}` : "3D preview"}
+        open={!!preview}
+        onClose={() => setPreview(null)}
+        title={preview ? `OE ${preview.oe.width}/${preview.oe.aspect}R${preview.oe.rim} vs ${preview.row.width}/${preview.row.aspect}R${preview.row.rim}` : "3D preview"}
         width={760}
       >
-        {previewResult && (
+        {preview && (
           <div className="wheel-viz">
             <div className="wheel-col">
               <Tire3DVisualizer
-                tire={{ width: oe.width, aspect: oe.aspect, rim: oe.rim }}
-                label={`OE · ${oe.width}/${oe.aspect}R${oe.rim}`}
+                tire={{ width: preview.oe.width, aspect: preview.oe.aspect, rim: preview.oe.rim }}
+                label={`OE · ${preview.oe.width}/${preview.oe.aspect}R${preview.oe.rim}`}
                 accent="#FF6F91"
                 height={280}
                 zoomable
@@ -612,8 +745,8 @@ export default function PlusSizeOptions() {
             </div>
             <div className="wheel-col">
               <Tire3DVisualizer
-                tire={{ width: previewResult.width, aspect: previewResult.aspect, rim: previewResult.rim }}
-                label={`${previewResult.label ? `${previewResult.label} · ` : ""}${previewResult.width}/${previewResult.aspect}R${previewResult.rim}`}
+                tire={{ width: preview.row.width, aspect: preview.row.aspect, rim: preview.row.rim }}
+                label={`${preview.row.label ? `${preview.row.label} · ` : ""}${preview.row.width}/${preview.row.aspect}R${preview.row.rim}`}
                 accent="#8B7CF6"
                 height={280}
                 zoomable
