@@ -27,6 +27,11 @@ function tyreSize(tyre) {
   return has(tyre?.width) && has(tyre?.aspect) && has(tyre?.rim) ? `${tyre.width}/${tyre.aspect} R${tyre.rim}` : null;
 }
 
+const MODIFICATION_LABELS = { lifted: "Lifted", lowered: "Lowered", stock: "Stock" };
+
+// "ET 35" / "ET -12" (wheel offset in mm), or null when not recorded.
+const offsetText = (n) => (has(n) ? `ET ${n} mm` : null);
+
 function Detail({ label, wide = false, children }) {
   const empty = children === null || children === undefined || children === "";
   return (
@@ -181,6 +186,10 @@ export default function VehicleNoteDetail() {
                 {vehicle.make && <span className="badge badge-live">{vehicle.make}</span>}
                 {vehicle.model && <span className="badge badge-model">{vehicle.model}</span>}
                 {vehicle.type && <span className="badge badge-model">{vehicle.type}</span>}
+                {vehicle.submodel && <span className="badge badge-model">{vehicle.submodel}</span>}
+                {(vehicle.modification || []).map((m) => (
+                  <span key={m} className="badge badge-model">{MODIFICATION_LABELS[m] || m}</span>
+                ))}
               </div>
 
               <dl className="vnd-details">
@@ -189,6 +198,12 @@ export default function VehicleNoteDetail() {
                 <Detail label="Model">{vehicle.model}</Detail>
                 <Detail label="Type">{vehicle.type}</Detail>
                 <Detail label="Year">{vehicle.year}</Detail>
+                <Detail label="Submodel">{vehicle.submodel}</Detail>
+                <Detail label="Modification">{(vehicle.modification || []).map((m) => MODIFICATION_LABELS[m] || m).join(", ")}</Detail>
+                <Detail label="Front tire size">{vehicle.frontTireSize}</Detail>
+                <Detail label="Rear tire size">{vehicle.rearTireSize}</Detail>
+                <Detail label="Front wheel offset">{offsetText(vehicle.frontWheelOffset)}</Detail>
+                <Detail label="Rear wheel offset">{offsetText(vehicle.rearWheelOffset)}</Detail>
                 <Detail label="Event date">{formatDate(vehicle.eventDate)}</Detail>
                 <Detail label="Added">{formatDateTime(vehicle.createdAt)}</Detail>
                 <Detail label="Last updated">{formatDateTime(vehicle.updatedAt)}</Detail>
@@ -196,6 +211,11 @@ export default function VehicleNoteDetail() {
                 {isStaffOrAdmin && <Detail label="Customer">{vehicle.customer?.fullName}</Detail>}
                 {isStaffOrAdmin && <Detail label="Customer email">{vehicle.customer?.email}</Detail>}
                 {isStaffOrAdmin && <Detail label="Customer phone">{vehicle.customer?.phone}</Detail>}
+                {vehicle.description && (
+                  <Detail label={`Description · ${vehicle.descriptionUpdatedAt ? "updated" : "created"} ${formatDateTime(vehicle.descriptionUpdatedAt || vehicle.createdAt) || ""}`} wide>
+                    <span className="vnd-prewrap">{vehicle.description}</span>
+                  </Detail>
+                )}
                 {vehicle.offsetNotes && (
                   <Detail label="Offset / fitment notes" wide>
                     <span className="vnd-prewrap">{vehicle.offsetNotes}</span>

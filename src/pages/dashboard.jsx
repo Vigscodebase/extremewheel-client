@@ -538,7 +538,7 @@ export default function Dashboard() {
                     <div className="recent-avatar">{v.name.charAt(0)}</div>
                     <div className="recent-info">
                       <p className="recent-name">{v.name}</p>
-                      <p className="recent-type">{v.type}</p>
+                      <p className="recent-type">{v.type || v.make}</p>
                     </div>
                     <span className="badge badge-model">{v.model}</span>
                   </div>

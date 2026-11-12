@@ -7,6 +7,7 @@ const KIND_LABEL = {
   make: "Make",
   model: "Model",
   year: "Year",
+  submodel: "Submodel",
   customer: "Customer",
   size: "Tire size",
   // preset: "Preset", // hidden: Tire Size Option presets are switched off

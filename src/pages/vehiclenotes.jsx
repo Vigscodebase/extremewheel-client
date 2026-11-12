@@ -41,6 +41,61 @@ import {
   useVehicleLookupYears,
 } from "../hooks/queries/useVehicleLookup";
 
+// Fields that are still stored (and still sent on save) but hidden on this page:
+// the filter bar, the search box and the Add / Edit form. Flip a flag to bring
+// the control back; the server side search is switched off separately
+// (see the "HIDDEN" notes in server.js).
+const SHOW_TYPE = false;
+const SHOW_CUSTOMER = false;
+
+// Predefined Modification choices (checkboxes in the form and the filter).
+// The values are what is stored; keep in sync with MODIFICATION_OPTIONS in
+// server/models/VehicleNote.js.
+const MODIFICATION_CHOICES = [
+  { value: "lifted", label: "Lifted" },
+  { value: "lowered", label: "Lowered" },
+  { value: "stock", label: "Stock" },
+];
+const modificationLabel = (value) => MODIFICATION_CHOICES.find((c) => c.value === value)?.label || value;
+
+// "205/55R16", "205-55-16" or "205 55 16" -> "205 55 16" (the tblAppGuide format).
+// Returns the text unchanged when it isn't three numbers, so it can be fixed.
+function normalizeTireSize(raw) {
+  const nums = String(raw ?? "").match(/\d+/g) || [];
+  return nums.length === 3 ? nums.join(" ") : String(raw ?? "").trim();
+}
+
+// "" when fine (or empty), otherwise a message for the form.
+function tireSizeProblem(raw, label) {
+  const text = String(raw ?? "").trim();
+  if (!text) return "";
+  const nums = (text.match(/\d+/g) || []).map(Number);
+  const [w, a, r] = nums;
+  const ok = nums.length === 3 && w >= 105 && w <= 495 && a >= 20 && a <= 95 && r >= 10 && r <= 30;
+  return ok ? "" : `${label} must be width, aspect and rim, e.g. 205 55 16.`;
+}
+
+function offsetProblem(raw, label) {
+  if (raw === "" || raw === null || raw === undefined) return "";
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= -200 && n <= 200 ? "" : `${label} must be a whole number between -200 and 200 (mm).`;
+}
+
+// Card date: short and relative while it is recent ("3h ago"), the real date after a week.
+function formatWhen(value) {
+  const d = new Date(value);
+  if (!value || Number.isNaN(d.getTime())) return "";
+  const diff = Date.now() - d.getTime();
+  const MIN = 60000;
+  const HOUR = 60 * MIN;
+  const DAY = 24 * HOUR;
+  if (diff < MIN) return "just now";
+  if (diff < HOUR) return `${Math.floor(diff / MIN)}m ago`;
+  if (diff < DAY) return `${Math.floor(diff / HOUR)}h ago`;
+  if (diff < 7 * DAY) return `${Math.floor(diff / DAY)}d ago`;
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
 const MOCK_VEHICLES = [
   { _id: "v1", name: "Ford Transit 350", make: "Ford", type: "Van / Mini Van", model: "Transit 350", year: "2023", image: "", beforeImage: "", afterImage: "", gallery: [] },
   { _id: "v2", name: "Toyota Hilux", make: "Toyota", type: "Trucks / SUV", model: "Hilux", year: "2022", image: "", beforeImage: "", afterImage: "", gallery: [] },
@@ -53,6 +108,13 @@ const emptyForm = {
   type: "",
   model: "",
   year: "",
+  submodel: "",
+  frontTireSize: "",
+  rearTireSize: "",
+  frontWheelOffset: "",
+  rearWheelOffset: "",
+  modification: [],
+  description: "",
   image: "",
   beforeImage: "",
   afterImage: "",
@@ -64,7 +126,7 @@ const emptyForm = {
   upgradedSpec: { engine: "", tyre: { width: "", aspect: "", rim: "" } },
 };
 
-const emptyFilters = { search: "", exact: false, pick: "", make: "", model: "", type: "", customer: "", yearFrom: "", yearTo: "" };
+const emptyFilters = { search: "", exact: false, pick: "", make: "", model: "", type: "", customer: "", modification: [], yearFrom: "", yearTo: "" };
 
 function readAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -146,7 +208,7 @@ export default function VehicleNotes() {
   // server enforces the same). Everyone else never sees customer data, so the
   // list isn't even requested for them.
   const isAdmin = user?.role === "admin";
-  const { data: customers, isLoading: loadingCustomers } = useCustomersQuery({ enabled: isStaffOrAdmin });
+  const { data: customers, isLoading: loadingCustomers } = useCustomersQuery({ enabled: isStaffOrAdmin && SHOW_CUSTOMER });
   const deleteCustomerMutation = useDeleteCustomer();
   const [customerModal, setCustomerModal] = useState({ open: false, customer: null });
   const [customerDelete, setCustomerDelete] = useState(null);
@@ -167,12 +229,13 @@ export default function VehicleNotes() {
       pick: picked ? filters.pick : "",
       make: filters.make,
       model: filters.model,
-      type: filters.type,
-      customer: isStaffOrAdmin ? filters.customer : "",
+      type: SHOW_TYPE ? filters.type : "",
+      customer: SHOW_CUSTOMER && isStaffOrAdmin ? filters.customer : "",
+      modification: filters.modification.join(","),
       yearFrom: filters.yearFrom,
       yearTo: filters.yearTo,
     }),
-    [effectiveSearch, picked, filters.pick, filters.make, filters.model, filters.type, filters.customer, filters.yearFrom, filters.yearTo, isStaffOrAdmin]
+    [effectiveSearch, picked, filters.pick, filters.make, filters.model, filters.type, filters.customer, filters.modification, filters.yearFrom, filters.yearTo, isStaffOrAdmin]
   );
   const pager = useVehicleNotesPage(listParams);
   const { isLoading: loading, isError: vehiclesError, isPageChanging } = pager;
@@ -278,8 +341,15 @@ export default function VehicleNotes() {
   }, [customers, form.customer, editing]);
 
   const filtersActive = Boolean(
-    filters.search.trim() || filters.make || filters.model || filters.type || filters.customer || filters.yearFrom || filters.yearTo
+    filters.search.trim() || filters.make || filters.model || filters.modification.length || filters.yearFrom || filters.yearTo ||
+    (SHOW_TYPE && filters.type) || (SHOW_CUSTOMER && filters.customer)
   );
+
+  const toggleFilterModification = (value) =>
+    setFilters((f) => ({
+      ...f,
+      modification: f.modification.includes(value) ? f.modification.filter((m) => m !== value) : [...f.modification, value],
+    }));
 
   const clearFilters = () => setFilters(emptyFilters);
 
@@ -329,9 +399,16 @@ export default function VehicleNotes() {
     setForm({
       name: v.name,
       make: v.make || "",
-      type: v.type,
+      type: v.type || "",
       model: v.model,
       year: v.year || "",
+      submodel: v.submodel || "",
+      frontTireSize: v.frontTireSize || "",
+      rearTireSize: v.rearTireSize || "",
+      frontWheelOffset: v.frontWheelOffset ?? "",
+      rearWheelOffset: v.rearWheelOffset ?? "",
+      modification: v.modification || [],
+      description: v.description || "",
       image: v.image || "",
       beforeImage: v.beforeImage || "",
       afterImage: v.afterImage || "",
@@ -370,6 +447,21 @@ export default function VehicleNotes() {
       },
     }));
   };
+
+  // Modification checkboxes. "Stock" means unmodified, so it can't be ticked
+  // together with Lifted / Lowered (and ticking those clears Stock).
+  const toggleFormModification = (value) =>
+    setForm((f) => {
+      const has = f.modification.includes(value);
+      if (has) return { ...f, modification: f.modification.filter((m) => m !== value) };
+      const next = value === "stock" ? ["stock"] : [...f.modification.filter((m) => m !== "stock"), value];
+      return { ...f, modification: next };
+    });
+
+  // Tire size / offset text boxes only accept what those values can contain.
+  const setTireSize = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value.replace(/[^\d\s/\-rRzZ]/g, "").slice(0, 14) }));
+  const setOffset = (field) => (e) =>
+    setForm((f) => ({ ...f, [field]: e.target.value.replace(/[^\d-]/g, "").replace(/(?!^)-/g, "").slice(0, 4) }));
 
   // Make -> Model -> Type is a cascading, dynamic dropdown chain sourced
   // from the Vehicle Notes database — changing an upstream field clears the
@@ -411,14 +503,30 @@ export default function VehicleNotes() {
   const submitForm = async (e) => {
     e.preventDefault();
     setFormError("");
-    if (!form.name || !form.make || !form.model || !form.type) {
-      setFormError("Vehicle name, make, model and type are required.");
+    // Type is hidden now, so it is no longer required.
+    if (!form.name || !form.make || !form.model) {
+      setFormError("Vehicle name, make and model are required.");
+      return;
+    }
+    const fitmentError =
+      tireSizeProblem(form.frontTireSize, "Front tire size") ||
+      tireSizeProblem(form.rearTireSize, "Rear tire size") ||
+      offsetProblem(form.frontWheelOffset, "Front wheel offset") ||
+      offsetProblem(form.rearWheelOffset, "Rear wheel offset");
+    if (fitmentError) {
+      setFormError(fitmentError);
       return;
     }
     // The customer field only exists for staff and admin — everyone else's
     // save must leave it out entirely (the server rejects it from them).
+    // (The customer control is hidden now, but an existing customer is still
+    // sent back unchanged so editing a vehicle never detaches it.)
     const { customer, ...formWithoutCustomer } = form;
-    const payload = isStaffOrAdmin ? { ...formWithoutCustomer, customer } : formWithoutCustomer;
+    const payload = {
+      ...(isStaffOrAdmin ? { ...formWithoutCustomer, customer } : formWithoutCustomer),
+      frontTireSize: normalizeTireSize(form.frontTireSize),
+      rearTireSize: normalizeTireSize(form.rearTireSize),
+    };
     // The card thumbnail defaults to the "before" photo. Don't send (and store)
     // the same multi-hundred-KB data URL twice — the list and detail pages
     // already fall back to beforeImage when `image` is empty.
@@ -440,9 +548,13 @@ export default function VehicleNotes() {
       form.type === (editing.type || "");
     const yearUnchanged = editing && form.year === (editing.year || "");
     const { make, model, type, year } = form;
+    // Type is hidden, so a brand-new make / model has no type to file it under:
+    // it goes into the Vehicle Notes database as "Uncategorized" so it still
+    // shows up in the dropdowns. A model that already exists is left alone.
+    const modelKnown = (lookupModels || []).includes(model);
     const afterSave = () => {
-      if (isStaffOrAdmin && !lookupUnchanged) {
-        quickAddLookup.mutate({ make, model, type }, { onError: () => { } });
+      if (isStaffOrAdmin && !lookupUnchanged && (type || !modelKnown)) {
+        quickAddLookup.mutate({ make, model, type: type || "Uncategorized" }, { onError: () => { } });
       }
       if (isStaffOrAdmin && year && !yearUnchanged) {
         quickAddLookupYear.mutate(year, { onError: () => { } });
@@ -623,16 +735,16 @@ export default function VehicleNotes() {
         }
       />
 
-      <div className="card vehicle-filter-bar mb-20">
+      <div className="card vehicle-filter-bar vn-filter-bar mb-16">
         <SearchAutocomplete
           value={filters.search}
           onChange={onSearchChange}
           suggestions={suggestions}
           loading={suggesting}
-          placeholder={isStaffOrAdmin ? "Search by vehicle name, make, model, type or customer name…" : "Search by vehicle name, make, model or type…"}
+          placeholder="Search by vehicle name, make, model, submodel, year or modification…"
           ariaLabel="Search vehicles"
         />
-        <div className={`vehicle-filter-grid${isStaffOrAdmin ? " with-customer" : ""}`}>
+        <div className="vn-filter-grid">
           <div className="field">
             <label>Make</label>
             <select value={filters.make} onChange={onFilterMakeChange}>
@@ -647,14 +759,18 @@ export default function VehicleNotes() {
               {filterModelOptions.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
-          <div className="field">
-            <label>Type</label>
-            <select value={filters.type} onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value }))}>
-              <option value="">All types</option>
-              {filterTypeOptions.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          {isStaffOrAdmin && (
+          {/* HIDDEN: Type filter (SHOW_TYPE). */}
+          {SHOW_TYPE && (
+            <div className="field">
+              <label>Type</label>
+              <select value={filters.type} onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value }))}>
+                <option value="">All types</option>
+                {filterTypeOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          )}
+          {/* HIDDEN: Customer filter (SHOW_CUSTOMER). */}
+          {SHOW_CUSTOMER && isStaffOrAdmin && (
             <div className="field">
               <label>Customer</label>
               <select value={filters.customer} onChange={(e) => setFilters((f) => ({ ...f, customer: e.target.value }))}>
@@ -677,8 +793,23 @@ export default function VehicleNotes() {
               {filterYearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
-          <button type="button" className="btn btn-ghost vehicle-filter-clear" onClick={clearFilters} disabled={!filtersActive}>
-            <FilterX size={14} /> Clear filter
+          <fieldset className="vn-mod-filter">
+            <legend>Modification</legend>
+            <div className="vn-check-row">
+              {MODIFICATION_CHOICES.map((c) => (
+                <label key={c.value} className="vn-check">
+                  <input
+                    type="checkbox"
+                    checked={filters.modification.includes(c.value)}
+                    onChange={() => toggleFilterModification(c.value)}
+                  />
+                  <span>{c.label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <button type="button" className="btn btn-ghost vn-filter-clear" onClick={clearFilters} disabled={!filtersActive}>
+            <FilterX size={14} /> Clear
           </button>
         </div>
       </div>
@@ -696,107 +827,97 @@ export default function VehicleNotes() {
           {pager.searchMode === "text" && (
             <p className="text-muted fs-11 search-note">No exact matches — showing related results.</p>
           )}
-          <div className={`vehicle-grid${isPageChanging ? " list-updating" : ""}`}>
+          <div className={`vehicle-grid vn-grid${isPageChanging ? " list-updating" : ""}`}>
             {pendingCreates.map((j) => (
-              <div key={j.clientRef} className="card vehicle-card vehicle-card-pending" aria-busy="true">
-                <div className="vehicle-image" />
-                <div className="vehicle-body">
-                  <p className="vehicle-name">{j.label}</p>
+              <div key={j.clientRef} className="card vehicle-card vn-card vehicle-card-pending" aria-busy="true">
+                <div className="vehicle-image vn-thumb" />
+                <div className="vn-body">
+                  {/* <p className="vn-name">{j.label}</p> */}
                   <p className="vehicle-pending-note">
                     {j.status === "done" ? "Saved" : <><Loader2 size={13} className="save-spin" /> Saving this vehicle…</>}
                   </p>
                 </div>
               </div>
             ))}
-            {filteredVehicles.map((v) => (
-              <div key={v._id} className={`card vehicle-card${savingVehicleIds.has(v._id) ? " is-saving" : ""}`}>
-                {savingVehicleIds.has(v._id) && (
-                  <span className="vehicle-saving-tag"><Loader2 size={12} className="save-spin" /> Saving…</span>
-                )}
-                <div className="vehicle-image">
-                  {v.image || v.beforeImage ? <AuthImage src={v.image || v.beforeImage} alt={v.name} /> : <Car size={30} color="#C6C9D6" />}
-                </div>
-                <div className="vehicle-body">
-                  <p className="vehicle-name">{v.name}</p>
-                  <div className="vehicle-tags">
-                    <span className="badge badge-live">{v.make}</span>
-                    <span className="badge badge-model">{v.model}</span>
-                    <span className="badge badge-model">{v.type}</span>
-                  </div>
-                  {/* {v.customer && (
-                  <p className="vehicle-customer fs-11 mt-4">
-                    <strong>{v.customer.fullName}</strong>
-                    <span className="text-muted">{[v.customer.email, v.customer.phone].filter(Boolean).join(" · ")}</span>
-                  </p>
-                )} */}
-                  {/* <p className="text-muted fs-11 mt-4">
-                    {v.year ? `Year: ${v.year}` : "No year set"}
-                    {" · "}
-                    {v.eventDate ? `Event date: ${new Date(v.eventDate).toLocaleDateString()}` : "No event date set"}
-                    {" · "}Added {new Date(v.createdAt).toLocaleDateString()}
-                  </p> */}
-                  {(v.existingSpec?.engine || v.existingSpec?.tyre?.width || v.upgradedSpec?.engine || v.upgradedSpec?.tyre?.width) && (
-                    <div className="spec-compare-grid compact">
-                      <div className="spec-compare-col">
-                        <p className="spec-compare-col-title">Existing</p>
-                        <p className="suggestion-spec-row"><span>Engine</span>{v.existingSpec?.engine || "—"}</p>
-                        <p className="suggestion-spec-row">
-                          <span>Tyre</span>
-                          {v.existingSpec?.tyre?.width ? `${v.existingSpec.tyre.width}/${v.existingSpec.tyre.aspect} R${v.existingSpec.tyre.rim}` : "—"}
-                        </p>
+            {filteredVehicles.map((v) => {
+              const edited = Boolean(v.descriptionUpdatedAt);
+              const stamp = edited ? v.descriptionUpdatedAt : v.createdAt;
+              return (
+                <div key={v._id} className={`card vehicle-card vn-card${savingVehicleIds.has(v._id) ? " is-saving" : ""}`}>
+                  {savingVehicleIds.has(v._id) && (
+                    <span className="vehicle-saving-tag"><Loader2 size={12} className="save-spin" /> Saving…</span>
+                  )}
+                  <div className="vn-thumb">
+                    {v.image || v.beforeImage ? <AuthImage src={v.image || v.beforeImage} alt={v.name} /> : <Car size={28} color="#C6C9D6" />}
+                    {/* Modification sits on the photo (like a badge) so the chip row below stays on one line */}
+                    {(v.modification || []).length > 0 && (
+                      <div className="vn-thumb-tags">
+                        {v.modification.map((m) => (
+                          <span key={m} className={`vn-chip vn-chip-mod is-${m}`}>{modificationLabel(m)}</span>
+                        ))}
                       </div>
-                      <div className="spec-compare-col upgraded">
-                        <p className="spec-compare-col-title">Upgraded</p>
-                        <p className="suggestion-spec-row"><span>Engine</span>{v.upgradedSpec?.engine || "—"}</p>
-                        <p className="suggestion-spec-row">
-                          <span>Tyre</span>
-                          {v.upgradedSpec?.tyre?.width ? `${v.upgradedSpec.tyre.width}/${v.upgradedSpec.tyre.aspect} R${v.upgradedSpec.tyre.rim}` : "—"}
-                        </p>
+                    )}
+                  </div>
+                  <div className="vn-body">
+                    {/* <p className="vn-name" title={v.name}>{v.name}</p> */}
+                    <div className="vn-chips">
+                      {v.year && <span className="vn-chip vn-chip-year">{v.year}</span>}
+                      {v.make && <span className="vn-chip vn-chip-make">{v.make}</span>}
+                      {v.model && <span className="vn-chip">{v.model}</span>}
+                      {v.submodel && <span className="vn-chip">{v.submodel}</span>}
+                    </div>
+                    <p className={`vn-desc${v.description ? "" : " is-empty"}`} title={v.description || undefined}>
+                      {v.description || "No description yet."}
+                    </p>
+                    <div className="vn-foot">
+                      <span className="vn-date" title={stamp ? new Date(stamp).toLocaleString() : undefined}>
+                        {edited ? "Updated" : "Created"} {formatWhen(stamp)}
+                      </span>
+                      <div className="vn-actions">
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          onClick={() => navigate(`/vehicle-notes/${v._id}`)}
+                          title="View details"
+                          aria-label={`View details for ${v.name}`}
+                        >
+                          <Eye size={14} />
+                        </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            className="icon-btn"
+                            onClick={() => openEdit(v)}
+                            title={savingVehicleIds.has(v._id) ? "Saving — available again in a moment" : "Edit"}
+                            aria-label={`Edit ${v.name}`}
+                            disabled={savingVehicleIds.has(v._id)}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            type="button"
+                            className="icon-btn danger"
+                            onClick={() => setDeleteTarget(v)}
+                            title="Delete"
+                            aria-label={`Delete ${v.name}`}
+                            disabled={savingVehicleIds.has(v._id)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                        {(v.gallery?.length > 0 || v.beforeImage || v.afterImage) && (
+                          <button type="button" className="icon-btn" onClick={() => openGallery(v)} title="Gallery" aria-label={`Open gallery for ${v.name}`}>
+                            <Images size={13} />
+                          </button>
+                        )}
                       </div>
                     </div>
-                  )}
-                  {(v.gallery?.length > 0 || v.beforeImage || v.afterImage) && (
-                    <button type="button" className="vehicle-gallery-btn" onClick={() => openGallery(v)}>
-                      <Images size={13} />
-                      View gallery{v.gallery?.length ? ` (${v.gallery.length})` : ""}
-                    </button>
-                  )}
+                  </div>
                 </div>
-                <div className="vehicle-actions">
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    onClick={() => navigate(`/vehicle-notes/${v._id}`)}
-                    title="View details"
-                    aria-label={`View details for ${v.name}`}
-                  >
-                    <Eye size={14} />
-                  </button>
-                  {canEdit && (
-                    <button
-                      type="button"
-                      className="icon-btn"
-                      onClick={() => openEdit(v)}
-                      title={savingVehicleIds.has(v._id) ? "Saving — available again in a moment" : "Edit"}
-                      disabled={savingVehicleIds.has(v._id)}
-                    >
-                      <Pencil size={14} />
-                    </button>
-                  )}
-                  {canDelete && (
-                    <button
-                      type="button"
-                      className="icon-btn danger"
-                      onClick={() => setDeleteTarget(v)}
-                      title="Delete"
-                      disabled={savingVehicleIds.has(v._id)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           {!vehiclesError && <CursorPager pager={pager} noun="vehicles" />}
         </>
@@ -812,7 +933,15 @@ export default function VehicleNotes() {
 
           <div className="field field-mb">
             <label>Vehicle name</label>
-            <input className="field-mb" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Ford Transit 350" />
+            <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Ford Transit 350" />
+          </div>
+
+          {/* Make -> Model: cascading, predefined dropdowns sourced from the
+              Vehicle Notes database (managed from Reporting & Data Export).
+              Staff and admin get a "+ Add new…" option for values not in the
+              list yet and a delete button on every option; everyone else picks
+              from the list only. */}
+          <div className="tire-input-grid cols-2 field-mb">
             <EditableSelect
               label="Make"
               value={form.make}
@@ -825,14 +954,6 @@ export default function VehicleNotes() {
               canAddNew={isStaffOrAdmin}
               onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "make", value }) : undefined}
             />
-          </div>
-
-          {/* Make -> Model -> Type: cascading, predefined dropdowns sourced from
-              the Vehicle Notes database (managed from Reporting & Data Export).
-              Staff and admin get a "+ Add new…" option for values not in the
-              list yet and a delete button on every option; everyone else picks
-              from the list only. */}
-          <div className="tire-input-grid cols-2 field-mb">
             <EditableSelect
               label="Model"
               value={form.model}
@@ -846,25 +967,32 @@ export default function VehicleNotes() {
               canAddNew={isStaffOrAdmin}
               onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "model", make: form.make, value }) : undefined}
             />
-            <EditableSelect
-              label="Type"
-              value={form.type}
-              onChange={(val) => setForm((f) => ({ ...f, type: val }))}
-              options={lookupTypes}
-              loading={loadingLookupTypes}
-              disabled={!form.model}
-              placeholder={!form.model ? "Select model first" : "Select type"}
-              addNewLabel="+ Add new type…"
-              customPlaceholder="e.g. Van / Mini Van"
-              canAddNew={isStaffOrAdmin}
-              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "type", make: form.make, model: form.model, value }) : undefined}
-            />
           </div>
 
-          {/* Year is the same kind of predefined, dynamic dropdown as
-              Make/Model/Type above — same EditableSelect, same "+ Add new…"
-              and per-option delete for staff and admin — it just doesn't
-              cascade off anything, so it's always enabled. */}
+          {/* HIDDEN: Type (SHOW_TYPE). The value an existing vehicle already has
+              is kept and sent back unchanged on save. */}
+          {SHOW_TYPE && (
+            <div className="field-mb">
+              <EditableSelect
+                label="Type"
+                value={form.type}
+                onChange={(val) => setForm((f) => ({ ...f, type: val }))}
+                options={lookupTypes}
+                loading={loadingLookupTypes}
+                disabled={!form.model}
+                placeholder={!form.model ? "Select model first" : "Select type"}
+                addNewLabel="+ Add new type…"
+                customPlaceholder="e.g. Van / Mini Van"
+                canAddNew={isStaffOrAdmin}
+                onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "type", make: form.make, model: form.model, value }) : undefined}
+              />
+            </div>
+          )}
+
+          {/* Year is the same kind of predefined, dynamic dropdown as Make/Model
+              (same EditableSelect, same "+ Add new…" and per-option delete for
+              staff and admin) — it just doesn't cascade off anything.
+              Submodel is the trim / sub-model from tblAppGuide (BASE, PREMIUM…). */}
           <div className="tire-input-grid cols-2 field-mb">
             <EditableSelect
               label="Year"
@@ -879,16 +1007,105 @@ export default function VehicleNotes() {
               onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "year", value }) : undefined}
             />
             <div className="field">
-              <label>Event date</label>
-              <input type="date" value={form.eventDate} onChange={(e) => setForm((f) => ({ ...f, eventDate: e.target.value }))} />
+              <label>Submodel</label>
+              <input
+                value={form.submodel}
+                maxLength={80}
+                onChange={(e) => setForm((f) => ({ ...f, submodel: e.target.value }))}
+                placeholder="e.g. BASE, PREMIUM, TYPE-S"
+              />
             </div>
           </div>
 
-          {/* Customer — staff and admin only. Options read "Full name (email)".
-              Staff and admin can add a customer from the dropdown; only admin
-              gets the edit / delete buttons. Picking a customer prefills the
-              (read-only) email and phone below. */}
-          {isStaffOrAdmin && (
+          <div className="tire-input-grid cols-2 field-mb">
+            <div className="field">
+              <label>Event date</label>
+              <input type="date" value={form.eventDate} onChange={(e) => setForm((f) => ({ ...f, eventDate: e.target.value }))} />
+            </div>
+            <fieldset className="vn-fieldset">
+              <legend>Modification</legend>
+              <div className="vn-check-row">
+                {MODIFICATION_CHOICES.map((c) => (
+                  <label key={c.value} className="vn-check">
+                    <input
+                      type="checkbox"
+                      checked={form.modification.includes(c.value)}
+                      onChange={() => toggleFormModification(c.value)}
+                    />
+                    <span>{c.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </div>
+
+          {/* Fitment — same data as the Stagfront / Stagrear and front / rear
+              offset columns of tblAppGuide-Templatenew.xlsx. */}
+          <div className="tire-input-grid cols-2 field-mb">
+            <div className="field">
+              <label>Front tire size</label>
+              <input
+                value={form.frontTireSize}
+                inputMode="text"
+                autoComplete="off"
+                onChange={setTireSize("frontTireSize")}
+                onBlur={() => setForm((f) => ({ ...f, frontTireSize: normalizeTireSize(f.frontTireSize) }))}
+                placeholder="205 55 16"
+              />
+            </div>
+            <div className="field">
+              <label>Rear tire size</label>
+              <input
+                value={form.rearTireSize}
+                inputMode="text"
+                autoComplete="off"
+                onChange={setTireSize("rearTireSize")}
+                onBlur={() => setForm((f) => ({ ...f, rearTireSize: normalizeTireSize(f.rearTireSize) }))}
+                placeholder="225 50 16"
+              />
+            </div>
+            <div className="field">
+              <label>Front wheel offset (mm)</label>
+              <input
+                value={form.frontWheelOffset}
+                inputMode="numeric"
+                autoComplete="off"
+                onChange={setOffset("frontWheelOffset")}
+                placeholder="e.g. 35"
+              />
+            </div>
+            <div className="field">
+              <label>Rear wheel offset (mm)</label>
+              <input
+                value={form.rearWheelOffset}
+                inputMode="numeric"
+                autoComplete="off"
+                onChange={setOffset("rearWheelOffset")}
+                placeholder="e.g. 40"
+              />
+            </div>
+          </div>
+
+          <div className="field field-mb">
+            <label htmlFor="vn-description">Description</label>
+            <textarea
+              id="vn-description"
+              className="vn-textarea"
+              rows={4}
+              maxLength={2000}
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              placeholder="Describe the vehicle, the work done or anything worth remembering…"
+            />
+            <span className="vn-counter">{form.description.length}/2000</span>
+          </div>
+
+          {/* HIDDEN: Customer (SHOW_CUSTOMER) — staff and admin only. Options read
+              "Full name (email)". Staff and admin can add a customer from the
+              dropdown; only admin gets the edit / delete buttons. Picking a
+              customer prefills the (read-only) email and phone below. An
+              existing vehicle keeps the customer it already has. */}
+          {SHOW_CUSTOMER && isStaffOrAdmin && (
             <div className="field-mb">
               <CustomerSelect
                 value={form.customer}
@@ -936,7 +1153,7 @@ export default function VehicleNotes() {
             </div>
           </div>
 
-          <div className="field-mb-lg">
+          {/* <div className="field-mb-lg">
             <div className="spec-section">
               <h4 className="spec-section-title mb-10">Existing (before)</h4>
               <div className="field field-mb">
@@ -1020,7 +1237,7 @@ export default function VehicleNotes() {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
 
           <div className="field field-mb-lg">
             <label>
@@ -1252,7 +1469,7 @@ export default function VehicleNotes() {
         busy={deleting}
       />
 
-      {isStaffOrAdmin && (
+      {SHOW_CUSTOMER && isStaffOrAdmin && (
         <CustomerFormModal
           open={customerModal.open}
           customer={customerModal.customer}
@@ -1261,7 +1478,7 @@ export default function VehicleNotes() {
         />
       )}
 
-      {isAdmin && (
+      {SHOW_CUSTOMER && isAdmin && (
         <ConfirmDialog
           open={!!customerDelete}
           onClose={() => setCustomerDelete(null)}
