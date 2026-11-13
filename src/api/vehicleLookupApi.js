@@ -13,6 +13,18 @@ export const fetchVehicleLookupTypes = (make, model) =>
 export const fetchVehicleLookupYears = () =>
   axios.get("/vehicle-lookup/years").then((r) => r.data.years || []);
 
+// Submodel / Tire size / Wheel offset lists. `kind` is "submodel", "tire-size" or
+// "wheel-offset" (front and rear share the tire-size and wheel-offset lists).
+// Adding and deleting are staff/admin, enforced server-side like the lists above.
+export const fetchVehicleLookupOptions = (kind) =>
+  axios.get("/vehicle-lookup/options", { params: { kind } }).then((r) => r.data.options || []);
+
+export const quickAddVehicleLookupOption = (kind, value) =>
+  axios.post("/vehicle-lookup/quick-add-option", { kind, value }).then((r) => r.data);
+
+export const deleteVehicleLookupOption = ({ kind, value }) =>
+  axios.delete("/vehicle-lookup/option", { params: { kind, value } }).then((r) => r.data);
+
 // Adds one Make/Model/Type combo (or one Year) to the predefined lists —
 // upserts, so re-submitting an existing value is a harmless no-op. This is
 // what lets the "+ Add new…" option on the Add/Edit vehicle form actually

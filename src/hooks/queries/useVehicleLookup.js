@@ -37,6 +37,30 @@ export function useVehicleLookupYears() {
   });
 }
 
+// Submodel / Tire size / Wheel offset — flat lists like Year, no parent selection.
+export function useVehicleLookupOptions(kind) {
+  return useQuery({
+    queryKey: ["vehicle-lookup", "options", kind],
+    queryFn: () => vehicleLookupApi.fetchVehicleLookupOptions(kind),
+  });
+}
+
+export function useQuickAddVehicleLookupOption() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ kind, value }) => vehicleLookupApi.quickAddVehicleLookupOption(kind, value),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["vehicle-lookup"] }),
+  });
+}
+
+export function useDeleteVehicleLookupOption() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: vehicleLookupApi.deleteVehicleLookupOption,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["vehicle-lookup"] }),
+  });
+}
+
 // "+ Add new…" on the Add/Edit vehicle form calls these on save so a
 // freshly-typed Make/Model/Type/Year becomes a real dropdown option from
 // then on. Both are staff/admin — the form only calls them for those roles,

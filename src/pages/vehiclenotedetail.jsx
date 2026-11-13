@@ -6,6 +6,7 @@ import Lightbox from "../components/lightbox";
 import PageHeader from "../components/pageheader";
 import { useAuth } from "../context/authcontext";
 import { useVehicleNoteQuery } from "../hooks/queries/useVehicleNotes";
+import { SHOW_CHIP_MODIFICATION, SHOW_CHIP_SUBMODEL, SHOW_CHIP_TYPE } from "../utils/vehicleNoteDisplay";
 
 const has = (n) => n !== undefined && n !== null && n !== "";
 
@@ -58,7 +59,7 @@ function SpecColumn({ title, spec, upgraded = false }) {
     <div className={`vnd-spec${upgraded ? " is-upgraded" : ""}`}>
       <h4 className="vnd-spec-title">{title}</h4>
       <dl className="vnd-spec-list">
-        <SpecRow label="Engine" value={spec?.engine} />
+        {/* <SpecRow label="Engine" value={spec?.engine} /> */}
         <SpecRow label="Tyre size" value={tyreSize(tyre)} />
         <SpecRow label="Width" value={tyre.width} />
         <SpecRow label="Aspect" value={tyre.aspect} />
@@ -182,12 +183,16 @@ export default function VehicleNoteDetail() {
                 <FileText size={16} className="icon-inline" />
                 Overview
               </h3>
+              {/* Year · Make · Model — same chips, same order and same look as the list cards.
+                  Type, Submodel and Modification chips are hidden for now
+                  (utils/vehicleNoteDisplay.js); their values are still in the details below. */}
               <div className="vnd-tags">
-                {vehicle.make && <span className="badge badge-live">{vehicle.make}</span>}
-                {vehicle.model && <span className="badge badge-model">{vehicle.model}</span>}
-                {vehicle.type && <span className="badge badge-model">{vehicle.type}</span>}
-                {vehicle.submodel && <span className="badge badge-model">{vehicle.submodel}</span>}
-                {(vehicle.modification || []).map((m) => (
+                {vehicle.year && <span className="vn-chip vn-chip-year">{vehicle.year}</span>}
+                {vehicle.make && <span className="vn-chip vn-chip-make">{vehicle.make}</span>}
+                {vehicle.model && <span className="vn-chip">{vehicle.model}</span>}
+                {SHOW_CHIP_TYPE && vehicle.type && <span className="vn-chip">{vehicle.type}</span>}
+                {SHOW_CHIP_SUBMODEL && vehicle.submodel && <span className="badge badge-model">{vehicle.submodel}</span>}
+                {SHOW_CHIP_MODIFICATION && (vehicle.modification || []).map((m) => (
                   <span key={m} className="badge badge-model">{MODIFICATION_LABELS[m] || m}</span>
                 ))}
               </div>
@@ -208,19 +213,19 @@ export default function VehicleNoteDetail() {
                 <Detail label="Added">{formatDateTime(vehicle.createdAt)}</Detail>
                 <Detail label="Last updated">{formatDateTime(vehicle.updatedAt)}</Detail>
                 {isStaffOrAdmin && <Detail label="Added by">{createdByName}</Detail>}
-                {isStaffOrAdmin && <Detail label="Customer">{vehicle.customer?.fullName}</Detail>}
+                {/* {isStaffOrAdmin && <Detail label="Customer">{vehicle.customer?.fullName}</Detail>}
                 {isStaffOrAdmin && <Detail label="Customer email">{vehicle.customer?.email}</Detail>}
-                {isStaffOrAdmin && <Detail label="Customer phone">{vehicle.customer?.phone}</Detail>}
+                {isStaffOrAdmin && <Detail label="Customer phone">{vehicle.customer?.phone}</Detail>} */}
                 {vehicle.description && (
                   <Detail label={`Description · ${vehicle.descriptionUpdatedAt ? "updated" : "created"} ${formatDateTime(vehicle.descriptionUpdatedAt || vehicle.createdAt) || ""}`} wide>
                     <span className="vnd-prewrap">{vehicle.description}</span>
                   </Detail>
                 )}
-                {vehicle.offsetNotes && (
+                {/* {vehicle.offsetNotes && (
                   <Detail label="Offset / fitment notes" wide>
                     <span className="vnd-prewrap">{vehicle.offsetNotes}</span>
                   </Detail>
-                )}
+                )} */}
               </dl>
             </div>
           </div>

@@ -119,7 +119,7 @@ export default function Reports() {
 
       <div className="card mt-20">
         <h3 className="mb-4">Export to CSV</h3>
-        <p className="text-muted mb-16">
+        <p className="text-muted mb-16 fontsize-fifteen">
           {canDownload
             ? "Downloads are scoped to the date range selected above."
             : "Record counts for the date range selected above. CSV download isn't enabled for your account."}

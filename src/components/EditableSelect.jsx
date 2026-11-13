@@ -8,8 +8,8 @@ const MENU_GAP = 6;
 
 /**
  * A dropdown populated from a predefined, dynamically-fetched option list.
- * Used for Make / Model / Type / Year on the Vehicle Notes "Add / Edit
- * vehicle" form and for the Make on the Tire Size Option preset popup, where
+ * Used for Make / Model / Type / Year / Submodel / Tire sizes / Wheel offsets
+ * on the Vehicle Notes "Add / Edit vehicle" form and for the Make on the Tire Size Option preset popup, where
  * each is backed by the Vehicle Notes database (see
  * hooks/queries/useVehicleLookup.js) but shouldn't be a hard wall against
  * entering something new.
@@ -30,6 +30,17 @@ const MENU_GAP = 6;
  *    <select> can't hold buttons, providing this switches the control to a
  *    custom dropdown; without it the control stays a native <select>.
  *
+ *  - `keepDropdownWhenEmpty`: by default, once an option list has loaded EMPTY
+ *    and nothing is selected, the control turns into a plain text box straight
+ *    away. Pass true to keep showing the dropdown instead (its menu then offers
+ *    "+ Add new…"), so a list that just hasn't been filled yet still looks and
+ *    behaves like the other dropdowns.
+ *
+ *  - `transformInput(text)`, `onCustomBlur()` and `inputProps`: only used by the
+ *    typed-in ("+ Add new…") text box, for fields whose values have a strict
+ *    format (a tire size, a wheel offset): clean what is typed, tidy it up on blur,
+ *    and pass attributes such as `inputMode` / `maxLength` through to the input.
+ *
  * The parent owns `value` and is responsible for actually persisting a new
  * value into the predefined list (see the quick-add calls in
  * pages/vehiclenotes.jsx) — this component only handles letting the person
@@ -47,6 +58,10 @@ export default function EditableSelect({
   customPlaceholder = "Type a new value",
   canAddNew = true,
   onDeleteOption,
+  keepDropdownWhenEmpty = false,
+  transformInput,
+  onCustomBlur,
+  inputProps,
 }) {
   const [mode, setMode] = useState("select"); // "select" | "custom"
   const [menuOpen, setMenuOpen] = useState(false);
@@ -79,7 +94,7 @@ export default function EditableSelect({
   // straight to a text input instead of a dropdown whose only real choice
   // is "+ Add new…".
   useEffect(() => {
-    if (canAddNew && !loading && options && options.length === 0 && !value) {
+    if (canAddNew && !keepDropdownWhenEmpty && !loading && options && options.length === 0 && !value) {
       setMode("custom");
     }
   }, [loading, options, canAddNew]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -196,11 +211,13 @@ export default function EditableSelect({
         <label>{label}</label>
         <div className="editable-select-custom">
           <input
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
+            value={value ?? ""}
+            onChange={(e) => onChange(transformInput ? transformInput(e.target.value) : e.target.value)}
+            onBlur={onCustomBlur}
             placeholder={customPlaceholder}
             disabled={disabled}
             autoFocus
+            {...inputProps}
           />
           {options && options.length > 0 && (
             <button type="button" className="editable-select-back" onClick={backToList} disabled={disabled} title="Choose from list instead">

@@ -120,7 +120,8 @@ function SizeButton({ size, activeSize, onPick, className = "", children }) {
   return (
     <button
       type="button"
-      className={`techdata-size ${className}${isActive ? " is-active" : ""}`}
+      // className={`techdata-size ${className}${isActive ? " is-active" : ""}`}
+      className={`techdata-size ${className}`}
       onClick={() => onPick(parsed)}
       title="Preview in 3D"
       aria-pressed={!!isActive}

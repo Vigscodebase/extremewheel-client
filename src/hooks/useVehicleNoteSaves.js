@@ -3,7 +3,7 @@
 //   submit()  -> sends the save (the only part the person waits for: the upload)
 //   then the server queues it and a worker writes it to MongoDB. This hook tells
 //   the page what is happening, in this order of preference:
-//     1. WebSocket push (instant)                      — /vehicle-notes/ws-ticket + /ws
+//     1. WebSocket push (instant)                      — the app-wide socket (realtime/realtimeClient.js)
 //     2. polling GET /vehicle-notes/save-status/:jobId — if a message was missed
 //
 // `saves` is the list the tray (components/SaveStatusTray.jsx) and the grid draw.
@@ -15,10 +15,9 @@ import { vehicleNotesKey } from "./queries/useVehicleNotes";
 import {
   fetchVehicleNote,
   fetchVehicleNoteSaveStatus,
-  fetchVehicleNotesWsTicket,
   submitVehicleNoteSave,
-  vehicleNotesSocketUrl,
 } from "../api/vehicleNotesApi";
+import { acquire, on, useRealtimeStore } from "../realtime/realtimeClient";
 
 const RANK = { sending: 0, queued: 1, processing: 2, done: 3, failed: 3 };
 const isActive = (s) => s.status === "queued" || s.status === "processing";
@@ -27,7 +26,6 @@ const isFinished = (s) => s.status === "done" || s.status === "failed";
 const DONE_VISIBLE_MS = 4000; // how long "Saved" stays on screen
 const POLL_MS_LIVE = 6000; // WebSocket is up: polling is only a backstop
 const POLL_MS_OFFLINE = 2500; // no WebSocket: poll quickly
-const WS_MAX_BACKOFF_MS = 30000;
 
 const newRef = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
@@ -50,7 +48,8 @@ export default function useVehicleNoteSaves({ enabled = true } = {}) {
   // the state copy only exists to re-render.
   const store = useRef([]);
   const [saves, setSaves] = useState([]);
-  const [connected, setConnected] = useState(false);
+  const socketUp = useRealtimeStore((s) => s.connected);
+  const connected = enabled && socketUp;
   const timers = useRef(new Set());
   const pollNow = useRef(null);
   const alive = useRef(true);
@@ -66,6 +65,9 @@ export default function useVehicleNoteSaves({ enabled = true } = {}) {
   // since its query key isn't known here.
   const refreshVehicleData = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: vehicleNotesKey });
+    // The server adds a saved Submodel / Tire size / Wheel offset to its dropdown
+    // list; refetch the lists so the open form shows it (with its delete button).
+    queryClient.invalidateQueries({ queryKey: ["vehicle-lookup"] });
     queryClient.invalidateQueries({
       predicate: (q) => JSON.stringify(q.queryKey).toLowerCase().includes("dashboard"),
     });
@@ -192,59 +194,17 @@ export default function useVehicleNoteSaves({ enabled = true } = {}) {
     }
   }, [commit, submit]);
 
-  // --- WebSocket: connect, follow, reconnect with back-off --------------------
+  // --- Live push: listen on the shared, app-wide WebSocket ---------------------
+  // (connecting, ticketing, reconnect back-off all live in realtime/realtimeClient.js)
   useEffect(() => {
-    if (!enabled || typeof WebSocket === "undefined") return undefined;
-    let closed = false;
-    let ws = null;
-    let attempt = 0;
-    let retryTimer = null;
-
-    const scheduleReconnect = () => {
-      if (closed) return;
-      const base = Math.min(WS_MAX_BACKOFF_MS, 1500 * 2 ** attempt);
-      attempt += 1;
-      retryTimer = setTimeout(connect, base * (0.7 + Math.random() * 0.6));
-    };
-
-    async function connect() {
-      if (closed) return;
-      try {
-        const ticket = await fetchVehicleNotesWsTicket();
-        if (closed) return;
-        ws = new WebSocket(vehicleNotesSocketUrl(ticket));
-        ws.onmessage = (e) => {
-          let msg;
-          try { msg = JSON.parse(e.data); } catch { return; }
-          if (msg.type === "ready") {
-            attempt = 0;
-            setConnected(true);
-            pollNow.current?.(); // catch up on anything missed while offline
-          } else if (msg.type === "vehicle-save") {
-            applyUpdate(msg);
-          }
-        };
-        ws.onclose = () => {
-          setConnected(false);
-          scheduleReconnect();
-        };
-        ws.onerror = () => ws?.close();
-      } catch {
-        // Ticket refused (Redis down, session expired…): keep polling, try again later.
-        setConnected(false);
-        scheduleReconnect();
-      }
-    }
-
-    connect();
+    if (!enabled) return undefined;
+    const release = acquire();
+    const offReady = on("ready", () => pollNow.current?.()); // catch up on anything missed while offline
+    const offSave = on("vehicle-save", applyUpdate);
     return () => {
-      closed = true;
-      clearTimeout(retryTimer);
-      if (ws) {
-        ws.onclose = null;
-        ws.close();
-      }
-      setConnected(false);
+      offReady();
+      offSave();
+      release();
     };
   }, [enabled, applyUpdate]);
 

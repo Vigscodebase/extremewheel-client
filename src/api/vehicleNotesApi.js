@@ -86,7 +86,7 @@ export const addVehicleStaffNote = ({ id, text }) =>
 export const removeVehicleStaffNote = ({ id, noteId }) =>
   axios.delete(`/vehicle-notes/${id}/notes/${noteId}`).then((r) => r.data.vehicle);
 
-// One page (10 cards) of the Vehicle Notes list, newest first — cursor based.
+// One page (20 cards) of the Vehicle Notes list, newest first — cursor based.
 // params: { q, make, model, type, customer, yearFrom, yearTo, cursor, limit }
 // -> { items, nextCursor, hasMore, total, searchMode }
 export const fetchVehicleNotesPage = (params, signal) =>

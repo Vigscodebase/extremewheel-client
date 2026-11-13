@@ -34,7 +34,7 @@ function OeLibraryBlock({ canDownload, canUpload }) {
     e.target.value = ""; // allow re-selecting the same file next time
     if (!file) return;
     // Success and failure are both shown from the mutation's own state below.
-    await importOe.mutateAsync(file).catch(() => {});
+    await importOe.mutateAsync(file).catch(() => { });
   };
 
   const result = importOe.data;
@@ -43,7 +43,7 @@ function OeLibraryBlock({ canDownload, canUpload }) {
     <div className="card data-transfer-item">
       <div>
         <p className="preset-label">OE tire size library</p>
-        <p className="text-muted fs-13">
+        <p className="text-muted fs-13 export-import-desc">
           The original-equipment sizes searched on Plus Size Options. Download them as .xlsx, or upload a Width / Aspect /
           Rim .xlsx to add new sizes — sizes already on file are skipped.
         </p>
@@ -122,7 +122,7 @@ function TechDataCsvBlock() {
     <div className="card data-transfer-item">
       <div>
         <p className="preset-label">Tech Data CSV</p>
-        <p className="text-muted fs-13">
+        <p className="text-muted fs-13 export-import-desc">
           The fitment / wheel-offset dataset shown on Tech Data. Download it as CSV, edit it, and re-upload — columns match
           exactly, so a round trip is safe.
         </p>
@@ -186,7 +186,7 @@ function VehicleDatabaseBlock({ canDownload, canUpload }) {
     <div className="card data-transfer-item">
       <div>
         <p className="preset-label">Vehicle Notes database</p>
-        <p className="text-muted fs-13">
+        <p className="text-muted fs-13 export-import-desc">
           The Make / Model / Type reference table behind the Vehicle Notes dropdowns. Download it as .xlsx, edit it, and
           re-upload — the Add / Edit vehicle dropdowns stay in sync automatically.
         </p>
@@ -254,7 +254,7 @@ export default function DataTransferPanel() {
         <FileSpreadsheet size={16} className="icon-inline" />
         Data import / export
       </h3>
-      <p className="text-muted mb-4">
+      <p className="text-muted data-transfer-desc fontsize-fifteen">
         Download or upload the reference data behind Plus Size Options, Tech Data and Vehicle Notes. These aren't affected
         by the date range above.
       </p>

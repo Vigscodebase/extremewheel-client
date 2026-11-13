@@ -1,8 +1,12 @@
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import AuthImage from "./AuthImage";
 
 // Simple full-screen image preview with keyboard (Esc / arrow key) support.
+// Rendered into <body> (like Modal) with a higher z-index than the modal, so a
+// photo opened from inside a popup — e.g. the vehicle gallery — shows ON TOP of it.
+// Before this it was drawn in the page itself, which put it behind the popup.
 // `images` is an array of { src, label }; `index` is the currently shown one.
 export default function Lightbox({ images, index, onClose, onIndexChange }) {
   const open = index !== null && index !== undefined && images?.length > 0;
@@ -21,7 +25,7 @@ export default function Lightbox({ images, index, onClose, onIndexChange }) {
   if (!open) return null;
   const current = images[index];
 
-  return (
+  return createPortal(
     <div className="lightbox-overlay" onClick={onClose}>
       <button type="button" className="lightbox-close" onClick={onClose} title="Close">
         <X size={20} />
@@ -56,6 +60,7 @@ export default function Lightbox({ images, index, onClose, onIndexChange }) {
           <ChevronRight size={22} />
         </button>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

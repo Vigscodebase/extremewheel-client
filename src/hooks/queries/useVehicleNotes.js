@@ -93,10 +93,17 @@ export function useRemoveVehicleStaffNote() {
   });
 }
 
-// Paginated + searchable cards for the Vehicle Notes page (10 per page, cursor
+// Paginated + searchable cards for the Vehicle Notes page (20 per page, cursor
 // based). The full-list hook above stays for Tech Data.
+export const VEHICLE_NOTES_PAGE_SIZE = 20;
+
 export const useVehicleNotesPage = (params) =>
-  useCursorPagination({ queryKey: vehicleNotesKey, fetchPage: vehicleNotesApi.fetchVehicleNotesPage, params });
+  useCursorPagination({
+    queryKey: vehicleNotesKey,
+    fetchPage: vehicleNotesApi.fetchVehicleNotesPage,
+    params,
+    pageSize: VEHICLE_NOTES_PAGE_SIZE,
+  });
 
 export const useVehicleNoteSuggestions = (text, enabled = true) =>
   useSuggestions({ queryKey: vehicleNotesKey, fetchSuggestions: vehicleNotesApi.fetchVehicleNoteSuggestions, text, enabled });

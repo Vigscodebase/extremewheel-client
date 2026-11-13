@@ -257,7 +257,7 @@ export default function TireSizeCalculator() {
             <p>Keeps the same aspect ratio and shows the speedometer effect of the swap.</p>
           </div>
           <button type="button" className="btn btn-ghost" onClick={handleConvertClick}>
-            <RefreshCw size={14} /> {convertOpen ? "Hide" : "Calculate"}
+            <RefreshCw size={14} /> {convertOpen ? "Hide" : "Show"}
           </button>
         </div>
 

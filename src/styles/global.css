@@ -320,7 +320,7 @@ ul {
 }
 
 .fs-13 {
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .fs-13-5 {
@@ -567,7 +567,9 @@ ul {
     position: fixed;
     inset: 0;
     background: rgba(20, 20, 28, 0.86);
-    z-index: 1000;
+    /* Above .modal-backdrop (1000 / 1300 on small screens), so a photo opened from
+       inside a popup is drawn over it. Below the dropdown menus (.ds-menu, 2500). */
+    z-index: 1500;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -712,6 +714,25 @@ ul {
 
 .gallery-thumb.wide {
     aspect-ratio: 4 / 3;
+}
+
+/* A before / after tile that opens the photo viewer is a real <button>. */
+button.gallery-thumb {
+    padding: 0;
+    font: inherit;
+    display: block;
+}
+
+button.gallery-thumb:focus-visible {
+    outline: 2px solid var(--color-pink);
+    outline-offset: 2px;
+}
+
+.gallery-thumb.is-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
 }
 
 .gallery-thumb img {
@@ -947,6 +968,18 @@ input[type="password"]::-ms-clear {
 
 .input-tire-size {
     padding-top: 35px;
+}
+
+.data-transfer-desc {
+    margin-bottom: 15px;
+}
+
+.fontsize-fifteen {
+    font-size: 15.5px;
+}
+
+.export-import-desc {
+    margin-bottom: 15px;
 }
 
 @media only screen and (min-width:320px) and (max-width:767px) {
@@ -2202,7 +2235,7 @@ input[type="password"]::-ms-clear {
 
 .preset-label {
     font-weight: 700;
-    font-size: 14.5px;
+    font-size: 15px;
     margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
@@ -4282,7 +4315,7 @@ input[type="password"]::-ms-clear {
     }
 
     .lightbox-overlay {
-        z-index: 1300;
+        z-index: 1500;
     }
 
     .range-toggle {
@@ -7460,11 +7493,25 @@ img[data-image-state="loading"] {
     padding: 4px 10px;
 }
 
+/* Add / Edit form: Lifted · Lowered · Stock on ONE line (the popup is wider now and
+   the boxes are smaller). Very narrow phones may still wrap. */
+.vn-fieldset .vn-check-row {
+    flex-wrap: nowrap;
+    gap: 4px 12px;
+    padding: 6px 10px;
+}
+
+@media (max-width: 420px) {
+    .vn-fieldset .vn-check-row {
+        flex-wrap: wrap;
+    }
+}
+
 .vn-check {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
+    gap: 5px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--color-ink);
     cursor: pointer;
@@ -7472,8 +7519,8 @@ img[data-image-state="loading"] {
 }
 
 .vn-check input {
-    width: 16px;
-    height: 16px;
+    width: 13px;
+    height: 13px;
     margin: 0;
     accent-color: var(--color-pink);
     cursor: pointer;
@@ -7639,7 +7686,7 @@ img[data-image-state="loading"] {
     border-top: 1px solid var(--color-border);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 8px;
 }
 

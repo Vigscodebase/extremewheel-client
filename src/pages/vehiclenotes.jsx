@@ -17,6 +17,7 @@ import { usePermissions } from "../context/permissioncontext";
 import useDebouncedValue from "../hooks/useDebouncedValue";
 import useVehicleNoteSaves, { saveErrorMessage } from "../hooks/useVehicleNoteSaves";
 import { PERM } from "../utils/permissions";
+import { SHOW_CHIP_MODIFICATION, SHOW_CHIP_SUBMODEL } from "../utils/vehicleNoteDisplay";
 import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
 import { useCustomersQuery, useDeleteCustomer } from "../hooks/queries/useCustomers";
 import {
@@ -31,12 +32,15 @@ import {
 import {
   useDeleteVehicleLookupMake,
   useDeleteVehicleLookupModel,
+  useDeleteVehicleLookupOption,
   useDeleteVehicleLookupType,
   useDeleteVehicleLookupYear,
   useQuickAddVehicleLookup,
+  useQuickAddVehicleLookupOption,
   useQuickAddVehicleLookupYear,
   useVehicleLookupMakes,
   useVehicleLookupModels,
+  useVehicleLookupOptions,
   useVehicleLookupTypes,
   useVehicleLookupYears,
 } from "../hooks/queries/useVehicleLookup";
@@ -81,19 +85,32 @@ function offsetProblem(raw, label) {
   return Number.isInteger(n) && n >= -200 && n <= 200 ? "" : `${label} must be a whole number between -200 and 200 (mm).`;
 }
 
-// Card date: short and relative while it is recent ("3h ago"), the real date after a week.
-function formatWhen(value) {
+// The Submodel / Tire size / Wheel offset dropdowns. Front and rear share one list
+// for tire sizes and one for offsets (see models/VehicleLookupOption.js on the
+// server). `fields` are the form fields that draw from each list.
+const OPTION_LISTS = {
+  submodel: { label: "submodel", fields: ["submodel"] },
+  "tire-size": { label: "tire size", fields: ["frontTireSize", "rearTireSize"] },
+  "wheel-offset": { label: "wheel offset", fields: ["frontWheelOffset", "rearWheelOffset"] },
+};
+
+// What the typed-in ("+ Add new…") boxes of the tire size / offset dropdowns accept.
+const cleanTireSizeInput = (text) => text.replace(/[^\d\s/\-rRzZ]/g, "").slice(0, 14);
+const cleanOffsetInput = (text) => text.replace(/[^\d-]/g, "").replace(/(?!^)-/g, "").slice(0, 4);
+
+// Card date: the same date and time the detail page shows, just short —
+// "12 Nov, 3:45 PM" (the year is added once it isn't the current one).
+function formatStamp(value) {
   const d = new Date(value);
   if (!value || Number.isNaN(d.getTime())) return "";
-  const diff = Date.now() - d.getTime();
-  const MIN = 60000;
-  const HOUR = 60 * MIN;
-  const DAY = 24 * HOUR;
-  if (diff < MIN) return "just now";
-  if (diff < HOUR) return `${Math.floor(diff / MIN)}m ago`;
-  if (diff < DAY) return `${Math.floor(diff / HOUR)}h ago`;
-  if (diff < 7 * DAY) return `${Math.floor(diff / DAY)}d ago`;
-  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  const thisYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    ...(thisYear ? {} : { year: "numeric" }),
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 const MOCK_VEHICLES = [
@@ -212,7 +229,7 @@ export default function VehicleNotes() {
   const deleteCustomerMutation = useDeleteCustomer();
   const [customerModal, setCustomerModal] = useState({ open: false, customer: null });
   const [customerDelete, setCustomerDelete] = useState(null);
-  // Paginated: one page of 10 cards at a time, fetched from the server with the
+  // Paginated: one page of 20 cards at a time, fetched from the server with the
   // search text (debounced) and filters — never every vehicle at once. See
   // hooks/queries/useCursorPagination.js.
   const [filters, setFilters] = useState(emptyFilters);
@@ -280,8 +297,14 @@ export default function VehicleNotes() {
   // database so it's always dynamic and up to date.
   const { data: filterTypes } = useVehicleLookupTypes(filters.make, filters.model);
   const { data: lookupYears, isLoading: loadingLookupYears } = useVehicleLookupYears();
+  // Submodel / Tire size / Wheel offset: flat predefined lists, managed exactly
+  // like Year (staff and admin can add new values and delete existing ones).
+  const { data: submodelOptions, isLoading: loadingSubmodels } = useVehicleLookupOptions("submodel");
+  const { data: tireSizeOptions, isLoading: loadingTireSizes } = useVehicleLookupOptions("tire-size");
+  const { data: wheelOffsetOptions, isLoading: loadingWheelOffsets } = useVehicleLookupOptions("wheel-offset");
   const quickAddLookup = useQuickAddVehicleLookup();
   const quickAddLookupYear = useQuickAddVehicleLookupYear();
+  const quickAddLookupOption = useQuickAddVehicleLookupOption();
 
   // Deleting an entry from the Make / Model / Type / Year dropdowns.
   // `lookupDelete` is the pending confirmation: { kind, make, model, type, value }.
@@ -289,12 +312,15 @@ export default function VehicleNotes() {
   const deleteLookupModel = useDeleteVehicleLookupModel();
   const deleteLookupType = useDeleteVehicleLookupType();
   const deleteLookupYear = useDeleteVehicleLookupYear();
+  const deleteLookupOption = useDeleteVehicleLookupOption();
+  // For a Submodel / Tire size / Wheel offset entry: { kind: "option", list, value }.
   const [lookupDelete, setLookupDelete] = useState(null);
   const lookupDeleting =
     deleteLookupMake.isPending ||
     deleteLookupModel.isPending ||
     deleteLookupType.isPending ||
-    deleteLookupYear.isPending;
+    deleteLookupYear.isPending ||
+    deleteLookupOption.isPending;
 
   // Grid filters — Make, Model (cascades from Make) and a yearly Date Range.
   // Year options are derived from the vehicles actually on file, so a newly
@@ -405,8 +431,9 @@ export default function VehicleNotes() {
       submodel: v.submodel || "",
       frontTireSize: v.frontTireSize || "",
       rearTireSize: v.rearTireSize || "",
-      frontWheelOffset: v.frontWheelOffset ?? "",
-      rearWheelOffset: v.rearWheelOffset ?? "",
+      // Strings, so they match the (text) values of the offset dropdown list.
+      frontWheelOffset: String(v.frontWheelOffset ?? ""),
+      rearWheelOffset: String(v.rearWheelOffset ?? ""),
       modification: v.modification || [],
       description: v.description || "",
       image: v.image || "",
@@ -458,10 +485,11 @@ export default function VehicleNotes() {
       return { ...f, modification: next };
     });
 
-  // Tire size / offset text boxes only accept what those values can contain.
-  const setTireSize = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value.replace(/[^\d\s/\-rRzZ]/g, "").slice(0, 14) }));
-  const setOffset = (field) => (e) =>
-    setForm((f) => ({ ...f, [field]: e.target.value.replace(/[^\d-]/g, "").replace(/(?!^)-/g, "").slice(0, 4) }));
+  // Setter for one form field fed by a plain dropdown value (EditableSelect hands
+  // back the chosen / typed string directly).
+  const setField = (field) => (value) => setForm((f) => ({ ...f, [field]: value }));
+  // A typed-in tire size is tidied up ("205/55R16" -> "205 55 16") when the box loses focus.
+  const tidyTireSize = (field) => () => setForm((f) => ({ ...f, [field]: normalizeTireSize(f[field]) }));
 
   // Make -> Model -> Type is a cascading, dynamic dropdown chain sourced
   // from the Vehicle Notes database — changing an upstream field clears the
@@ -559,6 +587,22 @@ export default function VehicleNotes() {
       if (isStaffOrAdmin && year && !yearUnchanged) {
         quickAddLookupYear.mutate(year, { onError: () => { } });
       }
+      // Same for the Submodel / Tire size / Wheel offset lists: a value that was
+      // typed in via "+ Add new…" becomes a dropdown option. Values that are in the
+      // list already, or that an edited vehicle already had, are skipped.
+      if (isStaffOrAdmin) {
+        const known = { submodel: submodelOptions, "tire-size": tireSizeOptions, "wheel-offset": wheelOffsetOptions };
+        const wanted = new Map();
+        Object.entries(OPTION_LISTS).forEach(([list, { fields }]) => {
+          fields.forEach((field) => {
+            const value = String(payload[field] ?? "").trim();
+            const before = String(editing?.[field] ?? "").trim();
+            if (!value || (editing && value === before) || (known[list] || []).includes(value)) return;
+            wanted.set(`${list}|${value}`, { kind: list, value });
+          });
+        });
+        wanted.forEach((entry) => quickAddLookupOption.mutate(entry, { onError: () => { } }));
+      }
     };
 
     setSubmitting(true);
@@ -634,9 +678,14 @@ export default function VehicleNotes() {
   // as a hand-typed value — and put back if the delete fails.
   const confirmDeleteLookup = async () => {
     if (!lookupDelete) return;
-    const { kind, make, model, type, value } = lookupDelete;
-    const previous = { make: form.make, model: form.model, type: form.type, year: form.year };
+    const { kind, make, model, type, value, list } = lookupDelete;
+    const optionFields = kind === "option" ? OPTION_LISTS[list].fields.filter((f) => form[f] === value) : [];
+    const previous = {
+      make: form.make, model: form.model, type: form.type, year: form.year,
+      ...Object.fromEntries(optionFields.map((f) => [f, form[f]])),
+    };
     const clearsForm =
+      (kind === "option" && optionFields.length > 0) ||
       (kind === "make" && form.make === value) ||
       (kind === "model" && form.make === make && form.model === value) ||
       (kind === "type" && form.make === make && form.model === model && form.type === value) ||
@@ -644,14 +693,16 @@ export default function VehicleNotes() {
 
     setFormError("");
     if (clearsForm) {
-      if (kind === "make") onFormMakeChange("");
+      if (kind === "option") setForm((f) => ({ ...f, ...Object.fromEntries(optionFields.map((field) => [field, ""])) }));
+      else if (kind === "make") onFormMakeChange("");
       else if (kind === "model") onFormModelChange("");
       else if (kind === "year") setForm((f) => ({ ...f, year: "" }));
       else setForm((f) => ({ ...f, type: "" }));
     }
 
     try {
-      if (kind === "make") await deleteLookupMake.mutateAsync(value);
+      if (kind === "option") await deleteLookupOption.mutateAsync({ kind: list, value });
+      else if (kind === "make") await deleteLookupMake.mutateAsync(value);
       else if (kind === "model") await deleteLookupModel.mutateAsync({ make, model: value });
       else if (kind === "year") await deleteLookupYear.mutateAsync(value);
       else await deleteLookupType.mutateAsync({ make, model, type: value });
@@ -673,7 +724,7 @@ export default function VehicleNotes() {
       });
     } catch (err) {
       if (clearsForm) setForm((f) => ({ ...f, ...previous }));
-      setFormError(err?.response?.data?.message || `Couldn't delete that ${kind}. Please try again.`);
+      setFormError(err?.response?.data?.message || `Couldn't delete that ${kind === "option" ? OPTION_LISTS[list].label : kind}. Please try again.`);
     } finally {
       setLookupDelete(null);
     }
@@ -681,7 +732,12 @@ export default function VehicleNotes() {
 
   const lookupDeleteMessage = (() => {
     if (!lookupDelete) return "";
-    const { kind, make, model, value } = lookupDelete;
+    const { kind, make, model, value, list } = lookupDelete;
+    if (kind === "option") {
+      const { label } = OPTION_LISTS[list];
+      const shared = OPTION_LISTS[list].fields.length > 1 ? " It's removed from both the front and rear lists." : "";
+      return `Delete "${value}" from the ${label} list?${shared} Existing vehicle notes keep their ${label}.`;
+    }
     if (kind === "make") {
       return `Delete "${value}" from the make list? Its models and types are removed from the Vehicle Notes database too. Existing vehicle notes keep their make.`;
     }
@@ -699,10 +755,22 @@ export default function VehicleNotes() {
     setLightboxIndex(null);
   };
 
-  const galleryImages = (galleryVehicle?.gallery || []).map((src, i) => ({
-    src,
-    label: `${galleryVehicle?.name || "Vehicle"} — photo ${i + 1}`,
-  }));
+  // Every photo in the popup as ONE ordered list — before, after, then the gallery —
+  // so a click on any of them opens the viewer and the arrows step through all.
+  const galleryPhotos = (() => {
+    if (!galleryVehicle) return [];
+    const name = galleryVehicle.name || "Vehicle";
+    const list = [];
+    if (galleryVehicle.beforeImage) list.push({ key: "before", src: galleryVehicle.beforeImage, label: `${name} — before` });
+    if (galleryVehicle.afterImage) list.push({ key: "after", src: galleryVehicle.afterImage, label: `${name} — after` });
+    (galleryVehicle.gallery || []).forEach((src, i) => list.push({ key: `gallery-${i}`, src, label: `${name} — photo ${i + 1}` }));
+    return list;
+  })();
+  const galleryImages = galleryPhotos.map(({ src, label }) => ({ src, label }));
+  const openGalleryPhoto = (key) => {
+    const idx = galleryPhotos.findIndex((p) => p.key === key);
+    if (idx >= 0) setLightboxIndex(idx);
+  };
 
   const onQuickAddGalleryPhoto = async (e) => {
     const file = e.target.files?.[0];
@@ -849,8 +917,9 @@ export default function VehicleNotes() {
                   )}
                   <div className="vn-thumb">
                     {v.image || v.beforeImage ? <AuthImage src={v.image || v.beforeImage} alt={v.name} /> : <Car size={28} color="#C6C9D6" />}
-                    {/* Modification sits on the photo (like a badge) so the chip row below stays on one line */}
-                    {(v.modification || []).length > 0 && (
+                    {/* Modification sits on the photo (like a badge) so the chip row below stays on one line.
+                        Hidden for now (SHOW_CHIP_MODIFICATION in utils/vehicleNoteDisplay.js). */}
+                    {SHOW_CHIP_MODIFICATION && (v.modification || []).length > 0 && (
                       <div className="vn-thumb-tags">
                         {v.modification.map((m) => (
                           <span key={m} className={`vn-chip vn-chip-mod is-${m}`}>{modificationLabel(m)}</span>
@@ -864,15 +933,16 @@ export default function VehicleNotes() {
                       {v.year && <span className="vn-chip vn-chip-year">{v.year}</span>}
                       {v.make && <span className="vn-chip vn-chip-make">{v.make}</span>}
                       {v.model && <span className="vn-chip">{v.model}</span>}
-                      {v.submodel && <span className="vn-chip">{v.submodel}</span>}
+                      {/* Hidden for now (SHOW_CHIP_SUBMODEL in utils/vehicleNoteDisplay.js). */}
+                      {SHOW_CHIP_SUBMODEL && v.submodel && <span className="vn-chip">{v.submodel}</span>}
                     </div>
                     <p className={`vn-desc${v.description ? "" : " is-empty"}`} title={v.description || undefined}>
                       {v.description || "No description yet."}
                     </p>
                     <div className="vn-foot">
-                      <span className="vn-date" title={stamp ? new Date(stamp).toLocaleString() : undefined}>
-                        {edited ? "Updated" : "Created"} {formatWhen(stamp)}
-                      </span>
+                      {/* <span className="vn-date" title={stamp ? new Date(stamp).toLocaleString() : undefined}>
+                        {edited ? "Updated" : "Created"} {formatStamp(stamp)}
+                      </span> */}
                       <div className="vn-actions">
                         <button
                           type="button"
@@ -923,7 +993,7 @@ export default function VehicleNotes() {
         </>
       )}
 
-      <Modal open={formOpen} onClose={() => { if (!saving) setFormOpen(false); }} title={editing ? "Edit vehicle" : "Add vehicle"} width={560}>
+      <Modal open={formOpen} onClose={() => { if (!saving) setFormOpen(false); }} title={editing ? "Edit vehicle" : "Add vehicle"} width={720}>
         <form onSubmit={submitForm}>
           {formError && (
             <div className="alert-error">
@@ -992,7 +1062,9 @@ export default function VehicleNotes() {
           {/* Year is the same kind of predefined, dynamic dropdown as Make/Model
               (same EditableSelect, same "+ Add new…" and per-option delete for
               staff and admin) — it just doesn't cascade off anything.
-              Submodel is the trim / sub-model from tblAppGuide (BASE, PREMIUM…). */}
+              Submodel is the trim / sub-model from tblAppGuide (BASE, PREMIUM…) and,
+              like the tire sizes and wheel offsets below, is a predefined dropdown
+              with the same add-new / delete rules. */}
           <div className="tire-input-grid cols-2 field-mb">
             <EditableSelect
               label="Year"
@@ -1006,15 +1078,20 @@ export default function VehicleNotes() {
               canAddNew={isStaffOrAdmin}
               onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "year", value }) : undefined}
             />
-            <div className="field">
-              <label>Submodel</label>
-              <input
-                value={form.submodel}
-                maxLength={80}
-                onChange={(e) => setForm((f) => ({ ...f, submodel: e.target.value }))}
-                placeholder="e.g. BASE, PREMIUM, TYPE-S"
-              />
-            </div>
+            <EditableSelect
+              label="Submodel"
+              value={form.submodel}
+              onChange={setField("submodel")}
+              options={submodelOptions}
+              loading={loadingSubmodels}
+              placeholder="Select submodel"
+              addNewLabel="+ Add new submodel…"
+              customPlaceholder="e.g. BASE, PREMIUM, TYPE-S"
+              canAddNew={isStaffOrAdmin}
+              keepDropdownWhenEmpty
+              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "option", list: "submodel", value }) : undefined}
+              inputProps={{ maxLength: 80 }}
+            />
           </div>
 
           <div className="tire-input-grid cols-2 field-mb">
@@ -1040,50 +1117,74 @@ export default function VehicleNotes() {
           </div>
 
           {/* Fitment — same data as the Stagfront / Stagrear and front / rear
-              offset columns of tblAppGuide-Templatenew.xlsx. */}
+              offset columns of tblAppGuide-Templatenew.xlsx. All four are
+              predefined dropdowns like Make / Model / Year: staff and admin get
+              "+ Add new…" and a delete button on every option, everyone else
+              picks from the list. Front and rear share one tire size list and
+              one offset list. */}
           <div className="tire-input-grid cols-2 field-mb">
-            <div className="field">
-              <label>Front tire size</label>
-              <input
-                value={form.frontTireSize}
-                inputMode="text"
-                autoComplete="off"
-                onChange={setTireSize("frontTireSize")}
-                onBlur={() => setForm((f) => ({ ...f, frontTireSize: normalizeTireSize(f.frontTireSize) }))}
-                placeholder="205 55 16"
-              />
-            </div>
-            <div className="field">
-              <label>Rear tire size</label>
-              <input
-                value={form.rearTireSize}
-                inputMode="text"
-                autoComplete="off"
-                onChange={setTireSize("rearTireSize")}
-                onBlur={() => setForm((f) => ({ ...f, rearTireSize: normalizeTireSize(f.rearTireSize) }))}
-                placeholder="225 50 16"
-              />
-            </div>
-            <div className="field">
-              <label>Front wheel offset (mm)</label>
-              <input
-                value={form.frontWheelOffset}
-                inputMode="numeric"
-                autoComplete="off"
-                onChange={setOffset("frontWheelOffset")}
-                placeholder="e.g. 35"
-              />
-            </div>
-            <div className="field">
-              <label>Rear wheel offset (mm)</label>
-              <input
-                value={form.rearWheelOffset}
-                inputMode="numeric"
-                autoComplete="off"
-                onChange={setOffset("rearWheelOffset")}
-                placeholder="e.g. 40"
-              />
-            </div>
+            <EditableSelect
+              label="Front tire size"
+              value={form.frontTireSize}
+              onChange={setField("frontTireSize")}
+              options={tireSizeOptions}
+              loading={loadingTireSizes}
+              placeholder="Select front tire size"
+              addNewLabel="+ Add new tire size…"
+              customPlaceholder="205 55 16"
+              canAddNew={isStaffOrAdmin}
+              keepDropdownWhenEmpty
+              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "option", list: "tire-size", value }) : undefined}
+              transformInput={cleanTireSizeInput}
+              onCustomBlur={tidyTireSize("frontTireSize")}
+              inputProps={{ inputMode: "text", autoComplete: "off" }}
+            />
+            <EditableSelect
+              label="Rear tire size"
+              value={form.rearTireSize}
+              onChange={setField("rearTireSize")}
+              options={tireSizeOptions}
+              loading={loadingTireSizes}
+              placeholder="Select rear tire size"
+              addNewLabel="+ Add new tire size…"
+              customPlaceholder="225 50 16"
+              canAddNew={isStaffOrAdmin}
+              keepDropdownWhenEmpty
+              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "option", list: "tire-size", value }) : undefined}
+              transformInput={cleanTireSizeInput}
+              onCustomBlur={tidyTireSize("rearTireSize")}
+              inputProps={{ inputMode: "text", autoComplete: "off" }}
+            />
+            <EditableSelect
+              label="Front wheel offset"
+              value={form.frontWheelOffset}
+              onChange={setField("frontWheelOffset")}
+              options={wheelOffsetOptions}
+              loading={loadingWheelOffsets}
+              placeholder="Select front wheel offset"
+              addNewLabel="+ Add new offset…"
+              customPlaceholder="e.g. 35"
+              canAddNew={isStaffOrAdmin}
+              keepDropdownWhenEmpty
+              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "option", list: "wheel-offset", value }) : undefined}
+              transformInput={cleanOffsetInput}
+              inputProps={{ inputMode: "numeric", autoComplete: "off" }}
+            />
+            <EditableSelect
+              label="Rear wheel offset"
+              value={form.rearWheelOffset}
+              onChange={setField("rearWheelOffset")}
+              options={wheelOffsetOptions}
+              loading={loadingWheelOffsets}
+              placeholder="Select rear wheel offset"
+              addNewLabel="+ Add new offset…"
+              customPlaceholder="e.g. 40"
+              canAddNew={isStaffOrAdmin}
+              keepDropdownWhenEmpty
+              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "option", list: "wheel-offset", value }) : undefined}
+              transformInput={cleanOffsetInput}
+              inputProps={{ inputMode: "numeric", autoComplete: "off" }}
+            />
           </div>
 
           <div className="field field-mb">
@@ -1153,17 +1254,17 @@ export default function VehicleNotes() {
             </div>
           </div>
 
-          {/* <div className="field-mb-lg">
+          <div className="field-mb-lg">
             <div className="spec-section">
               <h4 className="spec-section-title mb-10">Existing (before)</h4>
-              <div className="field field-mb">
+              {/* <div className="field field-mb">
                 <label>Engine spec</label>
                 <input
                   value={form.existingSpec.engine}
                   onChange={(e) => updateSpec("existingSpec")({ engine: e.target.value })}
                   placeholder="e.g. 2.2L Duratorq TDCi Diesel"
                 />
-              </div>
+              </div> */}
               <div className="tire-input-grid">
                 <div className="field">
                   <label>Width</label>
@@ -1199,14 +1300,14 @@ export default function VehicleNotes() {
 
             <div className="spec-section">
               <h4 className="spec-section-title mb-10" style={{ color: "var(--color-pink)" }}>Upgraded (after)</h4>
-              <div className="field field-mb">
+              {/* <div className="field field-mb">
                 <label>Engine spec</label>
                 <input
                   value={form.upgradedSpec.engine}
                   onChange={(e) => updateSpec("upgradedSpec")({ engine: e.target.value })}
                   placeholder="e.g. 2.0L EcoBlue Bi-Turbo Diesel"
                 />
-              </div>
+              </div> */}
               <div className="tire-input-grid">
                 <div className="field">
                   <label>Width</label>
@@ -1237,7 +1338,7 @@ export default function VehicleNotes() {
                 </div>
               </div>
             </div>
-          </div> */}
+          </div>
 
           <div className="field field-mb-lg">
             <label>
@@ -1363,12 +1464,21 @@ export default function VehicleNotes() {
               <div className="field field-mb-lg">
                 <label>Before / after</label>
                 <div className="before-after-grid">
-                  <div className="gallery-thumb wide">
-                    {galleryVehicle.beforeImage ? <AuthImage src={galleryVehicle.beforeImage} alt="before" /> : <span className="text-muted fs-11">No before photo</span>}
-                  </div>
-                  <div className="gallery-thumb wide">
-                    {galleryVehicle.afterImage ? <AuthImage src={galleryVehicle.afterImage} alt="after" /> : <span className="text-muted fs-11">No after photo</span>}
-                  </div>
+                  {/* Both open in the full-size viewer (which stacks above this popup). */}
+                  {galleryVehicle.beforeImage ? (
+                    <button type="button" className="gallery-thumb wide" onClick={() => openGalleryPhoto("before")} aria-label="View before photo full size">
+                      <AuthImage src={galleryVehicle.beforeImage} alt="before" />
+                    </button>
+                  ) : (
+                    <div className="gallery-thumb wide is-empty"><span className="text-muted fs-11">No before photo</span></div>
+                  )}
+                  {galleryVehicle.afterImage ? (
+                    <button type="button" className="gallery-thumb wide" onClick={() => openGalleryPhoto("after")} aria-label="View after photo full size">
+                      <AuthImage src={galleryVehicle.afterImage} alt="after" />
+                    </button>
+                  ) : (
+                    <div className="gallery-thumb wide is-empty"><span className="text-muted fs-11">No after photo</span></div>
+                  )}
                 </div>
               </div>
             )}
@@ -1426,7 +1536,7 @@ export default function VehicleNotes() {
               <label>Gallery ({galleryVehicle.gallery?.length || 0})</label>
               <div className="gallery-grid">
                 {(galleryVehicle.gallery || []).map((photo, i) => (
-                  <div key={photo} className="gallery-thumb" onClick={() => setLightboxIndex(i)}>
+                  <div key={photo} className="gallery-thumb" onClick={() => openGalleryPhoto(`gallery-${i}`)}>
                     <AuthImage src={photo} alt={`gallery ${i + 1}`} />
                     {canEdit && (
                       <button
@@ -1496,7 +1606,7 @@ export default function VehicleNotes() {
           onClose={() => setLookupDelete(null)}
           onConfirm={confirmDeleteLookup}
           busy={lookupDeleting}
-          title={`Delete ${lookupDelete?.kind || "entry"}`}
+          title={`Delete ${lookupDelete?.kind === "option" ? OPTION_LISTS[lookupDelete.list].label : lookupDelete?.kind || "entry"}`}
           message={lookupDeleteMessage}
         />
       )}

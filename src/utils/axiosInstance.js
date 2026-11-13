@@ -109,6 +109,12 @@ const SESSION_ENDED_MESSAGE = "Your session has ended. Please sign in again.";
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
+    // A 403 means the server no longer allows something the screen still offers,
+    // i.e. this browser's copy of the permissions is stale (PermissionProvider
+    // listens and re-fetches, throttled). It changes nothing else about how the
+    // error is handled below.
+    if (error.response?.status === 403) window.dispatchEvent(new Event("permissions-stale"));
+
     // The API answers 401 to a request that DID carry a token only when that
     // session can no longer be used: the account was deleted, or its password,
     // email or role was changed (which signs out every device), or the token is
