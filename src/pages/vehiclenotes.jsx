@@ -864,21 +864,27 @@ export default function VehicleNotes() {
           <fieldset className="vn-mod-filter">
             <legend>Modification</legend>
             <div className="vn-check-row">
-              {MODIFICATION_CHOICES.map((c) => (
-                <label key={c.value} className="vn-check">
-                  <input
-                    type="checkbox"
-                    checked={filters.modification.includes(c.value)}
-                    onChange={() => toggleFilterModification(c.value)}
-                  />
-                  <span>{c.label}</span>
-                </label>
-              ))}
+              {MODIFICATION_CHOICES.map((c) => {
+                const checked = filters.modification.includes(c.value);
+                return (
+                  <label key={c.value} className={`vn-check${checked ? " is-checked" : ""}`}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleFilterModification(c.value)}
+                    />
+                    <span>{c.label}</span>
+                  </label>
+                );
+              })}
             </div>
           </fieldset>
           <button type="button" className="btn btn-ghost vn-filter-clear" onClick={clearFilters} disabled={!filtersActive}>
             <FilterX size={14} /> Clear
           </button>
+          {/*}    <button type="button" className="btn btn-ghost vn-filter-clear" onClick={clearFilters} disabled={!filtersActive}>
+            <FilterX size={14} /> Clear
+          </button> */}
         </div>
       </div>
 
@@ -1102,16 +1108,19 @@ export default function VehicleNotes() {
             <fieldset className="vn-fieldset">
               <legend>Modification</legend>
               <div className="vn-check-row">
-                {MODIFICATION_CHOICES.map((c) => (
-                  <label key={c.value} className="vn-check">
-                    <input
-                      type="checkbox"
-                      checked={form.modification.includes(c.value)}
-                      onChange={() => toggleFormModification(c.value)}
-                    />
-                    <span>{c.label}</span>
-                  </label>
-                ))}
+                {MODIFICATION_CHOICES.map((c) => {
+                  const checked = form.modification.includes(c.value);
+                  return (
+                    <label key={c.value} className={`vn-check${checked ? " is-checked" : ""}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleFormModification(c.value)}
+                      />
+                      <span>{c.label}</span>
+                    </label>
+                  );
+                })}
               </div>
             </fieldset>
           </div>

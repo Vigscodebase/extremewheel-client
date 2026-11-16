@@ -166,26 +166,39 @@ export default function VehicleNoteDetail() {
 
       <div className="vnd-stack">
         {/* ---------- Overview ---------- */}
-        <section className="card vnd-card" aria-labelledby="vnd-overview-title">
+        {/* ---------- Overview ---------- */}
+        <section className="card vnd-card vnd-overview-card" aria-labelledby="vnd-overview-title">
           <div className="vnd-overview">
-            {heroSrc ? (
-              <button type="button" className="vnd-hero" onClick={() => openPhoto(heroKey)} aria-label="View main photo full size">
-                <AuthImage src={heroSrc} alt={vehicle.name} />
-              </button>
-            ) : (
-              <div className="vnd-hero is-empty" aria-hidden="true">
-                <Car size={40} color="#C6C9D6" />
-              </div>
-            )}
+            {/* Left: photo + description */}
+            <div className="vnd-overview-media">
+              {heroSrc ? (
+                <button type="button" className="vnd-hero" onClick={() => openPhoto(heroKey)} aria-label="View main photo full size">
+                  <AuthImage src={heroSrc} alt={vehicle.name} />
+                </button>
+              ) : (
+                <div className="vnd-hero is-empty" aria-hidden="true">
+                  <Car size={40} color="#C6C9D6" />
+                </div>
+              )}
 
+              {vehicle.description && (
+                <div className="vnd-desc-block">
+                  <p className="vnd-desc-label">
+                    Description · {vehicle.descriptionUpdatedAt ? "updated" : "created"}{" "}
+                    {formatDateTime(vehicle.descriptionUpdatedAt || vehicle.createdAt) || ""}
+                  </p>
+                  <p className="vnd-desc-text vnd-prewrap">{vehicle.description}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Right: title, chips and grouped details */}
             <div className="vnd-overview-info">
               <h3 id="vnd-overview-title" className="vnd-card-title">
                 <FileText size={16} className="icon-inline" />
                 Overview
               </h3>
-              {/* Year · Make · Model — same chips, same order and same look as the list cards.
-                  Type, Submodel and Modification chips are hidden for now
-                  (utils/vehicleNoteDisplay.js); their values are still in the details below. */}
+
               <div className="vnd-tags">
                 {vehicle.year && <span className="vn-chip vn-chip-year">{vehicle.year}</span>}
                 {vehicle.make && <span className="vn-chip vn-chip-make">{vehicle.make}</span>}
@@ -197,36 +210,37 @@ export default function VehicleNoteDetail() {
                 ))}
               </div>
 
-              <dl className="vnd-details">
-                <Detail label="Vehicle name">{vehicle.name}</Detail>
-                <Detail label="Make">{vehicle.make}</Detail>
-                <Detail label="Model">{vehicle.model}</Detail>
-                <Detail label="Type">{vehicle.type}</Detail>
-                <Detail label="Year">{vehicle.year}</Detail>
-                <Detail label="Submodel">{vehicle.submodel}</Detail>
-                <Detail label="Modification">{(vehicle.modification || []).map((m) => MODIFICATION_LABELS[m] || m).join(", ")}</Detail>
-                <Detail label="Front tire size">{vehicle.frontTireSize}</Detail>
-                <Detail label="Rear tire size">{vehicle.rearTireSize}</Detail>
-                <Detail label="Front wheel offset">{offsetText(vehicle.frontWheelOffset)}</Detail>
-                <Detail label="Rear wheel offset">{offsetText(vehicle.rearWheelOffset)}</Detail>
-                <Detail label="Event date">{formatDate(vehicle.eventDate)}</Detail>
-                <Detail label="Added">{formatDateTime(vehicle.createdAt)}</Detail>
-                <Detail label="Last updated">{formatDateTime(vehicle.updatedAt)}</Detail>
-                {isStaffOrAdmin && <Detail label="Added by">{createdByName}</Detail>}
-                {/* {isStaffOrAdmin && <Detail label="Customer">{vehicle.customer?.fullName}</Detail>}
-                {isStaffOrAdmin && <Detail label="Customer email">{vehicle.customer?.email}</Detail>}
-                {isStaffOrAdmin && <Detail label="Customer phone">{vehicle.customer?.phone}</Detail>} */}
-                {vehicle.description && (
-                  <Detail label={`Description · ${vehicle.descriptionUpdatedAt ? "updated" : "created"} ${formatDateTime(vehicle.descriptionUpdatedAt || vehicle.createdAt) || ""}`} wide>
-                    <span className="vnd-prewrap">{vehicle.description}</span>
-                  </Detail>
-                )}
-                {/* {vehicle.offsetNotes && (
-                  <Detail label="Offset / fitment notes" wide>
-                    <span className="vnd-prewrap">{vehicle.offsetNotes}</span>
-                  </Detail>
-                )} */}
-              </dl>
+              <div className="vnd-group">
+                <h4 className="vnd-group-title">Vehicle information</h4>
+                <dl className="vnd-details">
+                  <Detail label="Type">{vehicle.type}</Detail>
+                  <Detail label="Make">{vehicle.make}</Detail>
+                  <Detail label="Year">{vehicle.year}</Detail>
+                  <Detail label="Model">{vehicle.model}</Detail>
+                  <Detail label="Submodel">{vehicle.submodel}</Detail>
+                  <Detail label="Modification">{(vehicle.modification || []).map((m) => MODIFICATION_LABELS[m] || m).join(", ")}</Detail>
+                </dl>
+              </div>
+
+              <div className="vnd-group">
+                <h4 className="vnd-group-title">Wheel &amp; tire fitment</h4>
+                <dl className="vnd-details">
+                  <Detail label="Front tire size">{vehicle.frontTireSize}</Detail>
+                  <Detail label="Rear tire size">{vehicle.rearTireSize}</Detail>
+                  <Detail label="Event date">{formatDate(vehicle.eventDate)}</Detail>
+                  <Detail label="Front wheel offset">{offsetText(vehicle.frontWheelOffset)}</Detail>
+                  <Detail label="Rear wheel offset">{offsetText(vehicle.rearWheelOffset)}</Detail>
+                </dl>
+              </div>
+
+              <div className="vnd-group">
+                <h4 className="vnd-group-title">Metadata</h4>
+                <dl className="vnd-details">
+                  <Detail label="Added">{formatDateTime(vehicle.createdAt)}</Detail>
+                  <Detail label="Last updated">{formatDateTime(vehicle.updatedAt)}</Detail>
+                  {isStaffOrAdmin && <Detail label="Added by">{createdByName}</Detail>}
+                </dl>
+              </div>
             </div>
           </div>
         </section>
