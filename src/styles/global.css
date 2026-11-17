@@ -983,6 +983,93 @@ input[type="password"]::-ms-clear {
 }
 
 @media only screen and (min-width:320px) and (max-width:767px) {
+
+    .vnd-overview {
+        container: vnd-overview / inline-size;
+    }
+
+    /* Only the text scrolls; the "Description · created ..." label stays put */
+    .vnd-overview-media .vnd-desc-block {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .vnd-overview-media .vnd-desc-label {
+        flex: none;
+    }
+
+    .vnd-overview-media .vnd-desc-text {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: 200px;
+        /* stacked layout cap; lifted when side by side */
+        overflow-y: auto;
+        padding-right: 10px;
+        overscroll-behavior: contain;
+    }
+
+    /* Always-visible scrollbar, so it is obvious the text scrolls (also on touch
+       screens / DevTools device mode, where scrollbars are normally hidden until
+       you scroll). Chrome 121+ ignores ::-webkit-scrollbar as soon as
+       scrollbar-width / scrollbar-color are set, so those are used only where
+       ::-webkit-scrollbar does not exist (Firefox). */
+    /* Thin 2px bar: dark navy thumb (#0F1B2C) on a cream track (#F8F1DE) */
+    .vnd-overview-media .vnd-desc-text::-webkit-scrollbar {
+        width: 2px;
+    }
+
+    .vnd-overview-media .vnd-desc-text::-webkit-scrollbar-track {
+        background: #F8F1DE;
+        border-radius: 2px;
+    }
+
+    .vnd-overview-media .vnd-desc-text::-webkit-scrollbar-thumb {
+        background: #0F1B2C;
+        border-radius: 2px;
+    }
+
+    @supports not selector(::-webkit-scrollbar) {
+        .vnd-overview-media .vnd-desc-text {
+            scrollbar-width: thin;
+            scrollbar-color: #0F1B2C #F8F1DE;
+        }
+    }
+
+    /* Photo beside details */
+    @container vnd-overview (min-width: 620px) {
+        .vnd-overview-media {
+            display: flex;
+            flex-direction: column;
+            align-self: stretch;
+            /* Its own content no longer decides the row height, the details
+               column does. The floor keeps a photo + a few lines of text intact. */
+            contain: size;
+            min-height: 360px;
+        }
+
+        .vnd-overview-media .vnd-hero {
+            flex: none;
+        }
+
+        /* natural height when short, shrinks (and scrolls) when long */
+        .vnd-overview-media .vnd-desc-block {
+            flex: 0 1 auto;
+        }
+
+        .vnd-overview-media .vnd-desc-text {
+            max-height: none;
+        }
+
+        /* The details column is only ~300px wide at 810px, which made it a single
+           long list (about 920px tall) next to a much shorter photo column.
+           Two columns keeps both sides close in height. */
+        .vnd-overview-info .vnd-details {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px 12px;
+        }
+    }
+
     .btn-responsive {
         display: block;
     }
@@ -3725,6 +3812,92 @@ input[type="password"]::-ms-clear {
         justify-self: start;
     }
 
+    .vnd-overview {
+        container: vnd-overview / inline-size;
+    }
+
+    /* Only the text scrolls; the "Description · created ..." label stays put */
+    .vnd-overview-media .vnd-desc-block {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .vnd-overview-media .vnd-desc-label {
+        flex: none;
+    }
+
+    .vnd-overview-media .vnd-desc-text {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: 200px;
+        /* stacked layout cap; lifted when side by side */
+        overflow-y: auto;
+        padding-right: 10px;
+        overscroll-behavior: contain;
+    }
+
+    /* Always-visible scrollbar, so it is obvious the text scrolls (also on touch
+       screens / DevTools device mode, where scrollbars are normally hidden until
+       you scroll). Chrome 121+ ignores ::-webkit-scrollbar as soon as
+       scrollbar-width / scrollbar-color are set, so those are used only where
+       ::-webkit-scrollbar does not exist (Firefox). */
+    /* Thin 2px bar: dark navy thumb (#0F1B2C) on a cream track (#F8F1DE) */
+    .vnd-overview-media .vnd-desc-text::-webkit-scrollbar {
+        width: 2px;
+    }
+
+    .vnd-overview-media .vnd-desc-text::-webkit-scrollbar-track {
+        background: #F8F1DE;
+        border-radius: 2px;
+    }
+
+    .vnd-overview-media .vnd-desc-text::-webkit-scrollbar-thumb {
+        background: #0F1B2C;
+        border-radius: 2px;
+    }
+
+    @supports not selector(::-webkit-scrollbar) {
+        .vnd-overview-media .vnd-desc-text {
+            scrollbar-width: thin;
+            scrollbar-color: #0F1B2C #F8F1DE;
+        }
+    }
+
+    /* Photo beside details */
+    @container vnd-overview (min-width: 620px) {
+        .vnd-overview-media {
+            display: flex;
+            flex-direction: column;
+            align-self: stretch;
+            /* Its own content no longer decides the row height, the details
+               column does. The floor keeps a photo + a few lines of text intact. */
+            contain: size;
+            min-height: 360px;
+        }
+
+        .vnd-overview-media .vnd-hero {
+            flex: none;
+        }
+
+        /* natural height when short, shrinks (and scrolls) when long */
+        .vnd-overview-media .vnd-desc-block {
+            flex: 0 1 auto;
+        }
+
+        .vnd-overview-media .vnd-desc-text {
+            max-height: none;
+        }
+
+        /* The details column is only ~300px wide at 810px, which made it a single
+           long list (about 920px tall) next to a much shorter photo column.
+           Two columns keeps both sides close in height. */
+        .vnd-overview-info .vnd-details {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px 12px;
+        }
+    }
+
 }
 
 @media only screen and (min-width:768px) and (max-width:1023px) {
@@ -3792,7 +3965,7 @@ input[type="password"]::-ms-clear {
     }
 
     .preset-grid {
-        grid-template-columns: repeat(4, minmax(240px, 1fr));
+        grid-template-columns: repeat(4, minmax(255px, 1fr));
         /* Fix iPad overlapping */
     }
 
@@ -4028,11 +4201,25 @@ input[type="password"]::-ms-clear {
         margin-bottom: 28px;
     }
 
-    .mobile-drawer-header img {
+    /* .mobile-drawer-header img {
         width: 40px;
         height: 40px;
         border-radius: 50%;
         background: var(--color-pink);
+    } */
+
+    .mobile-drawer-header .mobile-logo-container {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: var(--color-pink);
+        position: relative;
+    }
+
+    .mobile-drawer-header .mobile-logo {
+        position: absolute;
+        left: 15%;
+        top: 16%;
     }
 
     .mobile-drawer-header .mobile-drawer-close {
@@ -4327,6 +4514,23 @@ input[type="password"]::-ms-clear {
         gap: 0px;
     }
 
+    .perm-count {
+        flex: 1 1 400px;
+        text-align: center;
+    }
+
+    .btn-ghost {
+        flex: 1 1 400px;
+    }
+
+    .perm-user-tools {
+        margin-top: 20px;
+        background-color: #fff;
+        padding: 20px;
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+    }
+
 }
 
 @media screen and (width: 1032px) and (height: 1376px) {
@@ -4337,6 +4541,10 @@ input[type="password"]::-ms-clear {
     .tire-calculator-form {
         flex-direction: column;
         gap: 0px;
+    }
+
+    .preset-grid {
+        grid-template-columns: repeat(4, minmax(255px, 1fr));
     }
 }
 
@@ -5249,6 +5457,10 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
     }
+
+    .modal-actions {
+        flex-direction: column;
+    }
 }
 
 /* ---------------------------------------------------------------------------
@@ -5361,9 +5573,19 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
     padding-bottom: 8px;
 }
 
+/* Sub-heading (TILES / CONTROLS) and its list sit indented under the page
+   title, like a sub-folder. --perm-indent = checkbox (16px) + row gap (10px),
+   so the caption and the sub-list line up with the page title's text instead
+   of its checkbox. Nested (depth-2) items step in by one more level. */
+.perm-group {
+    --perm-indent: 26px;
+    --perm-indent-step: 22px;
+}
+
 .perm-caption {
     display: block;
-    margin: 2px 0 2px;
+    margin: 4px 0 2px;
+    padding-left: var(--perm-indent);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -5372,11 +5594,29 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
 }
 
 .perm-el {
-    padding-left: 4px;
+    padding-left: var(--perm-indent);
 }
 
 .perm-el.depth-2 {
-    padding-left: 28px;
+    padding-left: calc(var(--perm-indent) + var(--perm-indent-step));
+}
+
+/* The indent stays 26px on every breakpoint so it always lines up with the
+   page title; only the nested step and touch spacing are tuned. */
+
+/* Small phones (≤ 360px): tighter nested step so long labels still fit */
+@media only screen and (max-width: 360px) {
+    .perm-group {
+        --perm-indent-step: 16px;
+    }
+}
+
+/* Phones & small tablets (320–767px): slightly roomier rows for touch */
+@media only screen and (min-width: 320px) and (max-width: 767px) {
+    .perm-el {
+        padding-top: 7px;
+        padding-bottom: 7px;
+    }
 }
 
 .perm-el.dim {
@@ -7886,6 +8126,92 @@ img[data-image-state="loading"] {
         grid-column: 1 / -1;
         justify-self: end;
     }
+
+    .vnd-overview {
+        container: vnd-overview / inline-size;
+    }
+
+    /* Only the text scrolls; the "Description · created ..." label stays put */
+    .vnd-overview-media .vnd-desc-block {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .vnd-overview-media .vnd-desc-label {
+        flex: none;
+    }
+
+    .vnd-overview-media .vnd-desc-text {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: 200px;
+        /* stacked layout cap; lifted when side by side */
+        overflow-y: auto;
+        padding-right: 10px;
+        overscroll-behavior: contain;
+    }
+
+    /* Always-visible scrollbar, so it is obvious the text scrolls (also on touch
+       screens / DevTools device mode, where scrollbars are normally hidden until
+       you scroll). Chrome 121+ ignores ::-webkit-scrollbar as soon as
+       scrollbar-width / scrollbar-color are set, so those are used only where
+       ::-webkit-scrollbar does not exist (Firefox). */
+    /* Thin 2px bar: dark navy thumb (#0F1B2C) on a cream track (#F8F1DE) */
+    .vnd-overview-media .vnd-desc-text::-webkit-scrollbar {
+        width: 2px;
+    }
+
+    .vnd-overview-media .vnd-desc-text::-webkit-scrollbar-track {
+        background: #F8F1DE;
+        border-radius: 2px;
+    }
+
+    .vnd-overview-media .vnd-desc-text::-webkit-scrollbar-thumb {
+        background: #0F1B2C;
+        border-radius: 2px;
+    }
+
+    @supports not selector(::-webkit-scrollbar) {
+        .vnd-overview-media .vnd-desc-text {
+            scrollbar-width: thin;
+            scrollbar-color: #0F1B2C #F8F1DE;
+        }
+    }
+
+    /* Photo beside details */
+    @container vnd-overview (min-width: 620px) {
+        .vnd-overview-media {
+            display: flex;
+            flex-direction: column;
+            align-self: stretch;
+            /* Its own content no longer decides the row height, the details
+               column does. The floor keeps a photo + a few lines of text intact. */
+            contain: size;
+            min-height: 360px;
+        }
+
+        .vnd-overview-media .vnd-hero {
+            flex: none;
+        }
+
+        /* natural height when short, shrinks (and scrolls) when long */
+        .vnd-overview-media .vnd-desc-block {
+            flex: 0 1 auto;
+        }
+
+        .vnd-overview-media .vnd-desc-text {
+            max-height: none;
+        }
+
+        /* The details column is only ~300px wide at 810px, which made it a single
+           long list (about 920px tall) next to a much shorter photo column.
+           Two columns keeps both sides close in height. */
+        .vnd-overview-info .vnd-details {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px 12px;
+        }
+    }
 }
 
 /* ---------- Left column: photo + description ---------- */
@@ -8023,5 +8349,102 @@ img[data-image-state="loading"] {
 @media only screen and (max-width: 360px) {
     .vnd-group .vnd-details {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+}
+
+@media only screen and (max-width: 1536px) {
+
+    .vnd-overview {
+        container: vnd-overview / inline-size;
+    }
+
+    /* Only the text scrolls; the "Description · created ..." label stays put */
+    .vnd-overview-media .vnd-desc-block {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .vnd-overview-media .vnd-desc-label {
+        flex: none;
+    }
+
+    .vnd-overview-media .vnd-desc-text {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: 113px;
+        /* stacked layout cap; lifted when side by side */
+        overflow-y: auto;
+        padding-right: 10px;
+        overscroll-behavior: contain;
+    }
+
+    /* Always-visible scrollbar, so it is obvious the text scrolls (also on touch
+       screens / DevTools device mode, where scrollbars are normally hidden until
+       you scroll). Chrome 121+ ignores ::-webkit-scrollbar as soon as
+       scrollbar-width / scrollbar-color are set, so those are used only where
+       ::-webkit-scrollbar does not exist (Firefox). */
+    /* Thin 2px bar: dark navy thumb (#0F1B2C) on a cream track (#F8F1DE) */
+    .vnd-overview-media .vnd-desc-text::-webkit-scrollbar {
+        width: 2px;
+    }
+
+    .vnd-overview-media .vnd-desc-text::-webkit-scrollbar-track {
+        background: #F8F1DE;
+        border-radius: 2px;
+    }
+
+    .vnd-overview-media .vnd-desc-text::-webkit-scrollbar-thumb {
+        background: #0F1B2C;
+        border-radius: 2px;
+    }
+
+    @supports not selector(::-webkit-scrollbar) {
+        .vnd-overview-media .vnd-desc-text {
+            scrollbar-width: thin;
+            scrollbar-color: #0F1B2C #F8F1DE;
+        }
+    }
+
+    /* Photo beside details */
+    @container vnd-overview (min-width: 620px) {
+        .vnd-overview-media {
+            display: flex;
+            flex-direction: column;
+            align-self: stretch;
+            /* Its own content no longer decides the row height, the details
+               column does. The floor keeps a photo + a few lines of text intact. */
+            contain: size;
+            min-height: 360px;
+        }
+
+        .vnd-overview-media .vnd-hero {
+            flex: none;
+        }
+
+        /* natural height when short, shrinks (and scrolls) when long */
+        .vnd-overview-media .vnd-desc-block {
+            flex: 0 1 auto;
+        }
+
+        .vnd-overview-media .vnd-desc-text {
+            max-height: none;
+        }
+
+        /* The details column is only ~300px wide at 810px, which made it a single
+           long list (about 920px tall) next to a much shorter photo column.
+           Two columns keeps both sides close in height. */
+        .vnd-overview-info .vnd-details {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px 12px;
+        }
+    }
+
+}
+
+@media only screen and (min-width:320px) and (max-width:766px) {
+    .perm-user-head {
+        justify-content: center;
     }
 }

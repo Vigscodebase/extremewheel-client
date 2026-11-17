@@ -211,7 +211,9 @@ export default function Sidebar() {
         aria-hidden={!mobileOpen}
       >
         <div className="mobile-drawer-header">
-          <img src="/sidebar-logo.webp" alt="logo" />
+          <div className="mobile-logo-container">
+            <img src="/sidebar-logo.webp" alt="logo" className="mobile-logo" />
+          </div>
           <button type="button" className="close-btn mobile-drawer-close" onClick={() => setMobileOpen(false)} aria-label="Close menu">
             <X size={20} />
           </button>
