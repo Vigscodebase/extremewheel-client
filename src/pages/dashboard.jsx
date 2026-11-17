@@ -279,7 +279,7 @@ function QuickAccessPanel() {
       <div className="panel-head">
         <div>
           <h3>Quick access</h3>
-          <p>Vehicle search & fitment lookup, plus one-click shortcuts to the tools you use most</p>
+          <p>One-click shortcuts to the tools you use most</p>
         </div>
       </div>
 
@@ -396,7 +396,7 @@ export default function Dashboard() {
           <div className="panel-head">
             <div>
               <h3>Tire showroom</h3>
-              <p>Live 3D preview of your most recently compared size</p>
+              <p>Live preview of your most recently compared size</p>
             </div>
             <PageLink to="/tire-calculator" className="see-all-link">
               Open calculator <ChevronRight size={14} />

@@ -1081,6 +1081,11 @@ input[type="password"]::-ms-clear {
     .tire3d-grid {
         grid-template-columns: 1fr;
     }
+
+    .staff-note-add-row {
+        flex-direction: column;
+    }
+
 }
 
 /* --- App Shell / Layout --- */
@@ -3965,7 +3970,7 @@ input[type="password"]::-ms-clear {
     }
 
     .preset-grid {
-        grid-template-columns: repeat(4, minmax(255px, 1fr));
+        grid-template-columns: repeat(3, minmax(250px, 1fr));
         /* Fix iPad overlapping */
     }
 
@@ -4544,7 +4549,7 @@ input[type="password"]::-ms-clear {
     }
 
     .preset-grid {
-        grid-template-columns: repeat(4, minmax(255px, 1fr));
+        grid-template-columns: repeat(3, minmax(255px, 1fr));
     }
 }
 
@@ -5461,6 +5466,10 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
     .modal-actions {
         flex-direction: column;
     }
+
+    .btn-ghost {
+        flex: 0px;
+    }
 }
 
 /* ---------------------------------------------------------------------------
@@ -5609,6 +5618,10 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
     .perm-group {
         --perm-indent-step: 16px;
     }
+
+    .btn-ghost {
+        flex: 0px;
+    }
 }
 
 /* Phones & small tablets (320–767px): slightly roomier rows for touch */
@@ -5616,6 +5629,10 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
     .perm-el {
         padding-top: 7px;
         padding-bottom: 7px;
+    }
+
+    .btn-ghost {
+        flex: 0px;
     }
 }
 
@@ -5676,6 +5693,10 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
 @media (max-width: 600px) {
     .preset-filter-grid {
         grid-template-columns: 1fr;
+    }
+
+    .btn-ghost {
+        flex: 0px;
     }
 }
 
@@ -5798,6 +5819,20 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
 .autocomplete-clear:hover {
     color: var(--color-ink);
     background: var(--color-border);
+}
+
+.search-box input[type="search"]::-webkit-search-cancel-button,
+.search-box input[type="search"]::-webkit-search-decoration,
+.search-box input[type="search"]::-webkit-search-results-button,
+.search-box input[type="search"]::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+}
+
+.search-box input[type="search"]::-ms-clear {
+    display: none;
+    /* old Edge / IE */
 }
 
 .autocomplete-list {
@@ -6128,6 +6163,10 @@ button.mobile-topbar-avatar.is-open .mobile-avatar-indicator {
         left: 8px;
         bottom: 8px;
         width: auto;
+    }
+
+    .btn-ghost {
+        flex: 0px;
     }
 }
 
@@ -6957,6 +6996,10 @@ img[data-image-state="loading"] {
     .tire-calculator-form .calculator-tire-input-grid {
         grid-template-columns: minmax(0, 1fr);
     }
+
+    .btn-ghost {
+        flex: 0px;
+    }
 }
 
 
@@ -7649,6 +7692,10 @@ img[data-image-state="loading"] {
         background: #fff;
         box-shadow: -6px 0 6px -6px rgba(42, 33, 24, 0.18);
     }
+
+    .preset-grid {
+        grid-template-columns: repeat(2, minmax(250px, 1fr));
+    }
 }
 
 /* =====================================================================
@@ -7744,6 +7791,10 @@ img[data-image-state="loading"] {
 @media (max-width: 420px) {
     .vn-fieldset .vn-check-row {
         flex-wrap: wrap;
+    }
+
+    .btn-ghost {
+        flex: 0px;
     }
 }
 
@@ -7978,6 +8029,10 @@ img[data-image-state="loading"] {
     .vehicle-card.vn-card .vn-thumb {
         flex-basis: 80px;
     }
+
+    .btn-ghost {
+        flex: 0px;
+    }
 }
 
 @media (width: 1180px) {
@@ -8103,6 +8158,10 @@ img[data-image-state="loading"] {
     .vn-fieldset .vn-check-row {
         flex-wrap: wrap;
         min-height: 0;
+    }
+
+    .btn-ghost {
+        flex: 0px;
     }
 }
 
@@ -8343,6 +8402,10 @@ img[data-image-state="loading"] {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px 16px;
     }
+
+    .btn-ghost {
+        flex: 0px;
+    }
 }
 
 /* Very small phones: back to a single column */
@@ -8351,6 +8414,9 @@ img[data-image-state="loading"] {
         grid-template-columns: minmax(0, 1fr);
     }
 
+    .btn-ghost {
+        flex: 0px;
+    }
 }
 
 @media only screen and (max-width: 1536px) {
@@ -8446,5 +8512,9 @@ img[data-image-state="loading"] {
 @media only screen and (min-width:320px) and (max-width:766px) {
     .perm-user-head {
         justify-content: center;
+    }
+
+    .btn-ghost {
+        flex: 0px;
     }
 }
