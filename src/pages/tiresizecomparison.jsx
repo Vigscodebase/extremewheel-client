@@ -202,7 +202,7 @@ export default function TireSizeComparison() {
 
       {/* Speedometer note sits right below the two Tire boxes. */}
       <div className={`speedo-banner ${Math.abs(diffPct) > 3 ? "warn" : "ok"}`}>
-        Tire B changes overall diameter by <strong>{diffPct >= 0 ? "+" : ""}{diffPct.toFixed(2)}%</strong> vs. Tire A -
+        Tire B changes overall diameter by <strong>{diffPct >= 0 ? "+" : ""}{diffPct.toFixed(2)}%</strong> vs. Tire A —
         {" "}
         {Math.abs(diffPct) > 3
           ? " outside the ±3% range generally considered safe for speedometer accuracy."

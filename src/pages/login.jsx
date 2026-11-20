@@ -2,8 +2,11 @@ import { Eye, EyeOff, Lock, Mail, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authcontext";
+import usePageMeta from "../hooks/usePageMeta";
+import { loginMeta } from "../../seo.config.js";
 
 export default function Login() {
+  usePageMeta(loginMeta);
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

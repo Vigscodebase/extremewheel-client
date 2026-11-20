@@ -280,7 +280,7 @@ export default function TireSizeCalculator() {
             </div>
 
             <div className={`speedo-banner ${Math.abs(diffPct) > 3 ? "warn" : "ok"}`}>
-              New size changes overall diameter by <strong>{diffPct >= 0 ? "+" : ""}{diffPct.toFixed(2)}%</strong> vs. current -
+              New size changes overall diameter by <strong>{diffPct >= 0 ? "+" : ""}{diffPct.toFixed(2)}%</strong> vs. current —
               {" "}
               {Math.abs(diffPct) > 3
                 ? " outside the ±3% range generally considered safe for speedometer accuracy."

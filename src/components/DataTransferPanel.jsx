@@ -44,7 +44,8 @@ function OeLibraryBlock({ canDownload, canUpload }) {
       <div>
         <p className="preset-label">OE tire size library</p>
         <p className="text-muted fs-13 export-import-desc">
-          The original-equipment sizes searched on Plus Size Options. Download them as .xlsx, or upload a .xlsx to add new sizes - sizes already on file are skipped.
+          The original-equipment sizes searched on Plus Size Options. Download them as .xlsx, or upload a Width / Aspect /
+          Rim .xlsx to add new sizes — sizes already on file are skipped.
         </p>
       </div>
 
@@ -122,8 +123,8 @@ function TechDataCsvBlock() {
       <div>
         <p className="preset-label">Tech Data CSV</p>
         <p className="text-muted fs-13 export-import-desc">
-          The fitment / wheel-offset dataset shown on Tech Data. Download it as CSV, edit it, and re-upload - columns match
-          exactly.
+          The fitment / wheel-offset dataset shown on Tech Data. Download it as CSV, edit it, and re-upload — columns match
+          exactly, so a round trip is safe.
         </p>
       </div>
 
@@ -187,7 +188,7 @@ function VehicleDatabaseBlock({ canDownload, canUpload }) {
         <p className="preset-label">Vehicle Notes database</p>
         <p className="text-muted fs-13 export-import-desc">
           The Make / Model / Type reference table behind the Vehicle Notes dropdowns. Download it as .xlsx, edit it, and
-          re-upload - the Add / Edit vehicle dropdowns stay in sync automatically.
+          re-upload — the Add / Edit vehicle dropdowns stay in sync automatically.
         </p>
       </div>
 
@@ -254,7 +255,8 @@ export default function DataTransferPanel() {
         Data import / export
       </h3>
       <p className="text-muted data-transfer-desc fontsize-fifteen">
-        Download or upload the reference data behind Plus Size Options, Tech Data and Vehicle Notes.
+        Download or upload the reference data behind Plus Size Options, Tech Data and Vehicle Notes. These aren't affected
+        by the date range above.
       </p>
 
       <div className="data-transfer-grid">

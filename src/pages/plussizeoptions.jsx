@@ -79,8 +79,8 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
         Vehicle-specific upgrade sizes
       </h3>
       <p className="text-muted fs-13 mb-16">
-        Look up the manufacturer-approved upgrade tire sizes for a specific vehicle - by wheel
-        diameter, and any staggered front/rear fitment options - separate from the tolerance search above.
+        Look up the manufacturer-approved upgrade tire sizes for a specific vehicle from the Application Guide — by wheel
+        diameter, and any staggered front/rear fitment options — separate from the tolerance search above.
       </p>
 
       <div className="tire-input-grid vehicle-select-grid field-mb">
@@ -147,7 +147,7 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
             <div key={record._id} className="vehicle-upgrade-box mt-16">
               <div className="modal-actions modal-actions-start mb-24">
                 <p className="preset-label mb-0">
-                  {record.txtTireSize ? `Base size: ${record.txtTireSize}` : "Base size"}
+                  {record.txtTireSize ? `Base size: ${record.txtTireSize}` : "Base size on file"}
                 </p>
                 {baseParsed && (
                   <button type="button" className="btn btn-ghost btn-noresponsive" onClick={() => onUseAsOe(baseParsed)}>
@@ -642,7 +642,7 @@ export default function PlusSizeOptions() {
       {data && (
         <div className="card compare-result-card mt-20">
           <div className="speedo-banner ok">
-            OE size <strong>{data.oe.width}/{data.oe.aspect} R{data.oe.rim}</strong> - overall height{" "}
+            OE size <strong>{data.oe.width}/{data.oe.aspect} R{data.oe.rim}</strong> — overall height{" "}
             <strong>{formatInches(data.oe.overallHeightIn)}"</strong>, tread width <strong>{formatInches(data.oe.treadWidthIn)}"</strong>. Showing matches
             within ±{data.tolerances.heightPct}% overall height (tread width is shown for reference, not used to filter), ranked by{" "}
             {SORT_OPTIONS.find((o) => o.value === data.sortBy || (data.sortBy || "").startsWith(o.value))?.label.toLowerCase() ||
@@ -761,7 +761,7 @@ export default function PlusSizeOptions() {
       {!searched && (
         <div className="card empty-state-card inline mt-20">
           <TrendingUp size={18} />
-          Enter an OE size above and search for the closest plus-size matches.
+          Enter an OE size above and search your saved tire library for the closest plus-size matches.
         </div>
       )}
 
