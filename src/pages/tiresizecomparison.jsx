@@ -79,7 +79,7 @@ function TireForm({ title, tag, accent, value, otherValue, onChange /*, presets 
         </select>
       </div>
       */}
-      <div className="tire-input-grid">
+      <div className="tire-input-grid mb-18">
         <div className="field">
           <label>Width</label>
           <input type="number" value={value.width} onChange={(e) => onChange({ width: Number(e.target.value) })} />
@@ -99,9 +99,9 @@ function TireForm({ title, tag, accent, value, otherValue, onChange /*, presets 
 
       {/* Same pairing as the Tire Size Calculator: 3D tire next to its specs table. */}
       <div className="tire-form-results">
-        <div className="tire-form-viz">
+        {/* <div className="tire-form-viz">
           <Tire3DVisualizer tire={value} label={`${tag} · ${tireDiameterInches(value).toFixed(1)}"`} accent={accent} height={230} variant="compare" />
-        </div>
+        </div> */}
         <div className="table-responsive">
           <table className="compare-table">
             <thead>

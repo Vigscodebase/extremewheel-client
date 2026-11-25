@@ -47,6 +47,19 @@
     /* Sidebar specific constants */
     --sidebar-w: 88px;
     --sidebar-expanded-w: 260px;
+
+    --color-pink: #A31621;
+    --color-pink-soft: #F7E6E7;
+    --color-violet: #E0A96D;
+    --color-mint: #4A8B58;
+    --color-mint-soft: #E5F0E8;
+    --color-amber-soft: #F9EFE3;
+    --color-ink: #2A2118;
+    --color-border: #E6DCD2;
+    --font-display: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --radius-md: 16px;
+    --shadow-card: 0 10px 30px -14px rgba(42, 33, 24, 0.1);
 }
 
 /* --- Reset & Base --- */
@@ -2052,20 +2065,6 @@ input[type="password"]::-ms-clear {
 .tire-calculator-form h3 {
     font-size: 16px;
     margin-bottom: 18px;
-}
-
-.tire-plus-form {
-    padding: 32px 28px;
-    width: 100%;
-}
-
-.tire-plus-form h3 {
-    font-size: 16px;
-    margin-bottom: 18px;
-}
-
-.tire-plus-form select {
-    max-width: 800px;
 }
 
 .tire-input-grid {
@@ -4367,10 +4366,6 @@ input[type="password"]::-ms-clear {
     }
 
     .tire-calculator-form {
-        padding: 16px;
-    }
-
-    .tire-plus-form {
         padding: 16px;
     }
 
@@ -6831,7 +6826,7 @@ img[data-image-state="loading"] {
    which left an empty 4th row and the blank gap at the bottom of the card. */
 .tire-calculator-form .calculator-tire-input-grid {
     grid-template-rows: none;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
     max-width: none;
 }
@@ -7502,100 +7497,6 @@ img[data-image-state="loading"] {
     }
 }
 
-/* ---------- Plus Size page: "Plus Size" (New rim) section inside the first box ---------- */
-.tire-plus-form .plus-size-section {
-    margin-top: 28px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border, rgba(42, 33, 24, 0.12));
-}
-
-/* Top-3 table stays inside the box; scrolls (both ways) if it ever exceeds it. */
-.tire-plus-form .plus-size-results-scroll {
-    max-height: 300px;
-    overflow: auto;
-}
-
-/* ---------- Plus Size page: first box as one row — inputs | top-3 results ----------
-   Inputs stay narrow on the left; the results table takes the rest of the box and
-   scrolls inside it when it is taller/wider than the available space. */
-.tire-plus-form .plus-size-layout {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 32px;
-}
-
-.tire-plus-form .plus-size-inputs {
-    flex: 0 0 300px;
-    width: 300px;
-    max-width: 100%;
-}
-
-/* Width / Aspect / Rim side by side in the narrow column; New rim is one field */
-.tire-plus-form .plus-size-inputs .tire-input-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    max-width: none;
-}
-
-.tire-plus-form .plus-size-section .tire-input-grid {
-    grid-template-columns: minmax(0, 1fr);
-}
-
-.tire-plus-form .plus-size-section {
-    margin-top: 20px;
-    padding-top: 18px;
-}
-
-.tire-plus-form .plus-size-results-pane {
-    flex: 1 1 0;
-    min-width: 0;
-    max-height: 360px;
-    overflow: auto;
-}
-
-/* The pane itself scrolls, so the table doesn't need a second scroller */
-.tire-plus-form .plus-size-results-scroll {
-    max-height: none;
-    overflow: visible;
-}
-
-.tire-plus-form .plus-size-results-pane .plus-results-table {
-    min-width: 640px;
-}
-
-/* Narrow screens (and a pinned sidebar on mid-size ones): stack, still scrollable */
-@media only screen and (max-width: 860px) {
-    .tire-plus-form .plus-size-layout {
-        flex-direction: column;
-        gap: 24px;
-    }
-
-    .tire-plus-form .plus-size-inputs {
-        flex: none;
-        width: 100%;
-    }
-
-    .tire-plus-form .plus-size-results-pane {
-        flex: none;
-        width: 100%;
-    }
-}
-
-@media only screen and (min-width: 861px) and (max-width: 1100px) {
-    .dashboard-layout:has(.sidebar.pinned) .tire-plus-form .plus-size-layout {
-        flex-direction: column;
-        gap: 24px;
-    }
-
-    .dashboard-layout:has(.sidebar.pinned) .tire-plus-form .plus-size-inputs,
-    .dashboard-layout:has(.sidebar.pinned) .tire-plus-form .plus-size-results-pane {
-        flex: none;
-        width: 100%;
-    }
-}
-
-
 /* ---------- Plus Size page — tablet (iPad Mini 768px … 1023px) ----------
    Both result tables (the "Plus Size matches" table and the closest-matches
    table) keep every column at a readable width, show the Size on ONE line, and
@@ -7605,7 +7506,7 @@ img[data-image-state="loading"] {
 @media only screen and (min-width: 768px) and (max-width: 1023px) {
 
     .plus-results-table,
-    .tire-plus-form .plus-size-results-pane .plus-results-table {
+    .plus-size-page .ps-scroll .plus-results-table {
         min-width: 700px;
     }
 
@@ -7616,7 +7517,7 @@ img[data-image-state="loading"] {
     }
 
     /* The two scrolling containers: top pane + closest-matches table wrapper */
-    .tire-plus-form .plus-size-results-pane,
+    .plus-size-page .ps-scroll,
     .compare-result-card .table-responsive {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
@@ -7625,17 +7526,17 @@ img[data-image-state="loading"] {
     }
 
     /* Always-visible horizontal scrollbar so it's obvious the table scrolls */
-    .tire-plus-form .plus-size-results-pane::-webkit-scrollbar,
+    .plus-size-page .ps-scroll::-webkit-scrollbar,
     .compare-result-card .table-responsive::-webkit-scrollbar {
         height: 8px;
     }
 
-    .tire-plus-form .plus-size-results-pane::-webkit-scrollbar-track,
+    .plus-size-page .ps-scroll::-webkit-scrollbar-track,
     .compare-result-card .table-responsive::-webkit-scrollbar-track {
         background: transparent;
     }
 
-    .tire-plus-form .plus-size-results-pane::-webkit-scrollbar-thumb,
+    .plus-size-page .ps-scroll::-webkit-scrollbar-thumb,
     .compare-result-card .table-responsive::-webkit-scrollbar-thumb {
         background: #c9bfb4;
         border-radius: 8px;
@@ -8494,5 +8395,602 @@ img[data-image-state="loading"] {
        when the label is wide, which made the Save icon tiny. */
     .perm-savebar .btn svg {
         flex: none;
+    }
+}
+
+
+/* =====================================================================
+   Tire Size Calculator — two-column layout
+   Scoped under .tsc; sizes follow the other pages (.card, .field,
+   .compare-table, .speedo-banner). Page width/padding come from
+   .page-main, so nothing here centres or caps the width.
+   Stacks by the width of the page area (container query), so it also
+   works when the sidebar is pinned.
+   ===================================================================== */
+
+.tsc {
+    container-type: inline-size;
+}
+
+.tsc-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.55fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.tsc-card {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    padding: 32px 28px;
+    min-width: 0;
+}
+
+/* --- Headings --- */
+
+.tsc-card-title {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    margin-bottom: 18px;
+}
+
+.tsc-card-title svg {
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+
+.tsc-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.tsc-card-head h3 {
+    font-size: 15.5px;
+}
+
+.tsc-card-head p {
+    font-size: 12.5px;
+    color: var(--color-muted);
+    margin-top: 3px;
+}
+
+.tsc-subheading {
+    display: flex;
+    align-items: center;
+    font-size: 15.5px;
+    margin: 24px 0 12px;
+}
+
+.tsc-subheading svg {
+    margin-right: 6px;
+}
+
+/* --- Inputs (same look as .field) --- */
+
+.tsc-input-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.tsc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.tsc-field label,
+.tsc-rim-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--color-ink);
+}
+
+.tsc-field input,
+.tsc-rim-input {
+    width: 100%;
+    border: 1.5px solid var(--color-border);
+    background: #fff;
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tsc-field input:focus,
+.tsc-rim-input:focus {
+    border-color: var(--color-pink);
+    box-shadow: 0 0 0 3px var(--color-pink-soft);
+}
+
+/* --- New rim + banner (banner starts level with the input) --- */
+
+.tsc-rim-row {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 16px;
+    row-gap: 7px;
+    margin-bottom: 20px;
+}
+
+.tsc-rim-label {
+    grid-area: 1 / 1;
+}
+
+.tsc-rim-input {
+    grid-area: 2 / 1;
+    align-self: start;
+}
+
+.tsc-banner {
+    grid-area: 2 / 2;
+}
+
+.tsc-banner {
+    display: flex;
+    align-items: center;
+    padding: 13px 16px;
+    border-radius: 12px;
+    border-left: 4px solid transparent;
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+
+.tsc-banner p {
+    margin: 0;
+}
+
+.tsc-banner.warn {
+    background: var(--color-amber-soft);
+    border-left-color: var(--color-violet);
+    color: #A05D0F;
+}
+
+.tsc-banner.ok {
+    background: var(--color-mint-soft);
+    border-left-color: var(--color-mint);
+    color: var(--color-mint);
+}
+
+/* --- Tables (same look as .compare-table) --- */
+
+.tsc-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tsc-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1.5px solid var(--color-border);
+    table-layout: fixed;
+}
+
+.tsc-table th {
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.tsc-table td {
+    text-align: left;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13.5px;
+    color: var(--color-muted);
+    white-space: nowrap;
+}
+
+.tsc-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.tsc-table td.tsc-value {
+    color: var(--color-ink);
+    font-weight: 600;
+}
+
+.tsc-table-2 th:first-child,
+.tsc-table-2 td:first-child {
+    width: 55%;
+}
+
+.tsc-table-3 th:first-child,
+.tsc-table-3 td:first-child {
+    width: 40%;
+}
+
+.tsc-table-speedo {
+    min-width: 600px;
+}
+
+.tsc-table-speedo th:first-child,
+.tsc-table-speedo td:first-child {
+    width: 22%;
+}
+
+/* =====================================================================
+   Responsive — based on the width of the page area, not the window
+   ===================================================================== */
+
+@container (max-width: 900px) {
+    .tsc-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .tsc-input-row {
+        max-width: 480px;
+    }
+}
+
+@container (max-width: 560px) {
+    .tsc-card {
+        padding: 20px 16px;
+    }
+
+    .tsc-card-head {
+        flex-direction: column;
+    }
+
+    .tsc-card-head .btn {
+        width: 100%;
+    }
+
+    .tsc-input-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .tsc-rim-row {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto;
+    }
+
+    .tsc-rim-label,
+    .tsc-rim-input,
+    .tsc-banner {
+        grid-area: auto;
+    }
+
+    .tsc-rim-input {
+        max-width: 140px;
+    }
+
+    .tsc-table th,
+    .tsc-table td {
+        padding: 10px;
+    }
+}
+
+/* =====================================================================
+   Plus Size Options — layout
+   The Plus Size table shows 6 rows (--ps-visible-rows, set from
+   PLUS_SIZE_VISIBLE_ROWS in plussizeoptions.jsx) and scrolls for the rest.
+   The "Vehicle-specific upgrade sizes" box has no scroll of its own. On wide
+   screens the boxes sit 2 x 2; below 1200px wide or on very short screens they
+   stack into one column (vehicle box last) and the page scrolls as usual.
+   ===================================================================== */
+.plus-size-page {
+    --ps-row-h: 42px;
+    --ps-head-h: 38px;
+}
+
+.plus-size-page .ps-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+}
+
+.plus-size-page .ps-panel {
+    margin-bottom: 0;
+    padding: 18px 20px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.plus-size-page .ps-panel h3 {
+    font-size: 16px;
+    margin: 0 0 12px;
+}
+
+.plus-size-page .ps-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.plus-size-page .ps-panel-head h3 {
+    margin: 0;
+}
+
+.plus-size-page .ps-note {
+    margin: 0 0 10px;
+}
+
+.plus-size-page .empty-state-card {
+    padding: 20px;
+}
+
+/* --- inputs box: OE size, its 3 specs, then the Plus Size (New rim) form --- */
+.plus-size-page .ps-block+.ps-block {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+}
+
+.plus-size-page .ps-block .btn {
+    margin-top: 12px;
+}
+
+.plus-size-page .ps-oe-fields.tire-input-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    max-width: none;
+}
+
+.plus-size-page .ps-plus-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.plus-size-page .ps-plus-row .btn {
+    margin-top: 0;
+}
+
+.plus-size-page .ps-specs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin: 12px 0 0;
+}
+
+.plus-size-page .ps-spec {
+    min-width: 0;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    background: #FBFBFE;
+}
+
+.plus-size-page .ps-spec dt {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1.25;
+    color: var(--color-muted);
+}
+
+.plus-size-page .ps-spec dd {
+    margin: 2px 0 0;
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--color-ink);
+}
+
+/* --- results tables: fixed row height so "4 rows" is exact, sticky header --- */
+.plus-size-page .ps-scroll {
+    width: 100%;
+    min-height: 0;
+    overflow: auto;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+.plus-size-page .ps-scroll .compare-table {
+    border: none;
+    min-width: 640px;
+}
+
+.plus-size-page .ps-scroll .compare-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    height: var(--ps-head-h);
+    padding: 0 8px;
+    font-size: 11.5px;
+    background: #fff;
+    border-bottom: none;
+    box-shadow: inset 0 -1px 0 var(--color-border);
+    white-space: nowrap;
+}
+
+.plus-size-page .ps-scroll .compare-table th:last-child {
+    z-index: 2;
+}
+
+.plus-size-page .ps-scroll .compare-table td {
+    height: var(--ps-row-h);
+    padding: 0 8px;
+    white-space: nowrap;
+}
+
+/* exactly N rows (+ header) visible, the rest scrolls */
+.plus-size-page .ps-scroll--rows {
+    max-height: calc(var(--ps-head-h) + var(--ps-visible-rows, 6) * var(--ps-row-h) + 2px);
+}
+
+/* stacked layout: cap the OE table; in the one-frame layout it fills its box instead */
+.plus-size-page .ps-scroll--fill {
+    max-height: 360px;
+}
+
+/* --- OE tolerance cards: one compact line each --- */
+.plus-size-page .tolerance-window {
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.plus-size-page .tolerance-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 14px;
+    padding: 8px 12px;
+}
+
+.plus-size-page .tolerance-card-head {
+    flex: 1 1 100%;
+    margin-bottom: 0;
+}
+
+.plus-size-page .tolerance-card-value {
+    font-size: 17px;
+}
+
+.plus-size-page .tolerance-limits {
+    flex: 1 1 auto;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    gap: 10px;
+}
+
+.plus-size-page .tolerance-limit dt {
+    margin-bottom: 0;
+    font-size: 11px;
+}
+
+.plus-size-page .tolerance-limit dd {
+    font-size: 13px;
+}
+
+/* --- vehicle upgrade box: fixed selects, scrolling results --- */
+.plus-size-page .vehicle-select-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+    max-width: 976px;
+}
+
+.plus-size-page .vehicle-upgrade-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+}
+
+.plus-size-page .ps-vehicle .ps-body {
+    min-height: 0;
+}
+
+/* --- the 2 x 2 desktop layout (1200px and wider) ---
+   Row 1: OE inputs | Plus Size matches (6 rows visible, scrolls for the rest).
+   Row 2: "Vehicle-specific upgrade sizes" | "Closest matches to the OE size".
+   The vehicle box has NO scroll of its own — it grows to fit its content (the
+   page scrolls if it has to) and that height sets row 2. The OE box then takes
+   exactly that same height: `contain: size` stops its own content from
+   influencing the row height, and its table container flex-fills whatever is
+   left under the heading / tolerance cards, scrolling internally for more rows.
+   Below 1200px everything stacks into one column and, because the vehicle card
+   is last in the markup, it ends up as the bottom box. */
+@media only screen and (min-width: 1200px) and (min-height: 600px) {
+    .page-main:has(.plus-size-page) {
+        padding-top: 18px;
+        padding-bottom: 24px;
+    }
+
+    .plus-size-page .page-header {
+        margin-bottom: 12px;
+    }
+
+    .plus-size-page .page-title {
+        font-size: 22px;
+        margin-top: 0;
+    }
+
+    .plus-size-page .ps-grid {
+        grid-template-columns: 400px minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        grid-template-areas:
+            "inputs plus"
+            "vehicle oe";
+        align-items: stretch;
+    }
+
+    .plus-size-page .ps-inputs {
+        grid-area: inputs;
+    }
+
+    .plus-size-page .ps-plus {
+        grid-area: plus;
+    }
+
+    .plus-size-page .ps-vehicle {
+        grid-area: vehicle;
+    }
+
+    .plus-size-page .ps-oe-results {
+        grid-area: oe;
+    }
+
+    /* vehicle box: natural height, no inner scrollbar */
+    .plus-size-page .ps-vehicle,
+    .plus-size-page .ps-vehicle .ps-body {
+        overflow: visible;
+    }
+
+    /* OE closest-matches box: same height as the vehicle box beside it */
+    .plus-size-page .ps-oe-results {
+        contain: size;
+        min-height: 420px;
+        /* only matters while the vehicle box is still empty */
+        overflow: hidden;
+    }
+
+    /* its table fills the rest of the box (no gap underneath) and scrolls inside */
+    .plus-size-page .ps-oe-results .ps-scroll--fill {
+        flex: 1 1 0;
+        min-height: 0;
+        max-height: none;
+    }
+}
+
+/* Short laptop screens (e.g. 1366x768): tighten the chrome so everything still fits. */
+@media only screen and (min-width: 1200px) and (min-height: 600px) and (max-height: 820px) {
+    .plus-size-page {
+        --ps-row-h: 38px;
+        --ps-head-h: 34px;
+    }
+
+    .page-main:has(.plus-size-page) {
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+
+    .plus-size-page .page-header {
+        margin-bottom: 8px;
+    }
+
+    .plus-size-page .ps-grid {
+        gap: 12px;
+    }
+
+    .plus-size-page .ps-panel {
+        padding: 14px 16px;
+    }
+
+    .plus-size-page .ps-hint {
+        display: none;
     }
 }

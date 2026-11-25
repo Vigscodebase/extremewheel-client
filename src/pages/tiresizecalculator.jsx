@@ -1,84 +1,47 @@
 import { Calculator, Gauge, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 import PageHeader from "../components/pageheader";
-import Tire3DVisualizer from "../components/Tire3DVisualizer";
-import TireSuggestions from "../components/TireSuggestions";
 import { useLogTireComparison } from "../hooks/queries/useActivity";
-// import { useTireOptionsQuery } from "../hooks/queries/useTireOptions"; // hidden: Tire Size Option feature is switched off
 import {
-  equivalentInchSize,
-  // revsPerMile, // hidden: Revs / mile display is commented out below
   sidewallHeightInches,
   speedoDifferencePct,
   speedometerErrorTable,
-  // tireCircumferenceMm, // hidden: Circumference display is commented out below
-  // tireDiameterInches, // hidden: only used by the Tire Size Option "alternate sizes" card, commented out below
   tireOverallHeightInches,
   tireWidthInches,
 } from "../utils/tireMath";
-
-// Hidden: Tire Size Option presets are switched off, so no preset (or mock preset) data is used here.
-// const MOCK_PRESETS = [
-//   { _id: "t1", label: "Factory Standard", width: 225, aspect: 65, rim: 17 },
-//   { _id: "t2", label: "Off-Road Package", width: 265, aspect: 70, rim: 17 },
-//   { _id: "t3", label: "Highway Comfort", width: 215, aspect: 60, rim: 16 },
-// ];
 
 const SPEED_READINGS = [20, 30, 40, 50, 60, 70, 80, 90];
 
 function specRows(tire) {
   return {
-    // diameter: tireDiameterInches(tire),
-    // circumference: tireCircumferenceMm(tire) / 25.4,
-    // revsPerMile: revsPerMile(tire),
     overallHeight: tireOverallHeightInches(tire),
     width: tireWidthInches(tire),
     sidewall: sidewallHeightInches(tire),
   };
 }
 
+const fmt = (inches) => `${inches.toFixed(2)}"`;
+
 export default function TireSizeCalculator() {
-  // Hidden: no Tire Size Option data is fetched or checked any more.
-  // const { data: fetchedPresets, isError: presetsError } = useTireOptionsQuery();
-  // const presets = presetsError || !fetchedPresets?.length ? MOCK_PRESETS : fetchedPresets;
   const logComparison = useLogTireComparison();
 
   const [tire, setTire] = useState({ width: 265, aspect: 70, rim: 17 });
-  const [unit, setUnit] = useState("in"); // "in" | "mm" for the results table
-  const [convertOpen, setConvertOpen] = useState(false);
+  const [convertOpen, setConvertOpen] = useState(true);
   const [targetRim, setTargetRim] = useState(18);
   const [logged, setLogged] = useState(false);
 
-  // Hidden: "Load a saved preset" is switched off.
-  // const applyPreset = (id) => {
-  //   const preset = presets.find((p) => p._id === id);
-  //   if (preset) setTire({ width: preset.width, aspect: preset.aspect, rim: preset.rim });
-  // };
-
   const spec = useMemo(() => specRows(tire), [tire]);
 
-  // "Convert to Different Wheel Size?" — keep the same sidewall aspect
-  // ratio (typical shop approach) and recompute against the new rim.
+  // Keep the same sidewall aspect ratio and recompute against the new rim.
   const convertedTire = useMemo(() => ({ ...tire, rim: Number(targetRim) || tire.rim }), [tire, targetRim]);
   const convertedSpec = useMemo(() => specRows(convertedTire), [convertedTire]);
   const diffPct = useMemo(() => speedoDifferencePct(tire, convertedTire), [tire, convertedTire]);
   const speedoTable = useMemo(() => speedometerErrorTable(tire, convertedTire, SPEED_READINGS), [tire, convertedTire]);
 
-  // Hidden: "Alternate sizes" were calculated from the Tire Size Option presets,
-  // which are switched off.
-  // // Alternate sizes — presets whose overall diameter falls within ±1" of
-  // // the entered size, sorted by closeness (mirrors tiresize.com's
-  // // "alternate tire sizes within 1 inch" suggestion using our own preset
-  // // library instead of a full manufacturer database).
-  // const alternates = useMemo(() => {
-  //   const target = tireDiameterInches(tire);
-  //   return presets
-  //     .map((p) => ({ ...p, diameter: tireDiameterInches(p) }))
-  //     .filter((p) => Math.abs(p.diameter - target) <= 1 && !(p.width === tire.width && p.aspect === tire.aspect && p.rim === tire.rim))
-  //     .sort((a, b) => Math.abs(a.diameter - target) - Math.abs(b.diameter - target));
-  // }, [presets, tire]);
-
-  const fmt = (inches) => (unit === "mm" ? `${(inches * 25.4).toFixed(1)} mm` : `${inches.toFixed(2)}"`);
+  const updateTire = (key) => (e) => {
+    setTire((t) => ({ ...t, [key]: Number(e.target.value) }));
+    setLogged(false);
+  };
 
   const handleConvertClick = async () => {
     const opening = !convertOpen;
@@ -98,259 +61,137 @@ export default function TireSizeCalculator() {
     }
   };
 
+  const outOfRange = Math.abs(diffPct) > 3;
+
   return (
-    <div>
+    <div className="tsc">
       <PageHeader
         eyebrow="Tire library"
         title="Tire Size Calculator"
-        subtitle="Calculate metric tire specs, convert to a different wheel size, and see alternate size suggestions."
+        subtitle="Calculate metric tire specs and convert to a different wheel size."
       />
 
-      <div className="card tire-calculator-form">
-        <div className="calculator-form-item">
-          <h3>
-            <Calculator size={16} className="icon-inline" />
+      <div className="tsc-layout">
+        {/* ───────── Left: input + specs ───────── */}
+        <section className="tsc-card">
+          <h3 className="tsc-card-title">
+            <Calculator size={16} />
             Input Tire Size
           </h3>
-          {/* Hidden: "Load a saved preset" (Tire Size Option presets are switched off)
-          <div className="field field-mb">
-            <label>Load a saved preset</label>
-            <select onChange={(e) => e.target.value && applyPreset(e.target.value)} defaultValue="">
-              <option value="">Custom size…</option>
-              {presets.map((p) => (
-                <option key={p._id} value={p._id}>
-                  {p.label} — {p.width}/{p.aspect} R{p.rim}
-                </option>
-              ))}
-            </select>
-          </div>
-          */}
-          <div className="calculator-tire-input-grid">
-            <div className="field">
-              <label>Width</label>
-              <input type="number" value={tire.width} onChange={(e) => { setTire((t) => ({ ...t, width: Number(e.target.value) })); setLogged(false); }} />
+
+          <div className="tsc-input-row">
+            <div className="tsc-field">
+              <label htmlFor="tsc-width">Width</label>
+              <input id="tsc-width" type="number" value={tire.width} onChange={updateTire("width")} />
             </div>
-            <div className="field">
-              <label>Aspect</label>
-              <input type="number" value={tire.aspect} onChange={(e) => { setTire((t) => ({ ...t, aspect: Number(e.target.value) })); setLogged(false); }} />
+            <div className="tsc-field">
+              <label htmlFor="tsc-aspect">Aspect</label>
+              <input id="tsc-aspect" type="number" value={tire.aspect} onChange={updateTire("aspect")} />
             </div>
-            <div className="field">
-              <label>Rim</label>
-              <input type="number" value={tire.rim} onChange={(e) => { setTire((t) => ({ ...t, rim: Number(e.target.value) })); setLogged(false); }} />
+            <div className="tsc-field">
+              <label htmlFor="tsc-rim">Rim</label>
+              <input id="tsc-rim" type="number" value={tire.rim} onChange={updateTire("rim")} />
             </div>
           </div>
 
-          {/* <div className="range-toggle mt-10">
-            <button type="button" className={unit === "in" ? "active" : ""} onClick={() => setUnit("in")}>inches</button>
-            <button type="button" className={unit === "mm" ? "active" : ""} onClick={() => setUnit("mm")}>mm</button>
-          </div> */}
-        </div>
-        <div className="calculator-form-item">
-          <div className="wheel-viz">
-            <Tire3DVisualizer tire={tire} label={`${tire.width}/${tire.aspect}R${tire.rim}`} accent="#FF6F91" height={240} variant="calculator" />
-          </div>
-        </div>
-        <div className="calculator-form-item formula-table-container">
-          {/* <p className="tire-size-string">
-            {tire.width}/{tire.aspect} R{tire.rim} · equivalent inch size ≈ {equivalentInchSize(tire)}
-          </p> */}
-          {/* <div class="table-responsive">
-            <table class="compare-table formula-table">
+          <div className="tsc-table-wrap">
+            <table className="tsc-table tsc-table-2">
               <thead>
-                <tr>
-                  <th>Spec</th>
-                  <th>Formula</th>
-                </tr>
+                <tr><th>Spec</th><th>Value</th></tr>
               </thead>
               <tbody>
-                <tr>
-                  <td class="compare-table-label">Overall Height</td>
-                  <td class="compare-table-value">(sidewall height × 2) + diameter</td>
-                </tr>
-                Hidden for now:
-                <tr>
-                  <td class="compare-table-label">Diameter</td>
-                  <td class="compare-table-value">rim + 2 × sidewall height</td>
-                </tr>
-               
-                <tr>
-                  <td class="compare-table-label">Width</td>
-                  <td class="compare-table-value">width (mm) ÷ 25.4</td>
-                </tr>
-                <tr>
-                  <td class="compare-table-label">Sidewall</td>
-                  <td class="compare-table-value">(width × aspect ÷ 100) ÷ 25.4</td>
-                </tr>
-                Hidden for now:
-                <tr>
-                  <td class="compare-table-label">Circumference</td>
-                  <td class="compare-table-value">π × diameter</td>
-                </tr>
-                <tr>
-                  <td class="compare-table-label">Revs / mile</td>
-                  <td class="compare-table-value">1 ÷ (circumference in miles)</td>
-                </tr>
-               
-              </tbody>
-            </table>
-          </div> */}
-          <div className="table-responsive">
-            <table className="compare-table">
-              <thead>
-                <tr>
-                  <th>Spec</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className="compare-table-label">Overall Height</td><td className="compare-table-value">{fmt(spec.overallHeight)}</td></tr>
-                {/* Hidden for now:
-              <tr><td className="compare-table-label">Diameter</td><td className="compare-table-value">{fmt(spec.diameter)}</td></tr>
-              */}
-                <tr><td className="compare-table-label">Width</td><td className="compare-table-value">{fmt(spec.width)}</td></tr>
-                <tr><td className="compare-table-label">Sidewall</td><td className="compare-table-value">{fmt(spec.sidewall)}</td></tr>
-                {/* Hidden for now:
-              <tr><td className="compare-table-label">Circumference</td><td className="compare-table-value">{fmt(spec.circumference)}</td></tr>
-              <tr><td className="compare-table-label">Revs / mile</td><td className="compare-table-value">{spec.revsPerMile.toFixed(0)}</td></tr>
-              */}
+                <tr><td>Overall Height</td><td className="tsc-value">{fmt(spec.overallHeight)}</td></tr>
+                <tr><td>Width</td><td className="tsc-value">{fmt(spec.width)}</td></tr>
+                <tr><td>Sidewall</td><td className="tsc-value">{fmt(spec.sidewall)}</td></tr>
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* <div className="card compare-result-card">
-        <div className="wheel-viz">
-          <Tire3DVisualizer tire={tire} label={`${tire.width}/${tire.aspect}R${tire.rim}`} accent="#FF6F91" height={240} variant="calculator" />
-        </div>
-
-        <div className="table-responsive">
-          <table className="compare-table">
-            <thead>
-              <tr>
-                <th>Spec</th>
-                <th>Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td className="compare-table-label">Overall Height</td><td className="compare-table-value">{fmt(spec.overallHeight)}</td></tr>
-              Hidden for now:
-              <tr><td className="compare-table-label">Diameter</td><td className="compare-table-value">{fmt(spec.diameter)}</td></tr>
-             
-              <tr><td className="compare-table-label">Width</td><td className="compare-table-value">{fmt(spec.width)}</td></tr>
-              <tr><td className="compare-table-label">Sidewall</td><td className="compare-table-value">{fmt(spec.sidewall)}</td></tr>
-              Hidden for now:
-              <tr><td className="compare-table-label">Circumference</td><td className="compare-table-value">{fmt(spec.circumference)}</td></tr>
-              <tr><td className="compare-table-label">Revs / mile</td><td className="compare-table-value">{spec.revsPerMile.toFixed(0)}</td></tr>
-             
-            </tbody>
-          </table>
-        </div>
-
-        <TireSuggestions tire={tire} />
-      </div> */}
-
-      <div className="card">
-        <div className={`section-title-row${convertOpen ? "" : " tight"}`}>
-          <div>
-            <h3>Convert to a different wheel size?</h3>
-            <p>Keeps the same aspect ratio and shows the speedometer effect of the swap.</p>
+        {/* ───────── Right: convert to a different wheel size ───────── */}
+        <section className="tsc-card">
+          <div className="tsc-card-head">
+            <div>
+              <h3>Convert to a different wheel size?</h3>
+              <p>Keeps the same aspect ratio and shows the speedometer effect of the swap.</p>
+            </div>
+            {/* <button type="button" className="btn btn-ghost" onClick={handleConvertClick} aria-expanded={convertOpen}>
+              <RefreshCw size={14} />
+              {convertOpen ? "Hide" : "Show"}
+            </button> */}
           </div>
-          <button type="button" className="btn btn-ghost" onClick={handleConvertClick}>
-            <RefreshCw size={14} /> {convertOpen ? "Hide" : "Show"}
-          </button>
-        </div>
 
-        {convertOpen && (
-          <>
-            <div className="tire-input-grid-tirecalculator narrow">
-              <div className="field">
-                <label>New rim</label>
-                <input type="number" value={targetRim} onChange={(e) => setTargetRim(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="wheel-viz">
-              <div className="wheel-col">
-                <Tire3DVisualizer tire={tire} label={`Current · ${tire.width}/${tire.aspect}R${tire.rim}`} accent="#FF6F91" height={220} variant="calculator" />
-              </div>
-              <div className="wheel-col">
-                <Tire3DVisualizer tire={convertedTire} label={`New · ${convertedTire.width}/${convertedTire.aspect}R${convertedTire.rim}`} accent="#8B7CF6" height={220} variant="calculator" />
-              </div>
-            </div>
-
-            <div className={`speedo-banner ${Math.abs(diffPct) > 3 ? "warn" : "ok"}`}>
-              New size changes overall diameter by <strong>{diffPct >= 0 ? "+" : ""}{diffPct.toFixed(2)}%</strong> vs. current —
-              {" "}
-              {Math.abs(diffPct) > 3
-                ? " outside the ±3% range generally considered safe for speedometer accuracy."
-                : " within the typical ±3% safe range for speedometer accuracy."}
-            </div>
-
-            <div className="table-responsive">
-              <table className="compare-table">
-                <thead>
-                  <tr><th>Spec</th><th>Current</th><th>New</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td className="compare-table-label">Overall Height</td><td className="compare-table-value">{fmt(spec.overallHeight)}</td><td className="compare-table-value">{fmt(convertedSpec.overallHeight)}</td></tr>
-                  {/* Hidden for now:
-                  <tr><td className="compare-table-label">Diameter</td><td className="compare-table-value">{fmt(spec.diameter)}</td><td className="compare-table-value">{fmt(convertedSpec.diameter)}</td></tr>
-                  */}
-                  <tr><td className="compare-table-label">Width</td><td className="compare-table-value">{fmt(spec.width)}</td><td className="compare-table-value">{fmt(convertedSpec.width)}</td></tr>
-                  <tr><td className="compare-table-label">Sidewall</td><td className="compare-table-value">{fmt(spec.sidewall)}</td><td className="compare-table-value">{fmt(convertedSpec.sidewall)}</td></tr>
-                  {/* Hidden for now:
-                  <tr><td className="compare-table-label">Circumference</td><td className="compare-table-value">{fmt(spec.circumference)}</td><td className="compare-table-value">{fmt(convertedSpec.circumference)}</td></tr>
-                  <tr><td className="compare-table-label">Revs / mile</td><td className="compare-table-value">{spec.revsPerMile.toFixed(0)}</td><td className="compare-table-value">{convertedSpec.revsPerMile.toFixed(0)}</td></tr>
-                  */}
-                </tbody>
-              </table>
-            </div>
-
-            <h4 className="subheading-spaced">
-              <Gauge size={14} className="icon-inline-sm" />
-              Speedometer Error
-            </h4>
-
-            <div className="table-responsive">
-              <table className="compare-table">
-                <thead>
-                  <tr><th>Reading (mph)</th>{speedoTable.map((r) => <th key={r.reading}>{r.reading}</th>)}</tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="compare-table-label">Actual speed</td>
-                    {speedoTable.map((r) => <td key={r.reading} className="compare-table-value">{r.actual}</td>)}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* <TireSuggestions tire={convertedTire} label="new wheel size" />    */}
-          </>
-        )}
-      </div>
-
-      {/* Hidden: "Alternate tire sizes" are built from Tire Size Option presets (switched off)
-      <div className="card alternate-tire-size">
-        <h3 className="mb-10">Alternate tire sizes (within 1" diameter)</h3>
-        {alternates.length === 0 ? (
-          <p className="text-muted">No saved presets fall within 1" of this size yet — add more in Tire Size Option.</p>
-        ) : (
-          <div className="preset-grid">
-            {alternates.map((a) => (
-              <div key={a._id} className="card preset-card cursor-pointer" onClick={() => setTire({ width: a.width, aspect: a.aspect, rim: a.rim })}>
-                <div>
-                  <p className="preset-label">{a.label}</p>
-                  <p className="preset-size">{a.width}/{a.aspect} R{a.rim}</p>
-                  <p className="preset-diameter">≈ {a.diameter.toFixed(1)}" diameter</p>
+          {convertOpen && (
+            <>
+              <div className="tsc-rim-row">
+                <label className="tsc-rim-label" htmlFor="tsc-new-rim">New rim</label>
+                <input
+                  id="tsc-new-rim"
+                  className="tsc-rim-input"
+                  type="number"
+                  value={targetRim}
+                  onChange={(e) => setTargetRim(e.target.value)}
+                />
+                <div className={`tsc-banner ${outOfRange ? "warn" : "ok"}`} role="status">
+                  <p>
+                    New size changes overall diameter by <strong>{diffPct >= 0 ? "+" : ""}{diffPct.toFixed(2)}%</strong> vs. current —{" "}
+                    {outOfRange
+                      ? "outside the ±3% range generally considered safe for speedometer accuracy."
+                      : "within the typical ±3% safe range for speedometer accuracy."}
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+
+              <div className="tsc-table-wrap">
+                <table className="tsc-table tsc-table-3">
+                  <thead>
+                    <tr><th>Spec</th><th>Current</th><th>New</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Overall Height</td>
+                      <td className="tsc-value">{fmt(spec.overallHeight)}</td>
+                      <td className="tsc-value">{fmt(convertedSpec.overallHeight)}</td>
+                    </tr>
+                    <tr>
+                      <td>Width</td>
+                      <td className="tsc-value">{fmt(spec.width)}</td>
+                      <td className="tsc-value">{fmt(convertedSpec.width)}</td>
+                    </tr>
+                    <tr>
+                      <td>Sidewall</td>
+                      <td className="tsc-value">{fmt(spec.sidewall)}</td>
+                      <td className="tsc-value">{fmt(convertedSpec.sidewall)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h4 className="tsc-subheading">
+                <Gauge size={14} />
+                Speedometer Error
+              </h4>
+
+              <div className="tsc-table-wrap">
+                <table className="tsc-table tsc-table-speedo">
+                  <thead>
+                    <tr>
+                      <th>Reading (mph)</th>
+                      {speedoTable.map((r) => <th key={r.reading}>{r.reading}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Actual speed</td>
+                      {speedoTable.map((r) => <td key={r.reading} className="tsc-value">{r.actual}</td>)}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </section>
       </div>
-      */}
     </div>
   );
 }

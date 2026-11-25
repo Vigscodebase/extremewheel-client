@@ -1,12 +1,12 @@
 import { Eye, Layers, Save, Search, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PageHeader from "../components/pageheader";
 import Modal from "../components/modal";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
-import { sidewallHeightInches } from "../utils/tireMath";
+import { tireComparisonMetrics } from "../utils/tireMath";
 // import { useTireOptionsQuery } from "../hooks/queries/useTireOptions"; // hidden: Tire Size Option feature is switched off
 import { usePlusSizeSearch, useSavePlusSizeMatch } from "../hooks/queries/usePlusSize";
 import {
@@ -23,8 +23,11 @@ import {
 
 const emptyOe = { width: 225, aspect: 65, rim: 17, targetRim: "" };
 
-// The Plus Size (New rim) table in the first box only lists the closest few matches.
-const PLUS_SIZE_MAX_RESULTS = 3;
+// The Plus Size (New rim) table lists EVERY size that fits the OE height window
+// on that rim, but only this many rows are visible at once — the rest scroll
+// inside the table so the whole page stays within one screen. (The matching
+// max-height is derived from this number in global.css via --ps-visible-rows.)
+const PLUS_SIZE_VISIBLE_ROWS = 6;
 
 const SORT_OPTIONS = [
   { value: "combined", label: "Best overall match (height + tread)" },
@@ -73,12 +76,12 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
   const step = !year ? 1 : !make ? 2 : !model ? 3 : !typeOption ? 4 : 5;
 
   return (
-    <div className="card mt-20">
+    <section className="card ps-panel ps-vehicle">
       <h3 className="mb-16">
         <Layers size={16} className="icon-inline" />
         Vehicle-specific upgrade sizes
       </h3>
-      <p className="text-muted fs-13 mb-16">
+      <p className="text-muted fs-13 mb-16 ps-hint">
         Look up the manufacturer-approved upgrade tire sizes for a specific vehicle from the Application Guide — by wheel
         diameter, and any staggered front/rear fitment options — separate from the tolerance search above.
       </p>
@@ -118,6 +121,7 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
         </div>
       </div>
 
+      <div className="ps-body">
       {step < 5 ? (
         <div className="empty-state-card">
           {step === 1 && "Start by selecting a year."}
@@ -208,7 +212,8 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
           );
         })
       )}
-    </div>
+      </div>
+    </section>
   );
 }
 
@@ -226,6 +231,89 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
 // at very slightly different tails. Showing only the 2 decimals both paths
 // agree on avoids that entirely.
 const formatInches = (n) => (n == null || !Number.isFinite(Number(n)) ? "—" : Number(n).toFixed(2));
+
+const round2 = (n) => Math.round(n * 100) / 100;
+
+// Height / tread differences vs the OE are shown in INCHES (2dp, e.g. +3.92),
+// not as a percentage. The % figures the server still sends are only used for
+// ranking, never displayed. Each side is rounded to 2dp first
+// (tireComparisonMetrics) and then subtracted, so the difference on screen
+// always equals what you get subtracting the two displayed numbers by hand.
+const formatDiffInches = (n) => {
+  if (!Number.isFinite(n)) return "—";
+  const fixed = n.toFixed(2);
+  return n > 0 ? `+${fixed}` : fixed;
+};
+
+// Overall height / tread width / sidewall height of the OE size currently
+// typed in — shown right under the OE inputs and recalculated as you type.
+function OeSpecs({ specs }) {
+  const items = [
+    ["Overall height", specs?.overallHeight],
+    ["Tread width", specs?.treadWidth],
+    ["Sidewall height", specs?.sidewallHeight],
+  ];
+  return (
+    <dl className="ps-specs" aria-label="OE size specs in inches">
+      {items.map(([label, value]) => (
+        <div key={label} className="ps-spec">
+          <dt title={label}>{label}</dt>
+          <dd>{value == null ? "—" : `${value.toFixed(2)}"`}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+// One results table for both the "Plus Size matches" box and the OE
+// closest-matches box. `oe` is the OE size of the search that produced `rows`.
+function ResultsTable({ rows, oe, onPreview }) {
+  const oeMetrics = tireComparisonMetrics(oe);
+  return (
+    <table className="compare-table plus-results-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th className="plus-size-col">Size</th>
+          <th title="Overall height, in inches">Overall height</th>
+          <th title="Tread width, in inches">Tread width</th>
+          <th title="Sidewall Height = Tread Width × Aspect Ratio, in inches">Sidewall height</th>
+          <th title="Overall height minus the OE overall height, in inches">Height diff (in)</th>
+          <th title="Tread width minus the OE tread width, in inches">Tread diff (in)</th>
+          <th>3D</th>
+          {/* <th>Save</th> — hidden, see saveMatch() in PlusSizeOptions */}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => {
+          const m = tireComparisonMetrics(r);
+          const heightDiff = round2(m.overallHeight - oeMetrics.overallHeight);
+          const treadDiff = round2(m.treadWidth - oeMetrics.treadWidth);
+          return (
+            <tr key={r._id}>
+              <td>
+                <span className={`badge ${r.rank === 1 ? "badge-live" : "badge-model"}`}>{r.rank}</span>
+              </td>
+              <td className="compare-table-value plus-size-col">
+                {r.label ? `${r.label} — ` : ""}{r.width} {r.aspect} {r.rim}
+              </td>
+              <td>{formatInches(m.overallHeight)}</td>
+              <td>{formatInches(m.treadWidth)}</td>
+              <td>{formatInches(m.sidewallHeight)}</td>
+              <td className={heightDiff === 0 ? "text-mint" : undefined}>{formatDiffInches(heightDiff)}</td>
+              <td className={treadDiff === 0 ? "text-mint" : undefined}>{formatDiffInches(treadDiff)}</td>
+              <td>
+                <button type="button" className="icon-btn" title="Preview in 3D" onClick={() => onPreview(r)}>
+                  <Eye size={14} />
+                </button>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
 
 // The OE size's overall height / tread width plus the lower & upper limit of
 // each. Only the overall-height window decides which sizes appear in the
@@ -318,7 +406,13 @@ export default function PlusSizeOptions() {
       }
       : emptyOe
   );
-  const [searched, setSearched] = useState(false);
+  // Live specs of the OE size typed in (inches, 2dp) — shown next to the OE fields.
+  const oeSpecs = useMemo(() => {
+    const width = Number(oe.width);
+    const aspect = Number(oe.aspect);
+    const rim = Number(oe.rim);
+    return width && aspect && rim ? tireComparisonMetrics({ width, aspect, rim }) : null;
+  }, [oe.width, oe.aspect, oe.rim]);
   // 3D preview target: { source: "oe" | "plus", row, oe } — `oe` is the OE size
   // of the search that produced the row (not the live inputs), so editing the
   // fields above never changes an open or later preview of an earlier result.
@@ -355,7 +449,6 @@ export default function PlusSizeOptions() {
 
   const runSearch = async (e) => {
     e.preventDefault();
-    setSearched(true);
     setPreview((cur) => (cur?.source === "oe" ? null : cur));
     setSavedIds(new Set());
     await searchMutation.mutateAsync({
@@ -374,8 +467,9 @@ export default function PlusSizeOptions() {
     });
   };
 
-  // "Plus Size" — same search/calculation as above, narrowed to the New rim,
-  // keeping only the top 3 closest matches.
+  // "Plus Size" — same search/calculation as above, narrowed to the New rim.
+  // Every size that fits is kept (closest first); the table shows
+  // PLUS_SIZE_VISIBLE_ROWS at a time and scrolls for the rest.
   const runPlusSearch = async (e) => {
     e.preventDefault();
     if (!oe.targetRim) return;
@@ -391,7 +485,7 @@ export default function PlusSizeOptions() {
   const data = searchMutation.data;
   const results = data?.results || [];
   const plusData = plusMutation.data;
-  const plusResults = (plusData?.results || []).slice(0, PLUS_SIZE_MAX_RESULTS);
+  const plusResults = plusData?.results || [];
 
   const saveMatch = async (r) => {
     await saveMutation.mutateAsync({
@@ -409,321 +503,168 @@ export default function PlusSizeOptions() {
   };
 
   return (
-    <div>
+    <div className="plus-size-page">
       <PageHeader
         eyebrow="Tire library"
         title="Plus Size Options"
         subtitle="Find alternate tire sizes that stay within tolerance of the OE overall diameter and tread width."
       />
 
-      <div className="card tire-plus-form">
-      <div className="plus-size-layout">
-      <div className="plus-size-inputs">
-      <form onSubmit={runSearch}>
-        {/* The OE library download / upload buttons now live on the Reporting & Data Export page. */}
-        <h3 className="mb-16">OE (original equipment) size</h3>
+      {/*
+        One-frame layout (see "Plus Size Options — one-frame layout" in global.css):
+        on a desktop screen this grid fills the viewport and each box scrolls
+        on its own, so the page itself never scrolls. On smaller screens the
+        boxes simply stack.
+      */}
+      <div className="ps-grid">
+        <section className="card ps-panel ps-inputs">
+          <form className="ps-block" onSubmit={runSearch}>
+            {/* The OE library download / upload buttons now live on the Reporting & Data Export page. */}
+            <h3>OE (original equipment) size</h3>
 
-        {/* Hidden: "Load a saved preset" (Tire Size Option presets are switched off)
-        <div className="field field-mb">
-          <label>Load a saved preset</label>
-          <select onChange={(e) => e.target.value && applyPreset(e.target.value)} defaultValue="">
-            <option value="">Custom size…</option>
-            {(presets || []).map((p) => (
-              <option key={p._id} value={p._id}>
-                {p.label} — {p.width}/{p.aspect} R{p.rim}
-              </option>
-            ))}
-          </select>
-        </div>
-        */}
+            {/* Hidden: "Load a saved preset" (Tire Size Option presets are switched off) — see applyPreset above. */}
 
-        <div className="tire-input-grid">
-          <div className="field">
-            <label>Width</label>
-            <input {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.width} value={oe.width} onChange={(e) => setOe((f) => ({ ...f, width: onlyDigits(e.target.value, TIRE_MAX.width) }))} />
-          </div>
-          <div className="field">
-            <label>Aspect</label>
-            <input {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.aspect} value={oe.aspect} onChange={(e) => setOe((f) => ({ ...f, aspect: onlyDigits(e.target.value, TIRE_MAX.aspect) }))} />
-          </div>
-          <div className="field">
-            <label>Rim</label>
-            <input {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.rim} value={oe.rim} onChange={(e) => setOe((f) => ({ ...f, rim: onlyDigits(e.target.value, TIRE_MAX.rim) }))} />
-          </div>
-          {/*
-            TEMPORARILY DISABLED — Target rim (optional). See the note by
-            the commented-out heightTolerancePct/treadTolerancePct/sortBy
-            state near the top of this component for why: an empty-field
-            round-trip bug in its two sibling tolerance fields was making
-            every search return zero matches, so all three (plus Sort
-            results by below) are disabled together for now, and the
-            search always runs OE width/aspect/rim only, against every
-            rim in oe_tiresize. Re-enable by restoring this block, the
-            state above, and the payload fields in runSearch.
-          <div className="field">
-            <label>Target rim (optional)</label>
-            <input
-              type="number"
-              placeholder="e.g. 18"
-              value={oe.targetRim}
-              onChange={(e) => setOe((f) => ({ ...f, targetRim: e.target.value }))}
-            />
-          </div>
-          */}
-        </div>
-
-        {/*
-          TEMPORARILY DISABLED — Height tolerance / Tread width tolerance /
-          Sort results by. Root cause: clearing (or never filling in)
-          Height/Tread tolerance left them as "" in state, and
-          Number("") === 0 in JS — not NaN, not "no override" — so the
-          search silently ran at a 0% tolerance and always came back with
-          "No saved tire sizes fall within tolerance", regardless of the OE
-          size entered. Disabled here in step with the matching
-          override-handling in server.js's /plus-size/search (also
-          commented out there), so every search now falls back to the
-          server's own defaults (3% height / 15% tread / combined sort)
-          every time. Re-enable by restoring this block, the state near
-          the top of this component, and the payload fields in runSearch —
-          once the onChange handlers below are fixed to store `undefined`
-          (not `""`) for an empty field, e.g.
-          `onChange={(e) => setHeightTolerancePct(e.target.value === "" ? undefined : e.target.value)}`,
-          and runSearch only sends a tolerance field when it's actually set.
-        <div className="field-mb-lg mt-16">
-          <label className="fs-11 text-muted" style={{ display: "block", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.02em" }}>
-            Configurable height &amp; tread width tolerance
-          </label>
-          <div className="tire-input-grid">
-            <div className="field">
-              <label>Height tolerance (±%)</label>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                value={heightTolerancePct}
-                onChange={(e) => setHeightTolerancePct(e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label>Tread width tolerance (±%)</label>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                value={treadTolerancePct}
-                onChange={(e) => setTreadTolerancePct(e.target.value)}
-              />
-            </div>
-            <div className="field sort-results-field">
-              <label>Sort results by</label>
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                {SORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-        */}
-
-        <div className="modal-actions modal-actions-start mt-8">
-          <button type="submit" className="btn btn-accent" disabled={searchMutation.isPending}>
-            <Search size={16} /> {searchMutation.isPending ? "Searching…" : "Find matches"}
-          </button>
-        </div>
-      </form>
-
-      <form className="plus-size-section" onSubmit={runPlusSearch}>
-        <h3 className="mb-16">Plus Size</h3>
-        <div className="tire-input-grid">
-          <div className="field">
-            <label>New rim</label>
-            <input
-              {...NUMERIC_INPUT_PROPS}
-              maxLength={TIRE_MAX.rim}
-              required
-              placeholder="e.g. 18"
-              value={oe.targetRim}
-              onChange={(e) => setOe((f) => ({ ...f, targetRim: onlyDigits(e.target.value, TIRE_MAX.rim) }))}
-            />
-          </div>
-        </div>
-
-        <div className="modal-actions modal-actions-start mt-8">
-          <button type="submit" className="btn btn-accent" disabled={plusMutation.isPending}>
-            <Search size={16} /> {plusMutation.isPending ? "Searching…" : "Find matches"}
-          </button>
-        </div>
-      </form>
-      </div>
-
-      <div className="plus-size-results-pane">
-        <h3 className="mb-16">Plus Size matches</h3>
-        {plusMutation.isError && (
-          <div className="alert-error">
-            {plusMutation.error?.response?.data?.message || "Search failed. Please try again."}
-          </div>
-        )}
-
-        {plusData && (
-          <div className="plus-size-results">
-            <p className="text-muted fs-13 mb-8">
-              Top {PLUS_SIZE_MAX_RESULTS} plus-size matches for <strong>{plusData.oe.width}/{plusData.oe.aspect} R{plusData.oe.rim}</strong> on a{" "}
-              <strong>{plusMutation.variables?.targetRim}" rim</strong>.
-            </p>
-            {plusResults.length === 0 ? (
-              <div className="empty-state-card">
-                No saved tire sizes on a {plusMutation.variables?.targetRim}" rim fall within tolerance. Try a different new rim.
+            <div className="tire-input-grid ps-oe-fields">
+              <div className="field">
+                <label>Width</label>
+                <input {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.width} value={oe.width} onChange={(e) => setOe((f) => ({ ...f, width: onlyDigits(e.target.value, TIRE_MAX.width) }))} />
               </div>
-            ) : (
-              <div className="table-responsive plus-size-results-scroll">
-                <table className="compare-table plus-results-table">
-                  <thead>
-                    <tr>
-                      <th>Rank</th>
-                      <th className="plus-size-col">Size</th>
-                      <th>Overall height</th>
-                      <th>Tread width</th>
-                      <th title="Sidewall Height = Tread Width × Aspect Ratio">Sidewall height</th>
-                      <th>Height diff</th>
-                      <th>Tread diff</th>
-                      <th>3D</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {plusResults.map((r) => (
-                      <tr key={r._id}>
-                        <td>
-                          <span className={`badge ${r.rank === 1 ? "badge-live" : "badge-model"}`}>{r.rank}</span>
-                        </td>
-                        <td className="compare-table-value plus-size-col">
-                          {r.label ? `${r.label} — ` : ""}{r.width} {r.aspect} {r.rim}
-                        </td>
-                        <td>{formatInches(r.overallHeightIn)}</td>
-                        <td>{formatInches(r.treadWidthIn)}</td>
-                        <td>{formatInches(sidewallHeightInches({ width: r.width, aspect: r.aspect }))}</td>
-                        <td className={Math.abs(r.heightDiffPct) < 0.01 ? "text-mint" : undefined}>
-                          {r.heightDiffPct >= 0 ? "+" : ""}{r.heightDiffPct}%
-                        </td>
-                        <td>{r.treadDiffPct >= 0 ? "+" : ""}{r.treadDiffPct}%</td>
-                        <td>
-                          <button
-                            type="button"
-                            className="icon-btn"
-                            title="Preview in 3D"
-                            onClick={() => togglePreview("plus", r, plusData.oe)}
-                          >
-                            <Eye size={14} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="field">
+                <label>Aspect</label>
+                <input {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.aspect} value={oe.aspect} onChange={(e) => setOe((f) => ({ ...f, aspect: onlyDigits(e.target.value, TIRE_MAX.aspect) }))} />
               </div>
-            )}
-          </div>
-        )}
-        {!plusData && !plusMutation.isError && (
-          <div className="empty-state-card">
-            Enter a New rim and click Find matches to see the top {PLUS_SIZE_MAX_RESULTS} plus-size matches here.
-          </div>
-        )}
-      </div>
-      </div>
-      </div>
-
-      {searchMutation.isError && (
-        <div className="alert-error mt-16">
-          {searchMutation.error?.response?.data?.message || "Search failed. Please try again."}
-        </div>
-      )}
-
-      {data && (
-        <div className="card compare-result-card mt-20">
-          <div className="speedo-banner ok">
-            OE size <strong>{data.oe.width}/{data.oe.aspect} R{data.oe.rim}</strong> — overall height{" "}
-            <strong>{formatInches(data.oe.overallHeightIn)}"</strong>, tread width <strong>{formatInches(data.oe.treadWidthIn)}"</strong>. Showing matches
-            within ±{data.tolerances.heightPct}% overall height (tread width is shown for reference, not used to filter), ranked by{" "}
-            {SORT_OPTIONS.find((o) => o.value === data.sortBy || (data.sortBy || "").startsWith(o.value))?.label.toLowerCase() ||
-              "closeness to OE"}
-            .
-          </div>
-
-          <OeToleranceWindow oe={data.oe} tolerances={data.tolerances} />
-
-          {results.length === 0 ? (
-            <div className="empty-state-card">
-              {/* Hidden: pointer to the Tire Size Option page (switched off)
-              No saved tire sizes fall within tolerance. Add more sizes on the Tire Size Option page, or widen your target rim /
-              tolerances above.
-              */}
-              No saved tire sizes fall within tolerance. Try widening your target rim / tolerances above.
+              <div className="field">
+                <label>Rim</label>
+                <input {...NUMERIC_INPUT_PROPS} maxLength={TIRE_MAX.rim} value={oe.rim} onChange={(e) => setOe((f) => ({ ...f, rim: onlyDigits(e.target.value, TIRE_MAX.rim) }))} />
+              </div>
+              {/* TEMPORARILY DISABLED — Target rim (optional) and the Height / Tread width tolerance + Sort
+                  results by controls. See the note above the (commented-out) tolerance state for why; restore
+                  them here together with that state and the payload fields in runSearch. */}
             </div>
-          ) : (
-            <div className="table-responsive">
-            <table className="compare-table plus-results-table">
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th className="plus-size-col">Size</th>
-                  <th>Overall height</th>
-                  <th>Tread width</th>
-                  <th title="Sidewall Height = Tread Width × Aspect Ratio">Sidewall height</th>
-                  <th>Height diff</th>
-                  <th>Tread diff</th>
-                  <th>3D</th>
-                  {/* <th>Save</th> */}
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r) => (
-                  <tr key={r._id}>
-                    <td>
-                      <span className={`badge ${r.rank === 1 ? "badge-live" : "badge-model"}`}>{r.rank}</span>
-                    </td>
-                    <td className="compare-table-value plus-size-col">
-                      {r.label ? `${r.label} — ` : ""}{r.width} {r.aspect} {r.rim}
-                    </td>
-                    <td>{formatInches(r.overallHeightIn)}</td>
-                    <td>{formatInches(r.treadWidthIn)}</td>
-                    <td>{formatInches(sidewallHeightInches({ width: r.width, aspect: r.aspect }))}</td>
-                    <td className={Math.abs(r.heightDiffPct) < 0.01 ? "text-mint" : undefined}>
-                      {r.heightDiffPct >= 0 ? "+" : ""}{r.heightDiffPct}%
-                    </td>
-                    <td>{r.treadDiffPct >= 0 ? "+" : ""}{r.treadDiffPct}%</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="icon-btn"
-                        title="Preview in 3D"
-                        onClick={() => togglePreview("oe", r, data.oe)}
-                      >
-                        <Eye size={14} />
-                      </button>
-                    </td>
-                    {/* <td>
-                      <button
-                        type="button"
-                        className="icon-btn"
-                        title="Save this match"
-                        disabled={saveMutation.isPending || savedIds.has(r._id)}
-                        onClick={() => saveMatch(r)}
-                      >
-                        <Save size={14} className={savedIds.has(r._id) ? "text-mint" : undefined} />
-                      </button>
-                    </td> */}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+            <OeSpecs specs={oeSpecs} />
+
+            <button type="submit" className="btn btn-accent" disabled={searchMutation.isPending}>
+              <Search size={16} /> {searchMutation.isPending ? "Searching…" : "Find matches"}
+            </button>
+          </form>
+
+          <form className="ps-block" onSubmit={runPlusSearch}>
+            <h3>Plus Size</h3>
+            <div className="ps-plus-row">
+              <div className="field">
+                <label>New rim</label>
+                <input
+                  {...NUMERIC_INPUT_PROPS}
+                  maxLength={TIRE_MAX.rim}
+                  required
+                  placeholder="e.g. 20"
+                  value={oe.targetRim}
+                  onChange={(e) => setOe((f) => ({ ...f, targetRim: onlyDigits(e.target.value, TIRE_MAX.rim) }))}
+                />
+              </div>
+              <button type="submit" className="btn btn-accent" disabled={plusMutation.isPending}>
+                <Search size={16} /> {plusMutation.isPending ? "Searching…" : "Find matches"}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section className="card ps-panel ps-plus">
+          <div className="ps-panel-head">
+            <h3>Plus Size matches</h3>
+            {plusData && plusResults.length > 0 && <span className="badge badge-model">{plusResults.length} found</span>}
+          </div>
+
+          {plusMutation.isError && (
+            <div className="alert-error">
+              {plusMutation.error?.response?.data?.message || "Search failed. Please try again."}
             </div>
           )}
 
-          {/* <TireSuggestions tire={{ width: Number(oe.width), aspect: Number(oe.aspect), rim: Number(oe.rim) }} label="OE size" />
-          {previewResult && <TireSuggestions tire={previewResult} label={previewResult.label} />} */}
-        </div>
-      )}
+          {plusData && (
+            <>
+              <p className="text-muted fs-13 ps-note">
+                {plusResults.length} plus-size {plusResults.length === 1 ? "match" : "matches"} for{" "}
+                <strong>{plusData.oe.width}/{plusData.oe.aspect} R{plusData.oe.rim}</strong> on a{" "}
+                <strong>{plusMutation.variables?.targetRim}" rim</strong>, closest first
+                {plusResults.length > PLUS_SIZE_VISIBLE_ROWS ? " — scroll the table to see all of them." : "."}
+              </p>
+              {plusResults.length === 0 ? (
+                <div className="empty-state-card">
+                  No saved tire sizes on a {plusMutation.variables?.targetRim}" rim fall within tolerance. Try a different new rim.
+                </div>
+              ) : (
+                <div className="ps-scroll ps-scroll--rows" style={{ "--ps-visible-rows": PLUS_SIZE_VISIBLE_ROWS }}>
+                  <ResultsTable
+                    rows={plusResults}
+                    oe={plusData.oe}
+                    onPreview={(r) => togglePreview("plus", r, plusData.oe)}
+                  />
+                </div>
+              )}
+            </>
+          )}
+          {!plusData && !plusMutation.isError && (
+            <div className="empty-state-card">
+              Enter a New rim and click Find matches to see every plus-size match here.
+            </div>
+          )}
+        </section>
+
+        <section className="card ps-panel ps-oe-results">
+          <div className="ps-panel-head">
+            <h3>Closest matches to the OE size</h3>
+            {data && results.length > 0 && <span className="badge badge-model">{results.length} found</span>}
+          </div>
+
+          {searchMutation.isError && (
+            <div className="alert-error">
+              {searchMutation.error?.response?.data?.message || "Search failed. Please try again."}
+            </div>
+          )}
+
+          {data ? (
+            <>
+              <p className="text-muted fs-13 ps-note">
+                OE size <strong>{data.oe.width}/{data.oe.aspect} R{data.oe.rim}</strong> — overall height{" "}
+                <strong>{formatInches(data.oe.overallHeightIn)}"</strong>, tread width <strong>{formatInches(data.oe.treadWidthIn)}"</strong>.
+                Showing matches within ±{data.tolerances.heightPct}% overall height (tread width is shown for reference, not used to filter), ranked by{" "}
+                {SORT_OPTIONS.find((o) => o.value === data.sortBy || (data.sortBy || "").startsWith(o.value))?.label.toLowerCase() ||
+                  "closeness to OE"}
+                .
+              </p>
+
+              <OeToleranceWindow oe={data.oe} tolerances={data.tolerances} />
+
+              {results.length === 0 ? (
+                <div className="empty-state-card">
+                  {/* Hidden: pointer to the Tire Size Option page (switched off) */}
+                  No saved tire sizes fall within tolerance. Try widening your target rim / tolerances above.
+                </div>
+              ) : (
+                <div className="ps-scroll ps-scroll--fill">
+                  <ResultsTable
+                    rows={results}
+                    oe={data.oe}
+                    onPreview={(r) => togglePreview("oe", r, data.oe)}
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            !searchMutation.isError && (
+              <div className="empty-state-card inline">
+                <TrendingUp size={18} />
+                Enter an OE size and search your saved tire library for the closest plus-size matches.
+              </div>
+            )
+          )}
+        </section>
+
+        {/* Always the last box on the page. */}
+        <VehicleUpgradeSizesCard onUseAsOe={useAsOe} />
+      </div>
 
       <Modal
         open={!!preview}
@@ -757,15 +698,6 @@ export default function PlusSizeOptions() {
         )}
       </Modal>
 
-
-      {!searched && (
-        <div className="card empty-state-card inline mt-20">
-          <TrendingUp size={18} />
-          Enter an OE size above and search your saved tire library for the closest plus-size matches.
-        </div>
-      )}
-
-      <VehicleUpgradeSizesCard onUseAsOe={useAsOe} />
     </div>
   );
 }
