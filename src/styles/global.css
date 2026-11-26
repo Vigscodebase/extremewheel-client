@@ -3964,8 +3964,7 @@ input[type="password"]::-ms-clear {
     }
 
     .preset-grid {
-        grid-template-columns: repeat(4, minmax(255px, 1fr));
-        /* Fix iPad overlapping */
+        grid-template-columns: repeat(2, minmax(255px, 1fr));
     }
 
     .compare-grid {
@@ -4539,7 +4538,7 @@ input[type="password"]::-ms-clear {
     }
 
     .preset-grid {
-        grid-template-columns: repeat(4, minmax(255px, 1fr));
+        grid-template-columns: repeat(2, minmax(255px, 1fr));
     }
 }
 
@@ -4550,6 +4549,10 @@ input[type="password"]::-ms-clear {
 
     .calculator-form-item {
         width: 50%;
+    }
+
+    .preset-grid {
+        grid-template-columns: repeat(2, minmax(255px, 1fr));
     }
 }
 
@@ -8219,6 +8222,7 @@ img[data-image-state="loading"] {
     .vnd-overview-media .vnd-hero {
         aspect-ratio: 2 / 1;
     }
+
 }
 
 @media only screen and (min-width: 1180px) {
@@ -8992,5 +8996,530 @@ img[data-image-state="loading"] {
 
     .plus-size-page .ps-hint {
         display: none;
+    }
+}
+
+/* =====================================================================
+   Tech Data — Attached beige tab bar + single-screen vertical chart
+   Header & tab bar sizing are shared across all Tech Data tabs to
+   prevent any layout shift when switching tabs. Only the 100dvh frame
+   lock is scoped to :has(.techdata-chart-card).
+   ===================================================================== */
+
+.techdata-page .card.techdata-card.techdata-tabbed-card {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.techdata-tabbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    background: var(--color-border);
+    border-bottom: 1px solid rgba(42, 33, 24, 0.08);
+}
+
+.techdata-tabbar::after {
+    content: "";
+    flex: 1 1 24px;
+    height: 1px;
+    margin-left: 10px;
+    background: rgba(42, 33, 24, 0.15);
+}
+
+.techdata-tab {
+    border: 1.5px solid transparent;
+    background: transparent;
+    padding: 6px 16px;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--color-muted);
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.techdata-tab:hover:not(.active) {
+    color: var(--color-ink);
+    background: rgba(255, 255, 255, 0.45);
+}
+
+.techdata-tab:focus-visible {
+    outline: 2px solid var(--color-pink);
+    outline-offset: 2px;
+}
+
+.techdata-tab.active {
+    background: #fff;
+    color: var(--color-ink);
+    border-color: #6E2327;
+    border-color: color-mix(in srgb, var(--color-pink) 45%, var(--color-ink));
+    box-shadow: 0 2px 6px -2px rgba(42, 33, 24, 0.14);
+}
+
+.techdata-tab-panel {
+    padding: 20px 24px;
+    min-width: 0;
+}
+
+@media only screen and (max-width: 767px) {
+    .techdata-tabbar {
+        padding: 8px 14px;
+        gap: 6px;
+    }
+
+    .techdata-tab {
+        padding: 5px 12px;
+        font-size: 13px;
+    }
+
+    .techdata-tab-panel {
+        padding: 16px;
+    }
+}
+
+@media only screen and (max-width: 420px) {
+    .techdata-tabbar::after {
+        display: none;
+    }
+}
+
+/* Base / mobile / tablet stacked chart card */
+.card.techdata-card.techdata-chart-card {
+    margin-top: 14px;
+}
+
+.techdata-wheeloffsetchart {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.techdata-chart-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex: 0 0 auto;
+}
+
+.techdata-chart-head h3 {
+    font-size: 15px;
+    line-height: 1.3;
+    margin: 0;
+}
+
+.techdata-chart-zoom-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-ink);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.techdata-chart-zoom-btn:hover {
+    border-color: var(--color-pink);
+    color: var(--color-pink);
+    background: var(--color-pink-soft);
+}
+
+.techdata-wheeloffsetchart-img {
+    appearance: none;
+    border: none;
+    background: transparent;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-in;
+}
+
+.techdata-wheeloffsetchart-img img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.techdata-chart-lightbox {
+    max-width: min(94vw, 1280px);
+    max-height: 92vh;
+}
+
+.techdata-chart-lightbox img {
+    max-height: 88vh;
+    background: #fff;
+    padding: 8px;
+}
+
+/* Desktop / laptop: shared chrome across ALL Tech Data tabs (zero shift) */
+@media only screen and (min-width: 900px) and (min-height: 600px) {
+    .page-main:has(.techdata-page) {
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+
+    .techdata-page .page-header {
+        margin-bottom: 10px;
+    }
+
+    .techdata-page .page-title {
+        font-size: 22px;
+        margin-top: 0;
+    }
+
+    .techdata-page .techdata-tabbar {
+        padding: 7px 18px;
+    }
+
+    .techdata-page .techdata-tab {
+        padding: 5px 14px;
+        font-size: 13px;
+    }
+
+    .page-main:has(.techdata-chart-card) {
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    .techdata-page:has(.techdata-chart-card) {
+        height: 100%;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .page-header {
+        margin-bottom: 0;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .card.techdata-card.techdata-lookup-card {
+        padding: 0;
+        max-height: 58vh;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-lookup-card .techdata-tab-panel {
+        padding: 12px 18px;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #c9bfb4 transparent;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-grid {
+        column-gap: 24px;
+        row-gap: 10px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-select h3,
+    .techdata-page:has(.techdata-chart-card) .techdata-heading h3 {
+        font-size: 14.5px;
+        margin-bottom: 6px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-fields {
+        gap: 6px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-fields .field {
+        gap: 2px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-fields .field label {
+        font-size: 11.5px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-lookup-card .field select {
+        padding-top: 5px;
+        padding-bottom: 5px;
+        font-size: 12.5px;
+        line-height: 1.35;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-empty {
+        min-height: 0;
+        padding: 16px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-lookup-card .tire3d-canvas-box {
+        height: clamp(115px, 18vh, 165px);
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-tire-hint {
+        font-size: 11px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-table th,
+    .techdata-page:has(.techdata-chart-card) .techdata-table td {
+        padding: 4px 10px;
+        font-size: 12.5px;
+        line-height: 1.3;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-fit {
+        padding-top: 8px;
+        gap: 8px 24px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-panel h4 {
+        font-size: 11px;
+        margin-bottom: 5px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-plus {
+        padding: 4px 8px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-note {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .card.techdata-chart-card {
+        margin-top: 0;
+        padding: 10px 18px 12px;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-wheeloffsetchart {
+        flex: 1 1 0;
+        min-height: 0;
+        overflow: hidden;
+        gap: 6px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-wheeloffsetchart-img {
+        flex: 1 1 0;
+        min-height: 0;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-wheeloffsetchart-img img {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        object-position: center;
+    }
+}
+
+/* Extra-short laptop viewports (e.g. 1366x768) */
+@media only screen and (min-width: 900px) and (min-height: 600px) and (max-height: 760px) {
+    .page-main:has(.techdata-page) {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .techdata-page .page-header {
+        margin-bottom: 8px;
+    }
+
+    .techdata-page .techdata-tabbar {
+        padding: 6px 16px;
+    }
+
+    .techdata-page .techdata-tab {
+        padding: 4px 12px;
+        font-size: 12.5px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) {
+        gap: 8px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .page-header {
+        margin-bottom: 0;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .card.techdata-card.techdata-lookup-card {
+        max-height: 56vh;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-lookup-card .techdata-tab-panel {
+        padding: 10px 16px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-grid {
+        row-gap: 7px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-fields {
+        gap: 4px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-lookup-card .field select {
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .techdata-table th,
+    .techdata-page:has(.techdata-chart-card) .techdata-table td {
+        padding: 3px 9px;
+        font-size: 12px;
+    }
+
+    .techdata-page:has(.techdata-chart-card) .card.techdata-chart-card {
+        padding: 8px 16px 10px;
+    }
+}
+
+/* =====================================================================
+   Shared Attached Beige Tab Bar (Reports & User Management)
+   Mirrors the Tech Data tab bar using existing fonts & palette tokens.
+   Strictly scoped to .app-tabbed-card so other pages are untouched.
+   ===================================================================== */
+
+.card.app-tabbed-card {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-tabbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    background: var(--color-border);
+    border-bottom: 1px solid rgba(42, 33, 24, 0.08);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.app-tabbar::-webkit-scrollbar {
+    display: none;
+}
+
+.app-tabbar::after {
+    content: "";
+    flex: 1 1 24px;
+    height: 1px;
+    margin-left: 10px;
+    background: rgba(42, 33, 24, 0.15);
+}
+
+.app-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1.5px solid transparent;
+    background: transparent;
+    padding: 6px 16px;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--color-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app-tab svg {
+    flex-shrink: 0;
+}
+
+.app-tab:hover:not(.active) {
+    color: var(--color-ink);
+    background: rgba(255, 255, 255, 0.45);
+}
+
+.app-tab:focus-visible {
+    outline: 2px solid var(--color-pink);
+    outline-offset: 2px;
+}
+
+.app-tab.active {
+    background: #fff;
+    color: var(--color-ink);
+    border-color: #6E2327;
+    border-color: color-mix(in srgb, var(--color-pink) 45%, var(--color-ink));
+    box-shadow: 0 2px 6px -2px rgba(42, 33, 24, 0.14);
+}
+
+.app-tab-panel {
+    padding: 24px 28px;
+    min-width: 0;
+}
+
+.app-tab-panel.p-0 {
+    padding: 0;
+}
+
+.reports-range-panel h3 {
+    font-size: 16px;
+    margin-bottom: 18px;
+    text-transform: capitalize;
+}
+
+.um-notice-wrap {
+    padding: 16px 20px 0;
+}
+
+.um-notice-wrap .perm-notice {
+    margin-bottom: 0 !important;
+}
+
+.um-perm-panel>.card {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    margin-bottom: 0;
+    padding: 0;
+    background: transparent;
+}
+
+@media only screen and (max-width: 767px) {
+    .app-tabbar {
+        padding: 8px 14px;
+        gap: 6px;
+    }
+
+    .app-tab {
+        padding: 5px 12px;
+        font-size: 13px;
+    }
+
+    .app-tab-panel:not(.p-0) {
+        padding: 16px;
+    }
+
+    .um-notice-wrap {
+        padding: 14px 14px 0;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    .app-tabbar::after {
+        display: none;
+    }
+}
+
+@media (width: 1024px) {
+    .preset-grid {
+        grid-template-columns: repeat(3, minmax(240px, 1fr));
     }
 }

@@ -1,5 +1,6 @@
 import { ArrowUp, FilterX } from "lucide-react";
 import { useMemo, useState } from "react";
+import { filterModelYears } from "../utils/validation";
 import { useAuth } from "../context/authcontext";
 import useDebouncedValue from "../hooks/useDebouncedValue";
 import { useCustomersQuery } from "../hooks/queries/useCustomers";
@@ -70,7 +71,7 @@ export default function SavedComparisonsList({ onApply }) {
   const makeOptions = facets?.makes ?? [];
   const modelOptions = filters.make ? facets?.models ?? [] : [];
   const typeOptions = filters.make && filters.model ? facets?.types ?? [] : [];
-  const yearOptions = facets?.years ?? [];
+  const yearOptions = useMemo(() => filterModelYears(facets?.years), [facets?.years]);
 
   // Customers (staff / admin only) — the same shared list Vehicle Notes uses.
   // The customer's name, plus their email when another customer shares that exact name.

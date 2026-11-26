@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ConfirmDialog from "./confirmdialog";
 import CustomerFormModal from "./CustomerFormModal";
 import CustomerSelect from "./CustomerSelect";
 import EditableSelect from "./EditableSelect";
 import Modal from "./modal";
 import { useAuth } from "../context/authcontext";
+import { MAX_MODEL_YEAR, MIN_MODEL_YEAR, cleanYearInput, filterModelYears, modelYearProblem } from "../utils/validation";
 import { useCustomersQuery, useDeleteCustomer } from "../hooks/queries/useCustomers";
 import { useCreateSavedComparison } from "../hooks/queries/useSavedComparisons";
 import {
@@ -76,6 +77,8 @@ export default function SaveComparisonModal({ tireA, tireB, diffPct, onClose, on
   const { data: lookupModels, isLoading: loadingLookupModels } = useVehicleLookupModels(form.make);
   const { data: lookupTypes, isLoading: loadingLookupTypes } = useVehicleLookupTypes(form.make, form.model);
   const { data: lookupYears, isLoading: loadingLookupYears } = useVehicleLookupYears();
+  // Only 1950–2030, ascending.
+  const yearOptions = useMemo(() => filterModelYears(lookupYears), [lookupYears]);
 
   // Deleting an entry from the dropdown lists. `lookupDelete` is the pending
   // confirmation: { kind, make, model, type, value }.
@@ -130,6 +133,11 @@ export default function SaveComparisonModal({ tireA, tireB, diffPct, onClose, on
     // Same rule as the Vehicle Notes form (and the server).
     if (!form.name.trim() || !form.make || !form.model || !form.type) {
       setFormError("Vehicle name, make, model and type are required.");
+      return;
+    }
+    const yearError = modelYearProblem(form.year, "Year");
+    if (yearError) {
+      setFormError(yearError);
       return;
     }
 
@@ -282,12 +290,14 @@ export default function SaveComparisonModal({ tireA, tireB, diffPct, onClose, on
               label="Year"
               value={form.year}
               onChange={(val) => setForm((f) => ({ ...f, year: val }))}
-              options={lookupYears}
+              options={yearOptions}
               loading={loadingLookupYears}
               placeholder="Select year"
               addNewLabel="+ Add new year…"
-              customPlaceholder="2023"
+              customPlaceholder={`${MIN_MODEL_YEAR}–${MAX_MODEL_YEAR}`}
               canAddNew={isStaffOrAdmin}
+              transformInput={cleanYearInput}
+              inputProps={{ inputMode: "numeric", maxLength: 4, autoComplete: "off" }}
               onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "year", value }) : undefined}
             />
           </div>

@@ -181,147 +181,165 @@ export default function UserManagement() {
         }
       />
 
-      <div className="tabbar">
-        <button type="button" className={tab === "users" ? "active" : ""} onClick={() => setTab("users")}>
-          <UsersIcon size={15} /> Users
-        </button>
-        <button type="button" className={tab === "access" ? "active" : ""} onClick={() => setTab("access")}>
-          <ShieldCheck size={15} /> Permissions
-        </button>
-      </div>
-
-      {tab === "users" && resetNotice && (
-        <div className="speedo-banner warn perm-notice">
-          <TriangleAlert size={14} className="icon-inline" />
-          <span>
-            {resetNotice.label}'s email was changed, so their permissions were reset. Grant access again in the
-            Permissions tab.
-          </span>
+      <div className="card app-tabbed-card">
+        <div className="app-tabbar" role="tablist" aria-label="User management views">
           <button
             type="button"
-            className="btn btn-ghost"
-            onClick={() => {
-              setPermUserId(resetNotice.id);
-              setTab("access");
-              setResetNotice(null);
-            }}
+            role="tab"
+            aria-selected={tab === "users"}
+            className={`app-tab${tab === "users" ? " active" : ""}`}
+            onClick={() => setTab("users")}
           >
-            Review permissions
+            <UsersIcon size={15} /> Users
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "access"}
+            className={`app-tab${tab === "access" ? " active" : ""}`}
+            onClick={() => setTab("access")}
+          >
+            <ShieldCheck size={15} /> Permissions
           </button>
         </div>
-      )}
 
-      {tab === "users" ? (
-        !loading && users.length === 0 && !query.trim() ? (
-          <div className="card empty-state-block">
-            No users yet — add your first one.
-          </div>
-        ) : (
-          <div className="card p-0">
-            <div className="panel-head-strip">
-              <SearchAutocomplete
-                className="search-box"
-                value={query}
-                onChange={(text, picked = false) => { setQuery(text); setQueryExact(picked); }}
-                suggestions={suggestions}
-                loading={suggesting}
-                placeholder="Search by name or email…"
-                ariaLabel="Search users"
-              />
-            </div>
+        {tab === "users" && (
+          <div className="app-tab-panel p-0">
+            {resetNotice && (
+              <div className="um-notice-wrap">
+                <div className="speedo-banner warn perm-notice">
+                  <TriangleAlert size={14} className="icon-inline" />
+                  <span>
+                    {resetNotice.label}'s email was changed, so their permissions were reset. Grant access again in the
+                    Permissions tab.
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => {
+                      setPermUserId(resetNotice.id);
+                      setTab("access");
+                      setResetNotice(null);
+                    }}
+                  >
+                    Review permissions
+                  </button>
+                </div>
+              </div>
+            )}
 
-            <div className={`table-responsive${isPageChanging ? " list-updating" : ""}`}>
-              <table className="user-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Joined</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading && (
-                    <tr>
-                      <td colSpan={5} className="text-center p-30 text-muted">
-                        Loading users…
-                      </td>
-                    </tr>
-                  )}
-                  {!loading && filtered.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="text-center p-30 text-muted">
-                        No users match your search.
-                      </td>
-                    </tr>
-                  )}
-                  {!loading &&
-                    filtered.map((u) => (
-                      <tr key={u._id}>
-                        <td className="fw-600">{u.name}</td>
-                        <td className="text-muted">{u.email}</td>
-                        <td>
-                          <span className={`badge badge-${u.role}`}>{u.role}</span>
-                        </td>
-                        <td className="text-muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</td>
-                        <td>
-                          <div className="flex-row gap-6">
-                            <button
-                              type="button"
-                              className="icon-btn"
-                              onClick={() => openPermissionsFor(u)}
-                              title="Manage permissions"
-                              aria-label={`Manage permissions for ${formatUserLabel(u)}`}
-                              disabled={usersError}
-                            >
-                              <ShieldCheck size={15} />
-                            </button>
-                            <button
-                              type="button"
-                              className="icon-btn"
-                              onClick={() => openEdit(u)}
-                              title={isLockedAdmin(u) ? "Only an admin can change an admin account" : "Edit"}
-                              disabled={isLockedAdmin(u)}
-                            >
-                              <Pencil size={15} />
-                            </button>
-                            <button
-                              type="button"
-                              className="icon-btn danger"
-                              onClick={() => setDeleteTarget(u)}
-                              title={
-                                isSelf(u)
-                                  ? "You can't delete your own account"
-                                  : isLockedAdmin(u)
-                                    ? "Only an admin can delete an admin account"
-                                    : "Delete"
-                              }
-                              disabled={isSelf(u) || isLockedAdmin(u)}
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
-                        </td>
+            {!loading && users.length === 0 && !query.trim() ? (
+              <div className="empty-state-block">
+                No users yet — add your first one.
+              </div>
+            ) : (
+              <>
+                <div className="panel-head-strip">
+                  <SearchAutocomplete
+                    className="search-box"
+                    value={query}
+                    onChange={(text, picked = false) => { setQuery(text); setQueryExact(picked); }}
+                    suggestions={suggestions}
+                    loading={suggesting}
+                    placeholder="Search by name or email…"
+                    ariaLabel="Search users"
+                  />
+                </div>
+
+                <div className={`table-responsive${isPageChanging ? " list-updating" : ""}`}>
+                  <table className="user-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
                       </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-            {!usersError && <CursorPager pager={pager} noun="users" />}
+                    </thead>
+                    <tbody>
+                      {loading && (
+                        <tr>
+                          <td colSpan={5} className="text-center p-30 text-muted">
+                            Loading users…
+                          </td>
+                        </tr>
+                      )}
+                      {!loading && filtered.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="text-center p-30 text-muted">
+                            No users match your search.
+                          </td>
+                        </tr>
+                      )}
+                      {!loading &&
+                        filtered.map((u) => (
+                          <tr key={u._id}>
+                            <td className="fw-600">{u.name}</td>
+                            <td className="text-muted">{u.email}</td>
+                            <td>
+                              <span className={`badge badge-${u.role}`}>{u.role}</span>
+                            </td>
+                            <td className="text-muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</td>
+                            <td>
+                              <div className="flex-row gap-6">
+                                <button
+                                  type="button"
+                                  className="icon-btn"
+                                  onClick={() => openPermissionsFor(u)}
+                                  title="Manage permissions"
+                                  aria-label={`Manage permissions for ${formatUserLabel(u)}`}
+                                  disabled={usersError}
+                                >
+                                  <ShieldCheck size={15} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="icon-btn"
+                                  onClick={() => openEdit(u)}
+                                  title={isLockedAdmin(u) ? "Only an admin can change an admin account" : "Edit"}
+                                  disabled={isLockedAdmin(u)}
+                                >
+                                  <Pencil size={15} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="icon-btn danger"
+                                  onClick={() => setDeleteTarget(u)}
+                                  title={
+                                    isSelf(u)
+                                      ? "You can't delete your own account"
+                                      : isLockedAdmin(u)
+                                        ? "Only an admin can delete an admin account"
+                                        : "Delete"
+                                  }
+                                  disabled={isSelf(u) || isLockedAdmin(u)}
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+                {!usersError && <CursorPager pager={pager} noun="users" />}
+              </>
+            )}
           </div>
-        )
-      ) : null}
+        )}
 
-      {/* Kept mounted (just hidden) so unsaved permission edits survive a tab switch. */}
-      <div hidden={tab !== "access"}>
-        <UserPermissionsPanel
-          users={permUsers}
-          loading={permLoading}
-          error={permError}
-          selectedId={selectedPermUserId}
-          onSelect={setPermUserId}
-        />
+        {/* Kept mounted (just hidden) so unsaved permission edits survive a tab switch. */}
+        <div className="app-tab-panel um-perm-panel" hidden={tab !== "access"}>
+          <UserPermissionsPanel
+            users={permUsers}
+            loading={permLoading}
+            error={permError}
+            selectedId={selectedPermUserId}
+            onSelect={setPermUserId}
+          />
+        </div>
       </div>
 
       <Modal open={formOpen} onClose={closeForm} title={editing ? "Edit user" : "Add user"} width={440}>

@@ -1,6 +1,7 @@
-import { ArrowLeftRight, Download, FileSpreadsheet, Info, Layers, Ruler, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeftRight, Download, FileSpreadsheet, Info, Layers, Maximize2, Ruler, Upload, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import PageHeader from "../components/pageheader";
+import { sortTypeOptions } from "../utils/sortTypeOptions";
 import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import {
   useAppGuideFitment,
@@ -45,10 +46,6 @@ const STAG_ROWS = [
 
 const has = (v) => v !== null && v !== undefined && String(v).trim() !== "";
 
-// Parses tire size strings as they appear in the Application Guide workbook
-// ("205 55 16", "245 35  20") as well as the usual "265/70R17" / "225/65 R17"
-// spellings into {width, aspect, rim}. Returns null when the string doesn't
-// match (free text etc.).
 function parseTireSizeString(str) {
   if (!has(str)) return null;
   const match = String(str).match(/(\d{3})\s*[/\s]\s*(\d{2,3})\s*R?\s*(\d{2})/i);
@@ -58,16 +55,12 @@ function parseTireSizeString(str) {
 
 const sizeLabel = (t) => (t ? `${t.width}/${t.aspect}R${t.rim}` : null);
 
-// "205 55 16" -> "205/55R16" (same spelling the Tire Size Calculator uses).
-// Anything that can't be parsed is shown as-is rather than hidden.
 function formatTireSize(str) {
   const parsed = parseTireSizeString(str);
   if (parsed) return sizeLabel(parsed);
   return has(str) ? String(str).trim() : null;
 }
 
-// Load index + speed symbol are two separate columns in the sheet; they read
-// as one value on a tire ("89H").
 function loadSpeed(load, speed) {
   if (!has(load) && !has(speed)) return null;
   return `${has(load) ? String(load).trim() : ""}${has(speed) ? String(speed).trim() : ""}`;
@@ -81,8 +74,6 @@ function offsetRange(min, max) {
   return `${String(min).trim()} – ${String(max).trim()} mm`;
 }
 
-// Source sheet stores 0 for "no" and a non-zero code (50) when the fitment is a
-// large-brake application.
 function bigBrakeLabel(v) {
   if (!has(v)) return null;
   return Number(v) === 0 ? "No" : `Yes (${String(v).trim()})`;
@@ -111,8 +102,6 @@ function SpecTable({ rows }) {
   );
 }
 
-// A tire size that can be clicked to preview it in the 3D view (sizes that
-// can't be parsed render as plain text).
 function SizeButton({ size, activeSize, onPick, className = "", children }) {
   const parsed = parseTireSizeString(size);
   if (!parsed) return <span className={className}>{children}</span>;
@@ -120,7 +109,6 @@ function SizeButton({ size, activeSize, onPick, className = "", children }) {
   return (
     <button
       type="button"
-      // className={`techdata-size ${className}${isActive ? " is-active" : ""}`}
       className={`techdata-size ${className}`}
       onClick={() => onPick(parsed)}
       title="Preview in 3D"
@@ -131,10 +119,6 @@ function SizeButton({ size, activeSize, onPick, className = "", children }) {
   );
 }
 
-// Everything the Application Guide has for one fitment record, laid out in the
-// same three-column card as the Tire Size Calculator (inputs | 3D tire |
-// spec table) with the plus-size and staggered fitments underneath, so the
-// whole record fits on one laptop screen without scrolling.
 function FitmentDetails({ record, preview, onPreview }) {
   const baseSize = parseTireSizeString(record.txtTireSize);
 
@@ -152,9 +136,6 @@ function FitmentDetails({ record, preview, onPreview }) {
     }))
     .filter((row) => has(row.front) || has(row.rear));
 
-  // Which size the 3D view is showing: whatever was last clicked, otherwise the
-  // base size (falling back to the next best size on file for rows that don't
-  // have a base size).
   const fallbackSize =
     baseSize ||
     parseTireSizeString(record.txtOptTireSize) ||
@@ -162,8 +143,6 @@ function FitmentDetails({ record, preview, onPreview }) {
     parseTireSizeString(plusRows[0]?.size);
   const shown = preview || fallbackSize;
 
-  // Every spec the record has, split into two balanced Spec | Value tables so
-  // the column stays short enough for a laptop screen.
   const specRows = [
     ["Tire size", formatTireSize(record.txtTireSize)],
     ["Load / speed", loadSpeed(record.loadTireSize, record.speedTireSize)],
@@ -293,9 +272,6 @@ function FitmentDetails({ record, preview, onPreview }) {
               </span>
             </p>
           )}
-          {/* {refIds.length > 0 && (
-            <p className="techdata-refs">{refIds.map(([label, v]) => `${label} ${String(v).trim()}`).join(" · ")}</p>
-          )} */}
         </div>
       )}
     </>
@@ -304,7 +280,6 @@ function FitmentDetails({ record, preview, onPreview }) {
 
 export default function TechData() {
   const [tab, setTab] = useState("lookup"); // "lookup" | "manual" | "csv" | "guide"
-  // The second tab (CSV import / export) is its own per-user permission.
   const { can } = usePermissions();
   const canUseCsvTab = can(PERM.TECH_DATA_CSV_TAB);
 
@@ -313,40 +288,58 @@ export default function TechData() {
       <PageHeader
         eyebrow="Wheel fitment"
         title="Tech Data"
-        // subtitle="Static fitment reference plus wheel offset lookups sourced from the Application Guide, Vehicle Notes and Tire Size Options." // hidden: Tire Size Option is switched off
         subtitle="Static fitment reference plus wheel offset lookups sourced from the Application Guide and Vehicle Notes."
       />
 
-      <div className="range-toggle">
-        <button type="button" className={tab === "lookup" ? "active" : ""} onClick={() => setTab("lookup")}>Vehicle lookup</button>
-        {/* <button type="button" className={tab === "manual" ? "active" : ""} onClick={() => setTab("manual")}>Manual reference</button> */}
-        {/* {canUseCsvTab && <button type="button" className={tab === "csv" ? "active" : ""} onClick={() => setTab("csv")}>CSV import / export</button>} */}
-        <button type="button" className={tab === "guide" ? "active" : ""} onClick={() => setTab("guide")}>Guide</button>
+      <div className={`card techdata-card techdata-tabbed-card${tab === "lookup" ? " techdata-lookup-card" : ""}`}>
+        <div className="techdata-tabbar" role="tablist" aria-label="Tech Data views">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "lookup"}
+            className={`techdata-tab${tab === "lookup" ? " active" : ""}`}
+            onClick={() => setTab("lookup")}
+          >
+            Vehicle lookup
+          </button>
+          {/* <button type="button" role="tab" aria-selected={tab === "manual"} className={`techdata-tab${tab === "manual" ? " active" : ""}`} onClick={() => setTab("manual")}>Manual reference</button> */}
+          {/* {canUseCsvTab && <button type="button" role="tab" aria-selected={tab === "csv"} className={`techdata-tab${tab === "csv" ? " active" : ""}`} onClick={() => setTab("csv")}>CSV import / export</button>} */}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "guide"}
+            className={`techdata-tab${tab === "guide" ? " active" : ""}`}
+            onClick={() => setTab("guide")}
+          >
+            Guide
+          </button>
+        </div>
+
+        <div className="techdata-tab-panel">
+          {tab === "guide" && (
+            <>
+              <h3 className="mb-10">
+                <Info size={16} className="icon-inline" />
+                Wheel & offset glossary
+              </h3>
+              <div className="preset-grid">
+                {GLOSSARY.map((g) => (
+                  <div key={g.term} className="card p-14">
+                    <p className="preset-label">{g.term}</p>
+                    <p className="text-muted fs-13 leading-relaxed">{g.def}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {tab === "lookup" && <VehicleLookupTab />}
+          {tab === "manual" && <ManualReferenceTab />}
+          {tab === "csv" && canUseCsvTab && <CsvImportExportTab />}
+        </div>
       </div>
 
-      {/* The glossary only renders on the Guide tab now — on every other tab it
-          was pushing results below the fold, so results on those tabs now fit
-          in one screen without a vertical scrollbar. */}
-      {tab === "guide" && (
-        <div className="card mb-20">
-          <h3 className="mb-10">
-            <Info size={16} className="icon-inline" />
-            Wheel & offset glossary
-          </h3>
-          <div className="preset-grid">
-            {GLOSSARY.map((g) => (
-              <div key={g.term} className="card p-14">
-                <p className="preset-label">{g.term}</p>
-                <p className="text-muted fs-13 leading-relaxed">{g.def}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {tab === "lookup" && <VehicleLookupTab />}
-      {tab === "manual" && <ManualReferenceTab />}
-      {tab === "csv" && canUseCsvTab && <CsvImportExportTab />}
+      {tab === "lookup" && <WheelOffsetChart />}
     </div>
   );
 }
@@ -356,8 +349,8 @@ function VehicleLookupTab() {
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [typeOption, setTypeOption] = useState("");
-  const [recordIndex, setRecordIndex] = useState(0); // when one selection matches several fitment rows
-  const [preview, setPreview] = useState(null); // { recordId, tire } — size clicked for the 3D view
+  const [recordIndex, setRecordIndex] = useState(0);
+  const [preview, setPreview] = useState(null);
   const logSearch = useLogVehicleSearch();
   const loggedKey = useRef("");
 
@@ -365,6 +358,8 @@ function VehicleLookupTab() {
   const { data: makes, isLoading: loadingMakes } = useAppGuideMakes(year);
   const { data: models, isLoading: loadingModels } = useAppGuideModels(year, make);
   const { data: types, isLoading: loadingTypes } = useAppGuideTypes(year, make, model);
+  // Shown in natural numeric order (17, 18, 19) whatever order the sheet had.
+  const sortedTypes = useMemo(() => sortTypeOptions(types), [types]);
 
   const [selType, selOption] = typeOption ? typeOption.split("|") : [null, null];
   const { data: fitment, isLoading: loadingFitment } = useAppGuideFitment(year, make, model, selType, selOption);
@@ -404,7 +399,6 @@ function VehicleLookupTab() {
 
   const records = fitment || [];
   const record = records.length > 0 ? records[Math.min(recordIndex, records.length - 1)] : null;
-  // A clicked size only applies to the record it was clicked on.
   const previewTire = record && preview?.recordId === record._id ? preview.tire : null;
 
   let emptyMessage = null;
@@ -416,91 +410,154 @@ function VehicleLookupTab() {
   else if (!record) emptyMessage = "No tech data on file for this fitment.";
 
   return (
-    <div className="card techdata-card">
-      <div className={`techdata-grid${emptyMessage ? " techdata-grid--empty" : ""}`}>
-        <div className="techdata-select">
-          <h3>
-            <Ruler size={16} className="icon-inline" />
-            Find a vehicle
-          </h3>
-          <div className="techdata-fields">
-            <div className="field">
-              <label>Year</label>
-              <select value={year} onChange={onYearChange} disabled={loadingYears}>
-                <option value="">{loadingYears ? "Loading…" : "Select year"}</option>
-                {(years || []).map((y) => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
-            <div className="field">
-              <label>Make</label>
-              <select value={make} onChange={onMakeChange} disabled={!year || loadingMakes}>
-                <option value="">{!year ? "Select year first" : loadingMakes ? "Loading…" : "Select make"}</option>
-                {(makes || []).map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <div className="field">
-              <label>Model</label>
-              <select value={model} onChange={onModelChange} disabled={!make || loadingModels}>
-                <option value="">{!make ? "Select make first" : loadingModels ? "Loading…" : "Select model"}</option>
-                {(models || []).map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <div className="field">
-              <label>Type / Option</label>
-              <select value={typeOption} onChange={onTypeChange} disabled={!model || loadingTypes} title={typeOption ? typeOption.replace("|", " — ").replace(/ — $/, "") : undefined}>
-                <option value="">{!model ? "Select model first" : loadingTypes ? "Loading…" : "Select type"}</option>
-                {(types || []).map((t) => (
-                  <option key={`${t.type}|${t.option}`} value={`${t.type}|${t.option || ""}`}>
-                    {t.type}{t.option ? ` — ${t.option}` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
+    <div className={`techdata-grid${emptyMessage ? " techdata-grid--empty" : ""}`}>
+      <div className="techdata-select">
+        <h3>
+          <Ruler size={16} className="icon-inline" />
+          Find a vehicle
+        </h3>
+        <div className="techdata-fields">
+          <div className="field">
+            <label>Year</label>
+            <select value={year} onChange={onYearChange} disabled={loadingYears}>
+              <option value="">{loadingYears ? "Loading…" : "Select year"}</option>
+              {(years || []).map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Make</label>
+            <select value={make} onChange={onMakeChange} disabled={!year || loadingMakes}>
+              <option value="">{!year ? "Select year first" : loadingMakes ? "Loading…" : "Select make"}</option>
+              {(makes || []).map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Model</label>
+            <select value={model} onChange={onModelChange} disabled={!make || loadingModels}>
+              <option value="">{!make ? "Select make first" : loadingModels ? "Loading…" : "Select model"}</option>
+              {(models || []).map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Type / Option</label>
+            <select value={typeOption} onChange={onTypeChange} disabled={!model || loadingTypes} title={typeOption ? typeOption.replace("|", " — ").replace(/ — $/, "") : undefined}>
+              <option value="">{!model ? "Select model first" : loadingTypes ? "Loading…" : "Select type"}</option>
+              {sortedTypes.map((t) => (
+                <option key={`${t.type}|${t.option}`} value={`${t.type}|${t.option || ""}`}>
+                  {t.type}{t.option ? ` — ${t.option}` : ""}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-
-        {emptyMessage ? (
-          <div className="techdata-empty">{emptyMessage}</div>
-        ) : (
-          <>
-            <div className="techdata-heading">
-              <h3>
-                {year} {make} {model} — {selType}{selOption ? ` (${selOption})` : ""}
-              </h3>
-              {records.length > 1 && (
-                <div className="range-toggle techdata-records" role="tablist" aria-label="Fitment records">
-                  {records.map((r, i) => (
-                    <button
-                      key={r._id}
-                      type="button"
-                      role="tab"
-                      aria-selected={i === recordIndex}
-                      className={i === recordIndex ? "active" : ""}
-                      onClick={() => setRecordIndex(i)}
-                    >
-                      {[r.txtOption, formatTireSize(r.txtTireSize)].filter(has).join(" · ") || `Fitment ${i + 1}`}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <FitmentDetails
-              key={record._id}
-              record={record}
-              preview={previewTire}
-              onPreview={(tire) => setPreview({ recordId: record._id, tire })}
-            />
-          </>
-        )}
       </div>
+
+      {emptyMessage ? (
+        <div className="techdata-empty">{emptyMessage}</div>
+      ) : (
+        <>
+          <div className="techdata-heading">
+            <h3>
+              {year} {make} {model} — {selType}{selOption ? ` (${selOption})` : ""}
+            </h3>
+            {records.length > 1 && (
+              <div className="range-toggle techdata-records" role="tablist" aria-label="Fitment records">
+                {records.map((r, i) => (
+                  <button
+                    key={r._id}
+                    type="button"
+                    role="tab"
+                    aria-selected={i === recordIndex}
+                    className={i === recordIndex ? "active" : ""}
+                    onClick={() => setRecordIndex(i)}
+                  >
+                    {[r.txtOption, formatTireSize(r.txtTireSize)].filter(has).join(" · ") || `Fitment ${i + 1}`}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <FitmentDetails
+            key={record._id}
+            record={record}
+            preview={previewTire}
+            onPreview={(tire) => setPreview({ recordId: record._id, tire })}
+          />
+        </>
+      )}
     </div>
+  );
+}
+
+function WheelOffsetChart() {
+  const [zoomed, setZoomed] = useState(false);
+
+  useEffect(() => {
+    if (!zoomed) return;
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setZoomed(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [zoomed]);
+
+  return (
+    <>
+      <div className="card techdata-card techdata-chart-card">
+        <div className="techdata-wheeloffsetchart">
+          <div className="techdata-chart-head">
+            <h3>
+              <Ruler size={16} className="icon-inline" />
+              Wheel Offset Chart
+            </h3>
+            <button
+              type="button"
+              className="techdata-chart-zoom-btn"
+              onClick={() => setZoomed(true)}
+              title="View full screen"
+            >
+              <Maximize2 size={13} />
+              Enlarge
+            </button>
+          </div>
+          <button
+            type="button"
+            className="techdata-wheeloffsetchart-img"
+            onClick={() => setZoomed(true)}
+            title="Click to enlarge Wheel Offset Chart"
+          >
+            <img src="/wheeloffsetchart.webp" alt="Wheel Offset Chart" />
+          </button>
+        </div>
+      </div>
+
+      {zoomed && (
+        <div
+          className="lightbox-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Wheel Offset Chart"
+          onClick={() => setZoomed(false)}
+        >
+          <button
+            type="button"
+            className="lightbox-close"
+            onClick={() => setZoomed(false)}
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+          <div className="lightbox-content techdata-chart-lightbox" onClick={(e) => e.stopPropagation()}>
+            <img src="/wheeloffsetchart.webp" alt="Wheel Offset Chart" />
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
 function ManualReferenceTab() {
   const { data: vehicles, isLoading } = useVehicleNotesQuery();
-  // Hidden: no Tire Size Option data is fetched or checked any more.
-  // const { data: tireOptions } = useTireOptionsQuery();
   const updateVehicle = useUpdateVehicleNote();
   const [selectedId, setSelectedId] = useState("");
   const [notes, setNotes] = useState("");
@@ -523,10 +580,7 @@ function ManualReferenceTab() {
   };
 
   return (
-    <div className="card">
-      {/* Hidden: "or tire preset" (Tire Size Option presets are switched off)
-      <h3 className="mb-4">Reference an existing vehicle note or tire preset</h3>
-      */}
+    <div>
       <h3 className="mb-4">Reference an existing vehicle note</h3>
       <p className="text-muted mb-16">
         For fitments not yet in the Application Guide dataset, record offset/backspacing reference notes directly against a Vehicle Note.
@@ -549,18 +603,6 @@ function ManualReferenceTab() {
             <span className="badge badge-model">{vehicle.model}</span>
             <span className="badge badge-model">{vehicle.type}</span>
           </div>
-
-          {/* Hidden: "Related tire size preset" (Tire Size Option presets are switched off)
-          <div className="field field-mb">
-            <label>Related tire size preset (reference only)</label>
-            <select defaultValue="">
-              <option value="">— none —</option>
-              {(tireOptions || []).map((p) => (
-                <option key={p._id} value={p._id}>{p.label} — {p.width}/{p.aspect} R{p.rim}</option>
-              ))}
-            </select>
-          </div>
-          */}
 
           <div className="field field-mb-lg">
             <label>Wheel offset / fitment notes</label>
@@ -609,8 +651,7 @@ function CsvImportExportTab() {
   };
 
   return (
-
-    <div className="card">
+    <div>
       <h3 className="mb-4">
         <FileSpreadsheet size={16} className="icon-inline" />
         Tech Data CSV

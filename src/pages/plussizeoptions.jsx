@@ -7,6 +7,7 @@ import Tire3DVisualizer from "../components/Tire3DVisualizer";
 import TireSuggestions from "../components/TireSuggestions";
 import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
 import { tireComparisonMetrics } from "../utils/tireMath";
+import { sortTypeOptions } from "../utils/sortTypeOptions";
 // import { useTireOptionsQuery } from "../hooks/queries/useTireOptions"; // hidden: Tire Size Option feature is switched off
 import { usePlusSizeSearch, useSavePlusSizeMatch } from "../hooks/queries/usePlusSize";
 import {
@@ -65,6 +66,8 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
   const { data: makes, isLoading: loadingMakes } = useAppGuideMakes(year);
   const { data: models, isLoading: loadingModels } = useAppGuideModels(year, make);
   const { data: types, isLoading: loadingTypes } = useAppGuideTypes(year, make, model);
+  // Shown in natural numeric order (17, 18, 19) whatever order the sheet had.
+  const sortedTypes = useMemo(() => sortTypeOptions(types), [types]);
 
   const [selType, selOption] = typeOption ? typeOption.split("|") : [null, null];
   const { data: fitment, isLoading: loadingFitment } = useAppGuideFitment(year, make, model, selType, selOption);
@@ -112,7 +115,7 @@ function VehicleUpgradeSizesCard({ onUseAsOe }) {
           <label>Type / Option</label>
           <select value={typeOption} onChange={(e) => setTypeOption(e.target.value)} disabled={!model || loadingTypes}>
             <option value="">{!model ? "Select model first" : loadingTypes ? "Loading…" : "Select type"}</option>
-            {(types || []).map((t) => (
+            {sortedTypes.map((t) => (
               <option key={`${t.type}|${t.option}`} value={`${t.type}|${t.option || ""}`}>
                 {t.type}{t.option ? ` — ${t.option}` : ""}
               </option>

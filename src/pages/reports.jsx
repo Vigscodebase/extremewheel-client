@@ -63,43 +63,52 @@ export default function Reports() {
         subtitle="Pick a date range, review activity, export any category to CSV, and import or export your data libraries."
       />
 
-      <div className="card tire-form mb-20">
-        <h3>
-          <FileBarChart size={16} className="icon-inline" />
-          Date range
-        </h3>
-        <div className="tire-input-grid">
-          <div className="field">
-            <label>From</label>
-            <input type="date" value={from} max={to} onChange={handleFromChange} />
-          </div>
-          <div className="field">
-            <label>To</label>
-            <input type="date" value={to} min={from} onChange={handleToChange} />
-          </div>
-        </div>
-        <div className="range-toggle mt-10">
+      <div className="card app-tabbed-card mb-20">
+        <div className="app-tabbar" role="tablist" aria-label="Quick date range">
           <button
             type="button"
-            className={activeTab === 7 ? "active" : ""}
+            role="tab"
+            aria-selected={activeTab === 7}
+            className={`app-tab${activeTab === 7 ? " active" : ""}`}
             onClick={() => applyQuickRange(7)}
           >
             Last 7 days
           </button>
           <button
             type="button"
-            className={activeTab === 30 ? "active" : ""}
+            role="tab"
+            aria-selected={activeTab === 30}
+            className={`app-tab${activeTab === 30 ? " active" : ""}`}
             onClick={() => applyQuickRange(30)}
           >
             Last 30 days
           </button>
           <button
             type="button"
-            className={activeTab === 90 ? "active" : ""}
+            role="tab"
+            aria-selected={activeTab === 90}
+            className={`app-tab${activeTab === 90 ? " active" : ""}`}
             onClick={() => applyQuickRange(90)}
           >
             Last 90 days
           </button>
+        </div>
+
+        <div className="app-tab-panel reports-range-panel">
+          <h3>
+            <FileBarChart size={16} className="icon-inline" />
+            Date range
+          </h3>
+          <div className="tire-input-grid">
+            <div className="field">
+              <label>From</label>
+              <input type="date" value={from} max={to} onChange={handleFromChange} />
+            </div>
+            <div className="field">
+              <label>To</label>
+              <input type="date" value={to} min={from} onChange={handleToChange} />
+            </div>
+          </div>
         </div>
       </div>
 

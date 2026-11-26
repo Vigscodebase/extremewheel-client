@@ -87,3 +87,41 @@ export function validatePassword(value, { required = true } = {}) {
   }
   return "";
 }
+
+/* ---------- Model year (1950 – 2030) ---------- */
+// Every Year dropdown (and every place a year can be added) uses this one range.
+// Keep in sync with MIN_MODEL_YEAR / MAX_MODEL_YEAR in server/utils/modelYear.js.
+export const MIN_MODEL_YEAR = 1950;
+export const MAX_MODEL_YEAR = 2030;
+
+export const isValidModelYear = (value) => {
+  const text = String(value ?? "").trim();
+  if (!/^\d{4}$/.test(text)) return false;
+  const n = Number(text);
+  return n >= MIN_MODEL_YEAR && n <= MAX_MODEL_YEAR;
+};
+
+// "" when fine (an empty year is allowed), otherwise a message for the form.
+export const modelYearProblem = (value, label = "Year") => {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  return isValidModelYear(text) ? "" : `${label} must be a 4-digit year between ${MIN_MODEL_YEAR} and ${MAX_MODEL_YEAR}.`;
+};
+
+// Only the years inside the allowed range, as strings, in ascending order.
+// Used for every Year dropdown so stray out-of-range values already in the
+// database (or an old import) never show up as choices.
+export const filterModelYears = (years) =>
+  (years || [])
+    .map((y) => String(y).trim())
+    .filter(isValidModelYear)
+    .sort((a, b) => Number(a) - Number(b));
+
+// What the typed-in ("+ Add new year…") box accepts: digits only, at most 4.
+export const cleanYearInput = (text) => String(text ?? "").replace(/\D/g, "").slice(0, 4);
+
+/* ---------- Tire size / wheel offset text fields ---------- */
+// Tire size: digits plus the separators people type ("205/55R16", "205 55 16").
+export const cleanTireSizeInput = (text) => String(text ?? "").replace(/[^\d\s/\-rRzZ]/g, "").slice(0, 14);
+// Wheel offset (mm): a whole number, optionally negative — digits and one leading "-" only.
+export const cleanOffsetInput = (text) => String(text ?? "").replace(/[^\d-]/g, "").replace(/(?!^)-/g, "").slice(0, 4);

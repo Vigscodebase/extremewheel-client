@@ -18,7 +18,18 @@ import useDebouncedValue from "../hooks/useDebouncedValue";
 import useVehicleNoteSaves, { saveErrorMessage } from "../hooks/useVehicleNoteSaves";
 import { PERM } from "../utils/permissions";
 import { SHOW_CHIP_MODIFICATION, SHOW_CHIP_SUBMODEL } from "../utils/vehicleNoteDisplay";
-import { NUMERIC_INPUT_PROPS, TIRE_MAX, onlyDigits } from "../utils/validation";
+import {
+  MAX_MODEL_YEAR,
+  MIN_MODEL_YEAR,
+  NUMERIC_INPUT_PROPS,
+  TIRE_MAX,
+  cleanOffsetInput,
+  cleanTireSizeInput,
+  cleanYearInput,
+  filterModelYears,
+  modelYearProblem,
+  onlyDigits,
+} from "../utils/validation";
 import { useCustomersQuery, useDeleteCustomer } from "../hooks/queries/useCustomers";
 import {
   useAddVehicleGalleryPhoto,
@@ -85,18 +96,13 @@ function offsetProblem(raw, label) {
   return Number.isInteger(n) && n >= -200 && n <= 200 ? "" : `${label} must be a whole number between -200 and 200 (mm).`;
 }
 
-// The Submodel / Tire size / Wheel offset dropdowns. Front and rear share one list
-// for tire sizes and one for offsets (see models/VehicleLookupOption.js on the
-// server). `fields` are the form fields that draw from each list.
+// The Submodel dropdown. (Tire sizes and wheel offsets used to be dropdowns
+// too; they are plain text boxes now — see the fitment fields in the form — so
+// only Submodel still draws from a predefined list, see models/VehicleLookupOption.js
+// on the server.) `fields` are the form fields that draw from each list.
 const OPTION_LISTS = {
   submodel: { label: "submodel", fields: ["submodel"] },
-  "tire-size": { label: "tire size", fields: ["frontTireSize", "rearTireSize"] },
-  "wheel-offset": { label: "wheel offset", fields: ["frontWheelOffset", "rearWheelOffset"] },
 };
-
-// What the typed-in ("+ Add new…") boxes of the tire size / offset dropdowns accept.
-const cleanTireSizeInput = (text) => text.replace(/[^\d\s/\-rRzZ]/g, "").slice(0, 14);
-const cleanOffsetInput = (text) => text.replace(/[^\d-]/g, "").replace(/(?!^)-/g, "").slice(0, 4);
 
 // Card date: the same date and time the detail page shows, just short —
 // "12 Nov, 3:45 PM" (the year is added once it isn't the current one).
@@ -297,11 +303,9 @@ export default function VehicleNotes() {
   // database so it's always dynamic and up to date.
   const { data: filterTypes } = useVehicleLookupTypes(filters.make, filters.model);
   const { data: lookupYears, isLoading: loadingLookupYears } = useVehicleLookupYears();
-  // Submodel / Tire size / Wheel offset: flat predefined lists, managed exactly
+  // Submodel: a flat predefined list, managed exactly
   // like Year (staff and admin can add new values and delete existing ones).
   const { data: submodelOptions, isLoading: loadingSubmodels } = useVehicleLookupOptions("submodel");
-  const { data: tireSizeOptions, isLoading: loadingTireSizes } = useVehicleLookupOptions("tire-size");
-  const { data: wheelOffsetOptions, isLoading: loadingWheelOffsets } = useVehicleLookupOptions("wheel-offset");
   const quickAddLookup = useQuickAddVehicleLookup();
   const quickAddLookupYear = useQuickAddVehicleLookupYear();
   const quickAddLookupOption = useQuickAddVehicleLookupOption();
@@ -339,14 +343,10 @@ export default function VehicleNotes() {
   const filterModelOptions = filterModels || [];
   const filterTypeOptions = filterTypes || [];
 
-  const filterYearOptions = useMemo(
-    () =>
-      (lookupYears || [])
-        .map(Number)
-        .filter((y) => Number.isFinite(y))
-        .sort((a, b) => a - b),
-    [lookupYears]
-  );
+  // Only 1950–2030, in ascending order (see MIN_MODEL_YEAR / MAX_MODEL_YEAR).
+  const filterYearOptions = useMemo(() => filterModelYears(lookupYears).map(Number), [lookupYears]);
+  // Same list as strings for the form's Year dropdown.
+  const formYearOptions = useMemo(() => filterModelYears(lookupYears), [lookupYears]);
 
   // Customer filter options — the customer's name, plus their email when
   // another customer shares that exact name (only email/phone are unique).
@@ -537,6 +537,7 @@ export default function VehicleNotes() {
       return;
     }
     const fitmentError =
+      modelYearProblem(form.year, "Year") ||
       tireSizeProblem(form.frontTireSize, "Front tire size") ||
       tireSizeProblem(form.rearTireSize, "Rear tire size") ||
       offsetProblem(form.frontWheelOffset, "Front wheel offset") ||
@@ -587,11 +588,11 @@ export default function VehicleNotes() {
       if (isStaffOrAdmin && year && !yearUnchanged) {
         quickAddLookupYear.mutate(year, { onError: () => { } });
       }
-      // Same for the Submodel / Tire size / Wheel offset lists: a value that was
+      // Same for the Submodel list: a value that was
       // typed in via "+ Add new…" becomes a dropdown option. Values that are in the
       // list already, or that an edited vehicle already had, are skipped.
       if (isStaffOrAdmin) {
-        const known = { submodel: submodelOptions, "tire-size": tireSizeOptions, "wheel-offset": wheelOffsetOptions };
+        const known = { submodel: submodelOptions };
         const wanted = new Map();
         Object.entries(OPTION_LISTS).forEach(([list, { fields }]) => {
           fields.forEach((field) => {
@@ -1076,12 +1077,14 @@ export default function VehicleNotes() {
               label="Year"
               value={form.year}
               onChange={(val) => setForm((f) => ({ ...f, year: val }))}
-              options={lookupYears}
+              options={formYearOptions}
               loading={loadingLookupYears}
               placeholder="Select year"
               addNewLabel="+ Add new year…"
-              customPlaceholder="2023"
+              customPlaceholder={`${MIN_MODEL_YEAR}–${MAX_MODEL_YEAR}`}
               canAddNew={isStaffOrAdmin}
+              transformInput={cleanYearInput}
+              inputProps={{ inputMode: "numeric", maxLength: 4, autoComplete: "off" }}
               onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "year", value }) : undefined}
             />
             <EditableSelect
@@ -1126,74 +1129,67 @@ export default function VehicleNotes() {
           </div>
 
           {/* Fitment — same data as the Stagfront / Stagrear and front / rear
-              offset columns of tblAppGuide-Templatenew.xlsx. All four are
-              predefined dropdowns like Make / Model / Year: staff and admin get
-              "+ Add new…" and a delete button on every option, everyone else
-              picks from the list. Front and rear share one tire size list and
-              one offset list. */}
+              offset columns of tblAppGuide-Templatenew.xlsx. These four are plain
+              text boxes (not dropdowns): the tire sizes only take tire-size
+              characters (digits, space, "/", "-", R) and are tidied to "205 55 16"
+              when the box loses focus; the offsets only take whole numbers (a
+              leading "-" is allowed, since lifted trucks often have a negative
+              offset). Both are validated again on save. */}
           <div className="tire-input-grid cols-2 field-mb">
-            <EditableSelect
-              label="Front tire size"
-              value={form.frontTireSize}
-              onChange={setField("frontTireSize")}
-              options={tireSizeOptions}
-              loading={loadingTireSizes}
-              placeholder="Select front tire size"
-              addNewLabel="+ Add new tire size…"
-              customPlaceholder="205 55 16"
-              canAddNew={isStaffOrAdmin}
-              keepDropdownWhenEmpty
-              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "option", list: "tire-size", value }) : undefined}
-              transformInput={cleanTireSizeInput}
-              onCustomBlur={tidyTireSize("frontTireSize")}
-              inputProps={{ inputMode: "text", autoComplete: "off" }}
-            />
-            <EditableSelect
-              label="Rear tire size"
-              value={form.rearTireSize}
-              onChange={setField("rearTireSize")}
-              options={tireSizeOptions}
-              loading={loadingTireSizes}
-              placeholder="Select rear tire size"
-              addNewLabel="+ Add new tire size…"
-              customPlaceholder="225 50 16"
-              canAddNew={isStaffOrAdmin}
-              keepDropdownWhenEmpty
-              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "option", list: "tire-size", value }) : undefined}
-              transformInput={cleanTireSizeInput}
-              onCustomBlur={tidyTireSize("rearTireSize")}
-              inputProps={{ inputMode: "text", autoComplete: "off" }}
-            />
-            <EditableSelect
-              label="Front wheel offset"
-              value={form.frontWheelOffset}
-              onChange={setField("frontWheelOffset")}
-              options={wheelOffsetOptions}
-              loading={loadingWheelOffsets}
-              placeholder="Select front wheel offset"
-              addNewLabel="+ Add new offset…"
-              customPlaceholder="e.g. 35"
-              canAddNew={isStaffOrAdmin}
-              keepDropdownWhenEmpty
-              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "option", list: "wheel-offset", value }) : undefined}
-              transformInput={cleanOffsetInput}
-              inputProps={{ inputMode: "numeric", autoComplete: "off" }}
-            />
-            <EditableSelect
-              label="Rear wheel offset"
-              value={form.rearWheelOffset}
-              onChange={setField("rearWheelOffset")}
-              options={wheelOffsetOptions}
-              loading={loadingWheelOffsets}
-              placeholder="Select rear wheel offset"
-              addNewLabel="+ Add new offset…"
-              customPlaceholder="e.g. 40"
-              canAddNew={isStaffOrAdmin}
-              keepDropdownWhenEmpty
-              onDeleteOption={isStaffOrAdmin ? (value) => setLookupDelete({ kind: "option", list: "wheel-offset", value }) : undefined}
-              transformInput={cleanOffsetInput}
-              inputProps={{ inputMode: "numeric", autoComplete: "off" }}
-            />
+            <div className="field">
+              <label htmlFor="vn-front-tire-size">Front tire size</label>
+              <input
+                id="vn-front-tire-size"
+                type="text"
+                inputMode="text"
+                autoComplete="off"
+                maxLength={14}
+                placeholder="205 55 16"
+                value={form.frontTireSize}
+                onChange={(e) => setField("frontTireSize")(cleanTireSizeInput(e.target.value))}
+                onBlur={tidyTireSize("frontTireSize")}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="vn-rear-tire-size">Rear tire size</label>
+              <input
+                id="vn-rear-tire-size"
+                type="text"
+                inputMode="text"
+                autoComplete="off"
+                maxLength={14}
+                placeholder="225 50 16"
+                value={form.rearTireSize}
+                onChange={(e) => setField("rearTireSize")(cleanTireSizeInput(e.target.value))}
+                onBlur={tidyTireSize("rearTireSize")}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="vn-front-wheel-offset">Front wheel offset (mm)</label>
+              <input
+                id="vn-front-wheel-offset"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={4}
+                placeholder="e.g. 35"
+                value={form.frontWheelOffset}
+                onChange={(e) => setField("frontWheelOffset")(cleanOffsetInput(e.target.value))}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="vn-rear-wheel-offset">Rear wheel offset (mm)</label>
+              <input
+                id="vn-rear-wheel-offset"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={4}
+                placeholder="e.g. 40"
+                value={form.rearWheelOffset}
+                onChange={(e) => setField("rearWheelOffset")(cleanOffsetInput(e.target.value))}
+              />
+            </div>
           </div>
 
           <div className="field field-mb">
